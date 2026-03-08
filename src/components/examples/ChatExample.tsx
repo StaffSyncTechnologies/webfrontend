@@ -36,8 +36,8 @@ export const ChatExample: React.FC = () => {
   const handleCreateDirectRoom = async (workerId: string) => {
     try {
       const result = await getOrCreateRoom({
+        workerId,
         participantId: workerId,
-        type: 'DIRECT'
       }).unwrap();
       setSelectedRoomId(result.id);
     } catch (error) {
@@ -80,7 +80,7 @@ export const ChatExample: React.FC = () => {
               >
                 <div style={{ fontWeight: 'bold' }}>{room.name}</div>
                 <div style={{ fontSize: '12px', color: '#666' }}>
-                  {room.type} • {room.participants.length} participants
+                  {room.type || 'Unknown'} • {room.participants?.length || 0} participants
                 </div>
                 {room.unreadCount > 0 && (
                   <div style={{ 
@@ -138,7 +138,7 @@ export const ChatExample: React.FC = () => {
             <div style={{ padding: '15px', borderBottom: '1px solid #ccc', backgroundColor: '#f8f8f8' }}>
               <h4>{selectedRoom.name}</h4>
               <div style={{ fontSize: '12px', color: '#666' }}>
-                {selectedRoom.participants.map(p => p.user.fullName).join(', ')}
+                {selectedRoom.participants?.map((p: any) => p.fullName || p.name || 'Unknown').join(', ') || 'No participants'}
               </div>
             </div>
 

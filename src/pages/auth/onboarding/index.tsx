@@ -403,7 +403,7 @@ const OnboardingFlow = () => {
   // Step 3b state (OTP)
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(59);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
+  const [timerInterval, setTimerInterval] = useState<ReturnType<typeof setInterval> | null>(null);
   
   // Handlers
   const handleOrgChange = (e: React.ChangeEvent<HTMLInputElement>) => {

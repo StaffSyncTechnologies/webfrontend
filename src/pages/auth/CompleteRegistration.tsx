@@ -331,7 +331,7 @@ export function CompleteRegistration({ type = 'team' }: Props) {
                 value={formData.jobTitle}
                 onChange={handleSelectChange}
                 displayEmpty
-                renderValue={(value) => value || <span style={{ color: '#9CA3AF' }}>Select job title</span>}
+                renderValue={(value) => value ? String(value) : <span style={{ color: '#9CA3AF' }}>Select job title</span>}
               >
                 {JOB_TITLES.map((title) => (
                   <MenuItem key={title} value={title}>{title}</MenuItem>
