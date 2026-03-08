@@ -1,0 +1,3 @@
+# Build Configuration
+BUILD_COMMAND=npx vite build
+PUBLISH_DIR=dist
