@@ -202,6 +202,7 @@ export interface User {
   id: string;
   fullName: string;
   email: string;
+  phone?: string;
   role: 'ADMIN' | 'OPS_MANAGER' | 'SHIFT_COORDINATOR' | 'COMPLIANCE_OFFICER';
   isActive: boolean;
   createdAt: string;
@@ -213,14 +214,20 @@ export interface Worker {
   id: string;
   fullName: string;
   email: string;
-  phone: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-  rtwStatus: 'COMPLIANT' | 'PENDING' | 'EXPIRED' | 'NOT_STARTED';
+  phone?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  rtwStatus?: 'COMPLIANT' | 'PENDING' | 'EXPIRED' | 'NOT_STARTED';
   reliabilityScore?: number;
   createdAt: string;
   skills?: Skill[];
   documents?: WorkerDocument[];
   availability?: WorkerAvailability;
+  workerProfile?: {
+    address?: string;
+  };
+  profilePicUrl?: string;
+  verified?: boolean;
+  role?: string;
 }
 
 export interface Skill {
@@ -251,10 +258,24 @@ export interface Shift {
   endAt: string;
   workersNeeded: number;
   payRate: number;
-  status: 'OPEN' | 'FILLED' | 'CANCELLED' | 'COMPLETED';
+  status: 'OPEN' | 'FILLED' | 'CANCELLED' | 'COMPLETED' | 'IN_PROGRESS';
   assignedWorkers?: Worker[];
   createdBy: string;
   createdAt: string;
+  // Optional fields from API responses
+  location?: { name: string };
+  requiredSkills?: Array<{ skillId: string; skill?: Skill }>;
+  notes?: string;
+  clientCompany?: { name: string };
+  _count?: { assignments: number };
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  attendances?: Array<{
+    id: string;
+    workerId: string;
+    clockIn?: string;
+    clockOut?: string;
+    status: string;
+  }>;
 }
 
 export interface ShiftAssignment {
@@ -328,8 +349,11 @@ export interface Organization {
   id: string;
   name: string;
   deploymentMode: 'AGENCY' | 'DIRECT_COMPANY';
+  industry?: string;
+  size?: string;
   branding?: OrganizationBranding;
   settings?: OrganizationSettings;
+  coverImageUrl?: string;
 }
 
 export interface OrganizationBranding {
@@ -505,6 +529,10 @@ export interface ChatRoom {
   worker: ChatUser;
   messages: ChatMessage[];
   unreadCount: number;
+  name?: string;
+  type?: string;
+  participants?: ChatUser[];
+  lastMessage?: ChatMessage;
 }
 
 export interface ChatMessage {
@@ -520,10 +548,12 @@ export interface ChatMessage {
 
 export interface GetOrCreateRoomRequest {
   workerId: string;
+  participantId?: string;
 }
 
 export interface UnreadCountResponse {
   count: number;
+  total?: number;
 }
 
 export interface AssignedWorker {
@@ -537,7 +567,7 @@ export interface AssignedWorker {
 export interface ClientDashboard {
   activeWorkers: number;
   upcomingShifts: number;
-  pendingTimesheets: number;
+  pendingTimesheets: ClientTimesheet[];
   totalHoursThisMonth: number;
   recentActivity: ClientActivity[];
 }

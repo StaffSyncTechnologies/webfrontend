@@ -350,10 +350,6 @@ const formatTime = (dateStr: string | null) => {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
 
 const formatDuration = (hours: number) => {
   if (hours < 1) return `${Math.round(hours * 60)} mins`;

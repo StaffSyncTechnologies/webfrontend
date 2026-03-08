@@ -35,7 +35,6 @@ import {
   IconButton,
   Menu as MuiMenu,
   Avatar,
-  Modal,
 } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer } from '../../components/layout';
@@ -483,115 +482,6 @@ const PageButton = styled('button')({
   '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
 });
 
-// Modal Styles
-const ModalOverlay = styled(Box)({
-  position: 'fixed',
-  inset: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const ModalCard = styled(Box)({
-  backgroundColor: colors.secondary.white,
-  borderRadius: '12px',
-  padding: '32px',
-  width: '500px',
-  maxWidth: '90vw',
-  position: 'relative',
-  outline: 'none',
-});
-
-const ModalClose = styled(IconButton)({
-  position: 'absolute',
-  top: '16px',
-  right: '16px',
-});
-
-const ModalTitle = styled('h2')({
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '22px',
-  fontWeight: 700,
-  color: colors.primary.navy,
-  margin: '0 0 4px',
-  textAlign: 'center',
-});
-
-const ModalSubtitle = styled('p')({
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '14px',
-  color: colors.text.secondary,
-  margin: '0 0 24px',
-  textAlign: 'center',
-});
-
-const FormGroup = styled(Box)({
-  marginBottom: '16px',
-});
-
-const Label = styled('label')({
-  display: 'block',
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '14px',
-  fontWeight: 500,
-  color: colors.primary.navy,
-  marginBottom: '8px',
-  '& .required': { color: colors.status.error },
-});
-
-const StyledInput = styled(TextField)({
-  width: '100%',
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '8px',
-    '& fieldset': { borderColor: '#E5E7EB' },
-  },
-  '& .MuiInputBase-input': {
-    padding: '12px 14px',
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: '14px',
-  },
-});
-
-const FormRow = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '16px',
-});
-
-const InviteSubmitButton = styled('button')({
-  width: '100%',
-  padding: '14px',
-  borderRadius: '8px',
-  border: 'none',
-  backgroundColor: colors.primary.navy,
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '14px',
-  fontWeight: 600,
-  color: colors.secondary.white,
-  cursor: 'pointer',
-  marginTop: '8px',
-  '&:hover': { backgroundColor: '#1a2d4a' },
-});
-
-const SuccessIcon = styled(Box)({
-  display: 'flex',
-  justifyContent: 'center',
-  marginBottom: '16px',
-  '& svg': {
-    fontSize: '48px',
-    color: colors.status.success,
-  },
-});
-
-const SuccessText = styled('p')({
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '14px',
-  color: colors.text.secondary,
-  textAlign: 'center',
-  margin: '0 0 24px',
-  lineHeight: 1.6,
-});
-
 const DoneButton = styled('button')({
   width: '100%',
   padding: '14px',
@@ -641,30 +531,31 @@ export function WorkerDetails() {
 
   // Extract worker info
   const worker = useMemo(() => {
-    const w = workerData?.data;
-    if (!w) return null;
+    const w = workerData;
     return {
-      name: w.fullName || 'Unknown',
-      verified: w.workerProfile?.rtwStatus === 'VERIFIED',
-      email: w.email || '',
-      phone: w.phone || '',
-      workerId: `#WK-${w.id?.slice(-6).toUpperCase() || '000000'}`,
-      location: w.workerProfile?.address || 'Not specified',
-      avatar: w.profilePicUrl || '',
+      id: w?.id || '',
+      fullName: w?.fullName || '',
+      name: w?.fullName || '',
+      email: w?.email || '',
+      phone: w?.phone || '',
+      workerId: `#WK-${w?.id?.slice(-6).toUpperCase() || '000000'}`,
+      location: w?.workerProfile?.address || 'Not specified',
+      avatar: w?.profilePicUrl || '',
+      verified: w?.verified || false,
     };
   }, [workerData]);
 
   // Extract stats
   const stats = useMemo(() => ({
-    totalShifts: statsData?.data?.totalShifts || 0,
-    totalEarnings: `£${(statsData?.data?.totalEarnings || 0).toFixed(2)}`,
-    totalHours: statsData?.data?.totalHours || '0h 0m',
-    attendanceRate: `${statsData?.data?.attendanceRate || 0}%`,
+    totalShifts: statsData?.totalShifts || 0,
+    totalEarnings: `£${(statsData?.totalEarnings || 0).toFixed(2)}`,
+    totalHours: statsData?.totalHours || '0h 0m',
+    attendanceRate: `${statsData?.attendanceRate || 0}%`,
   }), [statsData]);
 
   // Extract shift history
   const shiftHistory = useMemo(() => {
-    return shiftsData?.data?.data?.map((s: any) => ({
+    return shiftsData?.data?.map((s: any) => ({
       id: s.id,
       shiftId: s.shiftCode,
       title: s.title,
@@ -677,7 +568,7 @@ export function WorkerDetails() {
 
   // Extract payslips
   const payslips = useMemo(() => {
-    return payslipsData?.data?.data?.map((p: any) => ({
+    return payslipsData?.data?.map((p: any) => ({
       id: p.id,
       dateTime: `${p.periodStart} | ${p.periodEnd}`,
       payRate: `£${(p.payRate || 0).toFixed(2)}`,
@@ -690,7 +581,7 @@ export function WorkerDetails() {
 
   // Extract holidays
   const holidays = useMemo(() => {
-    return holidaysData?.data?.data?.map((h: any) => ({
+    return holidaysData?.data?.map((h: any) => ({
       id: h.id,
       type: h.type || 'Holiday',
       startDate: h.startDate,
@@ -702,27 +593,27 @@ export function WorkerDetails() {
 
   // Extract skills and documents
   const skillsAndDocs = useMemo(() => {
-    const skills = (skillsData?.data || []).map((s: any) => ({
+    const skills = skillsData?.map((s: any) => ({
       name: s.skill?.name || s.name || 'Unknown',
       type: 'Skill',
       expiryDate: '-',
       status: 'approved',
     }));
-    const docs = (documentsData?.data || []).map((d: any) => ({
+    const docs = documentsData?.map((d: any) => ({
       name: d.name || d.type || 'Document',
       type: 'Document',
       expiryDate: d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('en-GB') : '-',
       status: d.verified ? 'approved' : d.expiryDate && new Date(d.expiryDate) < new Date() ? 'rejected' : 'pending',
     }));
-    return [...skills, ...docs];
+    return [...(skills || []), ...(docs || [])];
   }, [skillsData, documentsData]);
 
   // Pagination info
   const getPagination = () => {
     switch (activeTab) {
-      case 'shifts': return shiftsData?.data?.pagination;
-      case 'payslips': return payslipsData?.data?.pagination;
-      case 'holidays': return holidaysData?.data?.pagination;
+      case 'shifts': return shiftsData?.pagination;
+      case 'payslips': return payslipsData?.pagination;
+      case 'holidays': return holidaysData?.pagination;
       default: return null;
     }
   };
@@ -731,7 +622,7 @@ export function WorkerDetails() {
   const handleBlockWorker = async () => {
     if (!workerId) return;
     try {
-      await createBlock({ workerId, reason: 'Blocked by admin', blockType: 'FULL' }).unwrap();
+      await createBlock({ workerId, reason: 'Blocked by admin' }).unwrap();
     } catch (err) {
       console.error('Failed to block worker:', err);
     }
@@ -742,10 +633,7 @@ export function WorkerDetails() {
   };
   const handleMenuClose = () => setMenuAnchor(null);
 
-  const handleInviteSubmit = () => {
-    setInviteOpen(false);
-  };
-
+  
   const renderShiftHistory = () => (
     <>
       <thead>
@@ -760,7 +648,7 @@ export function WorkerDetails() {
         </tr>
       </thead>
       <tbody>
-        {shiftHistory.map((s) => (
+        {shiftHistory.map((s: any) => (
           <tr key={s.id}>
             <Td><Checkbox size="small" /></Td>
             <Td>
@@ -799,7 +687,7 @@ export function WorkerDetails() {
         </tr>
       </thead>
       <tbody>
-        {payslips.map((p) => (
+        {payslips.map((p: any) => (
           <tr key={p.id}>
             <Td><Checkbox size="small" /></Td>
             <Td>{p.dateTime}</Td>
@@ -829,7 +717,7 @@ export function WorkerDetails() {
         </tr>
       </thead>
       <tbody>
-        {holidays.map((h) => (
+        {holidays.map((h: any) => (
           <tr key={h.id}>
             <Td><Checkbox size="small" /></Td>
             <Td>{h.type}</Td>

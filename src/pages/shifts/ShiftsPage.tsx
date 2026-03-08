@@ -361,9 +361,9 @@ export function ShiftsPage() {
   // API calls
   const statusFilter = activeTab === 'all' ? undefined : activeTab === 'open' ? 'OPEN' : 'COMPLETED';
   const { data: shiftsData, isLoading, error } = useGetShiftsQuery({ status: statusFilter });
-  const [deleteShift, { isLoading: isDeleting }] = useDeleteShiftMutation();
-  const [broadcastShift, { isLoading: isBroadcasting }] = useBroadcastShiftMutation();
-  const [cancelShift, { isLoading: isCancelling }] = useCancelShiftMutation();
+  const [deleteShift] = useDeleteShiftMutation();
+  const [broadcastShift] = useBroadcastShiftMutation();
+  const [cancelShift] = useCancelShiftMutation();
 
   // Process shifts data - handle wrapped API response
   const shifts = useMemo(() => {

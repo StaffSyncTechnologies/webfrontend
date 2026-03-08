@@ -21,7 +21,7 @@ import type {
 } from '../../types/api.ts';
 
 // Enhanced base query that handles token storage and dispatches auth actions
-const createAuthBaseQuery = (dispatch: any) => axiosBaseQuery({
+const createAuthBaseQuery = (_dispatch: any) => axiosBaseQuery({
   prepareHeaders: (headers) => {
     const token = localStorage.getItem('authToken');
     if (token) {
@@ -395,4 +395,20 @@ export const useAuthApi = () => {
     authApi = initializeAuthApi(dispatch);
   }
   return authApi;
+};
+
+// Export individual hooks for convenience
+export const useLoginMutation = () => {
+  const authApi = useAuthApi();
+  return authApi.endpoints.login.useMutation();
+};
+
+export const useLogoutMutation = () => {
+  const authApi = useAuthApi();
+  return authApi.endpoints.logout.useMutation();
+};
+
+export const useMeQuery = () => {
+  const authApi = useAuthApi();
+  return authApi.endpoints.me.useQuery();
 };

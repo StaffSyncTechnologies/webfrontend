@@ -15,7 +15,6 @@ import {
   CheckCircle,
   Pause,
   PlayArrow,
-  PersonAdd,
 } from '@mui/icons-material';
 import { Box, styled, TextField, InputAdornment, Select, MenuItem, Checkbox, IconButton, Menu as MuiMenu, Avatar } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
@@ -285,17 +284,6 @@ const PageButton = styled('button')({
   '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
 });
 
-// ============ DATA ============
-interface WorkerRow {
-  id: string;
-  workerId: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: string;
-  verified: boolean;
-}
 
 
 // ============ COMPONENT ============

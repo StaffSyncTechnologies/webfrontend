@@ -307,7 +307,7 @@ export function CreateShift() {
         endAt: endAt.toISOString(),
         workersNeeded,
         payRate: payRate ? parseFloat(payRate) : undefined,
-        requiredSkillIds: selectedSkillIds.length > 0 ? selectedSkillIds : undefined,
+        requiredSkills: selectedSkillIds.length > 0 ? selectedSkillIds.map(id => ({ skillId: id })) : undefined,
         notes: notes || undefined,
         priority,
       }).unwrap();

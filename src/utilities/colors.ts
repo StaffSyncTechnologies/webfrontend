@@ -8,6 +8,8 @@ export const colors = {
   primary: {
     navy: '#000035',      // Deep Navy Blue - Headers, text, dashboard, logo base
     blue: '#00AFEF',      // Bright Tech Blue - Buttons, highlights, links, active elements
+    dark: '#000035',      // Alias for navy - used in components
+    main: '#00AFEF',      // Alias for blue - used in components
   },
 
   // Secondary Colors

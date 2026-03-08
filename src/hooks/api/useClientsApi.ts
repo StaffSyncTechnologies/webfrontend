@@ -60,6 +60,7 @@ export interface CreateClientData {
   industry?: string;
   defaultPayRate?: number;
   defaultChargeRate?: number;
+  status?: 'ACTIVE' | 'INACTIVE';
 }
 
 // ============ QUERY KEYS ============

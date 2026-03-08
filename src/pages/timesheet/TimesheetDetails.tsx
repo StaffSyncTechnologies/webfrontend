@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowBack,
   Work,
@@ -383,10 +383,9 @@ const GoBackButton = styled('button')({
 });
 
 // ============ COMPONENT ============
-export function TimesheetDetails() {
+export function TimesheetDetails({ params: _ }: { params?: { id: string } }) {
   useDocumentTitle('Timesheet Details');
   const navigate = useNavigate();
-  const _params = useParams();
   const [successOpen, setSuccessOpen] = useState(false);
 
   const handleApprove = () => {

@@ -833,8 +833,8 @@ export function SettingsPage() {
               }}>
               {uploadingCover ? (
                 <CircularProgress size={32} />
-              ) : organization?.coverImageUrl ? (
-                <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}${organization.coverImageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (organization as any)?.coverImageUrl ? (
+                <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}${(organization as any).coverImageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Box sx={{ textAlign: 'center' }}>
                   <CloudUpload sx={{ fontSize: 32, color: '#9CA3AF', marginBottom: '4px' }} />
