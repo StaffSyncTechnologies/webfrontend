@@ -23,4 +23,5 @@ export { ReportsPage } from './reports';
 export { CompliancePage } from './compliance';
 export { SettingsPage } from './settings';
 export { HelpPage } from './help';
+export { InviteRequestsPage } from './invite-requests';
 export { default as ContactUsPage } from './contactUs';

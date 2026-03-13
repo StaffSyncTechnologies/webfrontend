@@ -1,7 +1,8 @@
-import { Box, styled } from '@mui/material';
+import { Box, styled, CircularProgress } from '@mui/material';
 import { Check } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../../utilities/colors';
+import { useGetPlansQuery, type Plan } from '../../store/slices/subscriptionSlice';
 
 interface PricingPlansProps {
   onSelectPlan?: (planId: string) => void;
@@ -148,48 +149,72 @@ const Subtitle = styled('p')({
   textAlign: 'center',
 });
 
-const plans = [
+const fallbackPlans = [
   {
-    id: 'starter',
-    name: 'STARTER',
-    price: '£0',
-    period: '/month',
-    billing: 'Billed annually.',
-    features: ['Free', '180 days free', 'Up to 10 workers', 'Basic shifts scheduling', 'GPS clock-in'],
-    buttonText: 'Start Free',
-    featured: false,
+    id: 'FREE',
+    name: 'Free Trial',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    features: ['180-day free trial', 'Unlimited workers', 'Full scheduling features', 'Time tracking & timesheets', 'GPS clock-in'],
+    isCustomPricing: false,
+    trialDays: 180,
+    workerLimit: 'Unlimited',
+    clientLimit: 'Unlimited',
   },
   {
-    id: 'pro',
-    name: 'PRO 👑',
-    price: '£99',
-    period: '/month',
-    billing: 'Billed annually.',
-    features: ['£99/month', 'Unlimited workers', 'Rota builder', 'Notifications', 'Payroll'],
-    buttonText: 'Start Trial',
-    featured: true,
-    popular: true,
+    id: 'STANDARD',
+    name: 'Standard',
+    monthlyPrice: 99,
+    yearlyPrice: 948,
+    features: ['Unlimited workers', 'Unlimited clients', 'Full scheduling features', 'Invoicing & payroll', 'Priority support'],
+    isCustomPricing: false,
+    trialDays: null,
+    workerLimit: 'Unlimited',
+    clientLimit: 'Unlimited',
   },
   {
-    id: 'enterprise',
-    name: 'ENTERPRISE',
-    price: '£X',
-    period: '/month',
-    billing: 'Billed annually.',
-    features: ['Custom', 'White-label', 'API access', 'Priority support', 'Dedicated manager'],
-    buttonText: 'Contact Us',
-    featured: false,
+    id: 'ENTERPRISE',
+    name: 'Enterprise',
+    monthlyPrice: null,
+    yearlyPrice: null,
+    features: ['Everything in Standard', 'White-label branding', 'Custom integrations', 'Dedicated account manager', '24/7 phone support'],
+    isCustomPricing: true,
+    trialDays: null,
+    workerLimit: 'Unlimited',
+    clientLimit: 'Unlimited',
   },
-];
+] as Plan[];
+
+function mapPlanToDisplay(plan: Plan) {
+  const isFree = plan.id === 'FREE';
+  const isEnterprise = plan.isCustomPricing;
+  const isStandard = !isFree && !isEnterprise;
+
+  return {
+    id: plan.id,
+    name: isStandard ? `${plan.name} 👑` : plan.name,
+    price: isEnterprise ? 'Custom' : `£${plan.monthlyPrice ?? 0}`,
+    period: isEnterprise ? '' : '/month',
+    billing: isEnterprise ? 'Contact us for pricing.' : plan.yearlyPrice ? `£${plan.yearlyPrice}/year when billed annually.` : 'Billed annually.',
+    features: plan.features,
+    buttonText: isFree ? 'Start Free' : isEnterprise ? 'Contact Us' : 'Start Trial',
+    featured: isStandard,
+    popular: isStandard,
+  };
+}
 
 const PricingPlans = ({ onSelectPlan, showTitle = true }: PricingPlansProps) => {
   const navigate = useNavigate();
+  const { data: plansData, isLoading } = useGetPlansQuery();
+
+  const backendPlans = plansData?.plans ?? fallbackPlans;
+  const displayPlans = backendPlans.map(mapPlanToDisplay);
 
   const handleSelectPlan = (planId: string) => {
     if (onSelectPlan) {
       onSelectPlan(planId);
     } else {
-      if (planId === 'enterprise') {
+      if (planId === 'ENTERPRISE') {
         navigate('/contact-us');
       } else {
         navigate('/get-started');
@@ -205,33 +230,39 @@ const PricingPlans = ({ onSelectPlan, showTitle = true }: PricingPlansProps) => 
           <Subtitle>Choose the plan that is right for you to complete your registration</Subtitle>
         </>
       )}
-      <PlansContainer>
-        {plans.map(plan => (
-          <PlanCard key={plan.id} featured={plan.featured}>
-            {plan.popular && <PopularBadge>MOST POPULAR</PopularBadge>}
-            <PlanName featured={plan.featured}>{plan.name}</PlanName>
-            <PlanPrice featured={plan.featured}>
-              <span className="amount">{plan.price}</span>
-              <span className="period">{plan.period}</span>
-            </PlanPrice>
-            <BillingNote featured={plan.featured}>{plan.billing}</BillingNote>
-            <FeatureList>
-              {plan.features.map((feature, index) => (
-                <FeatureItem key={index} featured={plan.featured}>
-                  <Check />
-                  {feature}
-                </FeatureItem>
-              ))}
-            </FeatureList>
-            <PlanButton
-              featured={plan.featured}
-              onClick={() => handleSelectPlan(plan.id)}
-            >
-              {plan.buttonText}
-            </PlanButton>
-          </PlanCard>
-        ))}
-      </PlansContainer>
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <PlansContainer>
+          {displayPlans.map(plan => (
+            <PlanCard key={plan.id} featured={plan.featured}>
+              {plan.popular && <PopularBadge>MOST POPULAR</PopularBadge>}
+              <PlanName featured={plan.featured}>{plan.name}</PlanName>
+              <PlanPrice featured={plan.featured}>
+                <span className="amount">{plan.price}</span>
+                <span className="period">{plan.period}</span>
+              </PlanPrice>
+              <BillingNote featured={plan.featured}>{plan.billing}</BillingNote>
+              <FeatureList>
+                {plan.features.map((feature, index) => (
+                  <FeatureItem key={index} featured={plan.featured}>
+                    <Check />
+                    {feature}
+                  </FeatureItem>
+                ))}
+              </FeatureList>
+              <PlanButton
+                featured={plan.featured}
+                onClick={() => handleSelectPlan(plan.id)}
+              >
+                {plan.buttonText}
+              </PlanButton>
+            </PlanCard>
+          ))}
+        </PlansContainer>
+      )}
     </>
   );
 };

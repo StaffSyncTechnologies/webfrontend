@@ -559,6 +559,7 @@ export function SettingsPage() {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
@@ -667,7 +668,11 @@ export function SettingsPage() {
     try {
       await updateOrganization({
         name: orgForm.name,
-        registrationNumber: orgForm.registrationNumber,
+        tradingName: orgForm.tradingName || null,
+        registrationNumber: orgForm.registrationNumber || null,
+        industry: orgForm.industry || null,
+        website: orgForm.website || null,
+        phone: orgForm.phone || null,
       }).unwrap();
       await updateBranding({
         primaryColor: orgForm.primaryColor,
@@ -676,7 +681,8 @@ export function SettingsPage() {
       toast.success('Settings saved successfully');
       setIsEditing(false);
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to save settings');
+      console.error('Save settings error:', err);
+      toast.error(err?.data?.message || err?.message || 'Failed to save settings');
     }
   };
 
@@ -794,7 +800,7 @@ export function SettingsPage() {
               {uploadingLogo ? (
                 <CircularProgress size={32} />
               ) : organization?.logoUrl ? (
-                <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}${organization.logoUrl}`} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '8px' }} />
+                <img src={organization.logoUrl!.startsWith('http') ? organization.logoUrl! : `https://backend-rp5c.onrender.com${organization.logoUrl}`} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '8px' }} />
               ) : (
                 <Box sx={{ textAlign: 'center' }}>
                   <CloudUpload sx={{ fontSize: 32, color: '#9CA3AF', marginBottom: '4px' }} />
@@ -834,7 +840,7 @@ export function SettingsPage() {
               {uploadingCover ? (
                 <CircularProgress size={32} />
               ) : (organization as any)?.coverImageUrl ? (
-                <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}${(organization as any).coverImageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={(organization as any).coverImageUrl.startsWith('http') ? (organization as any).coverImageUrl : `https://backend-rp5c.onrender.com${(organization as any).coverImageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Box sx={{ textAlign: 'center' }}>
                   <CloudUpload sx={{ fontSize: 32, color: '#9CA3AF', marginBottom: '4px' }} />
@@ -969,7 +975,7 @@ export function SettingsPage() {
       <SectionCard>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <SectionTitle style={{ margin: 0 }}>Locations</SectionTitle>
-          <AddLocationBtn onClick={() => setLocationOpen(true)}>
+          <AddLocationBtn onClick={() => { setEditingLocation(null); setLocationOpen(true); }}>
             <Add sx={{ fontSize: 18 }} /> Add Location
           </AddLocationBtn>
         </Box>
@@ -991,7 +997,7 @@ export function SettingsPage() {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {loc.isPrimary && <PrimaryBadge>Primary</PrimaryBadge>}
-                  <IconButton size="small"><Edit sx={{ fontSize: 16 }} /></IconButton>
+                  <IconButton size="small" onClick={() => { setEditingLocation(loc); setLocationOpen(true); }}><Edit sx={{ fontSize: 16 }} /></IconButton>
                 </Box>
               </LocationItem>
             ))}
@@ -1765,7 +1771,7 @@ export function SettingsPage() {
       {/* Modals */}
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
       <AddRoleModal open={roleOpen} onClose={() => setRoleOpen(false)} />
-      <AddLocationModal open={locationOpen} onClose={() => setLocationOpen(false)} />
+      <AddLocationModal open={locationOpen} onClose={() => { setLocationOpen(false); setEditingLocation(null); }} editLocation={editingLocation} />
       <SubscriptionSuccessModal open={successModalOpen} onClose={handleSuccessClose} />
       <CancelSubscriptionModal open={cancelModalOpen} onClose={() => setCancelModalOpen(false)} onConfirm={handleCancelSubscription} />
       <DeleteAccountModal open={deleteAccountOpen} onClose={() => setDeleteAccountOpen(false)} />

@@ -21,6 +21,7 @@ import {
   SettingsPage,
   HelpPage,
   ContactUsPage,
+  InviteRequestsPage,
 } from '../pages';
 import { BillingPage } from '../pages/settings';
 import { CreateShift, ShiftDetails, EditShift } from '../pages/shifts';
@@ -346,6 +347,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <BillingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invite-requests"
+          element={
+            <ProtectedRoute>
+              <InviteRequestsPage />
             </ProtectedRoute>
           }
         />

@@ -16,6 +16,7 @@ import {
   Logout,
   VerifiedUser,
   Chat,
+  PersonAdd,
 } from '@mui/icons-material';
 import type { ComponentType } from 'react';
 import type { UserRole } from '../utilities/roles';
@@ -144,6 +145,15 @@ export const routes: RouteConfig[] = [
     path: '/hr-management',
     label: 'HR Management',
     icon: SupervisorAccount,
+    requiresAuth: true,
+    showInSidebar: true,
+    section: 'main',
+    allowedRoles: ['ADMIN', 'OPS_MANAGER'],
+  },
+  {
+    path: '/invite-requests',
+    label: 'Invite Requests',
+    icon: PersonAdd,
     requiresAuth: true,
     showInSidebar: true,
     section: 'main',

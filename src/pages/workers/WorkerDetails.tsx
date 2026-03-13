@@ -531,7 +531,7 @@ export function WorkerDetails() {
 
   // Extract worker info
   const worker = useMemo(() => {
-    const w = workerData;
+    const w = (workerData as any)?.data || workerData;
     return {
       id: w?.id || '',
       fullName: w?.fullName || '',
@@ -546,16 +546,21 @@ export function WorkerDetails() {
   }, [workerData]);
 
   // Extract stats
-  const stats = useMemo(() => ({
-    totalShifts: statsData?.totalShifts || 0,
-    totalEarnings: `£${(statsData?.totalEarnings || 0).toFixed(2)}`,
-    totalHours: statsData?.totalHours || '0h 0m',
-    attendanceRate: `${statsData?.attendanceRate || 0}%`,
-  }), [statsData]);
+  const stats = useMemo(() => {
+    const s = (statsData as any)?.data || statsData;
+    return {
+      totalShifts: s?.totalShifts || 0,
+      totalEarnings: `£${(s?.totalEarnings || 0).toFixed(2)}`,
+      totalHours: s?.totalHours || '0h 0m',
+      attendanceRate: `${s?.attendanceRate || 0}%`,
+    };
+  }, [statsData]);
 
   // Extract shift history
   const shiftHistory = useMemo(() => {
-    return shiftsData?.data?.map((s: any) => ({
+    const raw = shiftsData as any;
+    const shifts = Array.isArray(raw?.data?.data) ? raw.data.data : Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+    return shifts.map((s: any) => ({
       id: s.id,
       shiftId: s.shiftCode,
       title: s.title,
@@ -563,12 +568,14 @@ export function WorkerDetails() {
       date: s.date,
       duration: s.duration,
       status: s.status,
-    })) || [];
+    }));
   }, [shiftsData]);
 
   // Extract payslips
   const payslips = useMemo(() => {
-    return payslipsData?.data?.map((p: any) => ({
+    const raw = payslipsData as any;
+    const pays = Array.isArray(raw?.data?.data) ? raw.data.data : Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+    return pays.map((p: any) => ({
       id: p.id,
       dateTime: `${p.periodStart} | ${p.periodEnd}`,
       payRate: `£${(p.payRate || 0).toFixed(2)}`,
@@ -576,30 +583,34 @@ export function WorkerDetails() {
       deductions: `£${(p.deductions || 0).toFixed(2)}`,
       netPay: `£${(p.netPay || 0).toFixed(2)}`,
       status: p.status,
-    })) || [];
+    }));
   }, [payslipsData]);
 
   // Extract holidays
   const holidays = useMemo(() => {
-    return holidaysData?.data?.map((h: any) => ({
+    const raw = holidaysData as any;
+    const hols = Array.isArray(raw?.data?.data) ? raw.data.data : Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+    return hols.map((h: any) => ({
       id: h.id,
       type: h.type || 'Holiday',
       startDate: h.startDate,
       endDate: h.endDate,
       duration: `${h.days || 1} days`,
       status: h.status,
-    })) || [];
+    }));
   }, [holidaysData]);
 
   // Extract skills and documents
   const skillsAndDocs = useMemo(() => {
-    const skills = skillsData?.map((s: any) => ({
+    const rawSkills = Array.isArray(skillsData) ? skillsData : (skillsData as any)?.data || [];
+    const skills = rawSkills?.map((s: any) => ({
       name: s.skill?.name || s.name || 'Unknown',
       type: 'Skill',
       expiryDate: '-',
       status: 'approved',
     }));
-    const docs = documentsData?.map((d: any) => ({
+    const rawDocs = Array.isArray(documentsData) ? documentsData : (documentsData as any)?.data || [];
+    const docs = rawDocs?.map((d: any) => ({
       name: d.name || d.type || 'Document',
       type: 'Document',
       expiryDate: d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('en-GB') : '-',

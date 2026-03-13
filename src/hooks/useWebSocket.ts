@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAppSelector } from '../store';
 import type { ChatMessage } from '../types/api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_BASE = 'https://backend-rp5c.onrender.com';
 
 interface UseWebSocketOptions {
   roomId?: string | null;

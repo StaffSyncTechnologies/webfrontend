@@ -1,7 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
+const API_BASE = 'https://backend-rp5c.onrender.com/api/v1';
 
 export interface ComplianceStats {
   total: number;

@@ -291,6 +291,8 @@ export function WorkersPage() {
   useDocumentTitle('Workers');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState('ALL');
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuWorkerId, setMenuWorkerId] = useState<string | null>(null);
@@ -307,12 +309,15 @@ export function WorkersPage() {
   const { data: statsData } = useGetWorkerListStatsQuery();
   
   // Fetch worker list
-  const { data: workersData, isLoading: workersLoading } = useGetWorkersQuery({});
+  const { data: workersData, isLoading: workersLoading } = useGetWorkersQuery({
+    search: searchTerm || undefined,
+    status: statusFilter !== 'ALL' ? statusFilter : undefined,
+  });
 
   // Process workers data - backend returns { success: true, data: [...] }
   const workers = useMemo(() => {
     const data = workersData?.data || [];
-    return (Array.isArray(data) ? data : []).map((w: any) => ({
+    const all = (Array.isArray(data) ? data : []).map((w: any) => ({
       id: w.id,
       workerId: `WK-${w.id?.slice(-6).toUpperCase() || '000000'}`,
       name: w.fullName || 'Unknown',
@@ -324,6 +329,19 @@ export function WorkersPage() {
       verified: w.workerProfile?.rtwStatus === 'VERIFIED',
       avatar: w.profilePicUrl || '',
     }));
+    if (roleFilter !== 'ALL') {
+      return all.filter((w) => w.role.toLowerCase() === roleFilter.toLowerCase());
+    }
+    return all;
+  }, [workersData, roleFilter]);
+
+  // Extract unique roles for the role filter dropdown
+  const availableRoles = useMemo(() => {
+    const data = workersData?.data || [];
+    const roles = new Set((Array.isArray(data) ? data : []).map((w: any) =>
+      w.workerProfile?.jobTitle || w.workerSkills?.[0]?.skill?.name || 'Worker'
+    ));
+    return Array.from(roles).sort();
   }, [workersData]);
 
   // Process stats data - backend returns { success: true, data: {...} }
@@ -471,12 +489,28 @@ export function WorkersPage() {
             </FilterButton>
           </FilterLeft>
           <FilterRight>
-            <DropdownButton>
-              All Status <KeyboardArrowDown sx={{ fontSize: 18 }} />
-            </DropdownButton>
-            <DropdownButton>
-              All Roles <KeyboardArrowDown sx={{ fontSize: 18 }} />
-            </DropdownButton>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              size="small"
+              sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', minWidth: 130, bgcolor: 'white', borderRadius: '8px', '& .MuiSelect-select': { padding: '8px 12px' } }}
+            >
+              <MenuItem value="ALL">All Status</MenuItem>
+              <MenuItem value="ACTIVE">Active</MenuItem>
+              <MenuItem value="SUSPENDED">Suspended</MenuItem>
+              <MenuItem value="DEACTIVATED">Deactivated</MenuItem>
+            </Select>
+            <Select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              size="small"
+              sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', minWidth: 130, bgcolor: 'white', borderRadius: '8px', '& .MuiSelect-select': { padding: '8px 12px' } }}
+            >
+              <MenuItem value="ALL">All Roles</MenuItem>
+              {availableRoles.map((role) => (
+                <MenuItem key={role} value={role}>{role}</MenuItem>
+              ))}
+            </Select>
             <ExportButton>
               Export as CSV <FileDownload sx={{ fontSize: 18 }} />
             </ExportButton>

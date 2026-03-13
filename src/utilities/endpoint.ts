@@ -5,7 +5,7 @@
 
 /// <reference types="../vite-env" />
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+export const API_BASE = 'https://backend-rp5c.onrender.com';
 
 // Dashboard endpoints
 export const DASHBOARD = {
@@ -372,6 +372,12 @@ export const TIMESHEET = {
   EXPORT: `${API_BASE}/api/v1/attendance/timesheet/export`,
   APPROVE: (attendanceId: string) => `${API_BASE}/api/v1/attendance/${attendanceId}/approve`,
   FLAG: (attendanceId: string) => `${API_BASE}/api/v1/attendance/${attendanceId}/flag`,
+} as const;
+
+// Invite Code Request endpoints
+export const INVITE_REQUESTS = {
+  LIST: `${API_BASE}/api/v1/agencies/invite-requests`,
+  REVIEW: (id: string) => `${API_BASE}/api/v1/agencies/invite-requests/${id}`,
 } as const;
 
 // Chat endpoints

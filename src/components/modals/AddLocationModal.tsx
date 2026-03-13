@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Close, LocationOn } from '@mui/icons-material';
 import { Box, styled, TextField, Select, MenuItem, Checkbox, IconButton, Modal, CircularProgress } from '@mui/material';
 import { colors } from '../../utilities/colors';
-import { useCreateLocationMutation } from '../../store/slices/settingsSlice';
+import { useCreateLocationMutation, useUpdateLocationMutation } from '../../store/slices/settingsSlice';
+import type { Location as LocationType } from '../../store/slices/settingsSlice';
 import { useToast } from '../../hooks';
 
 // ============ STYLED COMPONENTS ============
@@ -129,12 +130,16 @@ const SubmitBtn = styled('button')({
 interface AddLocationModalProps {
   open: boolean;
   onClose: () => void;
+  editLocation?: LocationType | null;
 }
 
 // ============ COMPONENT ============
-export function AddLocationModal({ open, onClose }: AddLocationModalProps) {
+export function AddLocationModal({ open, onClose, editLocation }: AddLocationModalProps) {
   const toast = useToast();
-  const [createLocation, { isLoading }] = useCreateLocationMutation();
+  const [createLocation, { isLoading: creating }] = useCreateLocationMutation();
+  const [updateLocation, { isLoading: updating }] = useUpdateLocationMutation();
+  const isLoading = creating || updating;
+  const isEdit = !!editLocation;
   
   const [form, setForm] = useState({
     name: '',
@@ -145,6 +150,37 @@ export function AddLocationModal({ open, onClose }: AddLocationModalProps) {
     country: 'uk',
     isPrimary: false,
   });
+
+  const parseAddress = (address: string) => {
+    const parts = address.split(',').map((p) => p.trim());
+    return {
+      addressLine1: parts[0] || '',
+      addressLine2: parts.length > 3 ? parts[1] : '',
+      city: parts.length > 3 ? parts[2] : parts[1] || '',
+      postcode: parts.length > 3 ? parts[3] : parts[2] || '',
+      country: (parts[parts.length - 1] || 'uk').toLowerCase(),
+    };
+  };
+
+  // Reset / pre-fill form when modal opens
+  useEffect(() => {
+    if (open) {
+      if (editLocation) {
+        const parsed = parseAddress(editLocation.address);
+        setForm({
+          name: editLocation.name,
+          addressLine1: parsed.addressLine1,
+          addressLine2: parsed.addressLine2,
+          city: parsed.city,
+          postcode: parsed.postcode,
+          country: ['uk', 'us', 'ca', 'au'].includes(parsed.country) ? parsed.country : 'uk',
+          isPrimary: editLocation.isPrimary,
+        });
+      } else {
+        setForm({ name: '', addressLine1: '', addressLine2: '', city: '', postcode: '', country: 'uk', isPrimary: false });
+      }
+    }
+  }, [open, editLocation]);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [field]: e.target.value });
@@ -161,21 +197,33 @@ export function AddLocationModal({ open, onClose }: AddLocationModalProps) {
         .filter(Boolean)
         .join(', ');
 
-      await createLocation({
-        name: form.name,
-        address,
-        latitude: 0,
-        longitude: 0,
-        geofenceRadius: 300,
-        isPrimary: form.isPrimary,
-        isActive: true,
-      }).unwrap();
+      if (isEdit && editLocation) {
+        await updateLocation({
+          id: editLocation.id,
+          data: {
+            name: form.name,
+            address,
+            isPrimary: form.isPrimary,
+          },
+        }).unwrap();
+        toast.success('Location updated successfully');
+      } else {
+        await createLocation({
+          name: form.name,
+          address,
+          latitude: 0,
+          longitude: 0,
+          geofenceRadius: 300,
+          isPrimary: form.isPrimary,
+          isActive: true,
+        }).unwrap();
+        toast.success('Location added successfully');
+      }
 
-      toast.success('Location added successfully');
       setForm({ name: '', addressLine1: '', addressLine2: '', city: '', postcode: '', country: 'uk', isPrimary: false });
       onClose();
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to add location');
+      toast.error(err?.data?.message || (isEdit ? 'Failed to update location' : 'Failed to add location'));
     }
   };
 
@@ -197,8 +245,8 @@ export function AddLocationModal({ open, onClose }: AddLocationModalProps) {
             }}>
               <LocationOn sx={{ fontSize: 28, color: colors.primary.blue }} />
             </Box>
-            <ModalTitle>Add New Location</ModalTitle>
-            <ModalSubtitle style={{ margin: 0 }}>Add a work location for your organization</ModalSubtitle>
+            <ModalTitle>{isEdit ? 'Edit Location' : 'Add New Location'}</ModalTitle>
+            <ModalSubtitle style={{ margin: 0 }}>{isEdit ? 'Update this work location' : 'Add a work location for your organization'}</ModalSubtitle>
           </Box>
           <ModalFormGroup>
             <ModalLabel>Location Name<span className="required">*</span></ModalLabel>
@@ -240,7 +288,7 @@ export function AddLocationModal({ open, onClose }: AddLocationModalProps) {
           <ModalButtonsRow>
             <CancelBtn onClick={onClose} disabled={isLoading}>Cancel</CancelBtn>
             <SubmitBtn onClick={handleSubmit} disabled={isLoading}>
-              {isLoading ? <CircularProgress size={18} sx={{ color: 'white' }} /> : 'Add Location'}
+              {isLoading ? <CircularProgress size={18} sx={{ color: 'white' }} /> : isEdit ? 'Update Location' : 'Add Location'}
             </SubmitBtn>
           </ModalButtonsRow>
         </ModalCard>
