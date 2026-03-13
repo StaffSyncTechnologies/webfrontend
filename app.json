@@ -23,7 +23,6 @@
       }
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,7 +30,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.staffsync.worker",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -50,7 +50,23 @@
         }
       ]
     ],
-
+    "build": {
+      "development": {
+        "developmentClient": true,
+        "distribution": "internal"
+      },
+      "preview": {
+        "distribution": "internal",
+        "android": {
+          "buildType": "apk"
+        }
+      },
+      "production": {
+        "android": {
+          "buildType": "apk"
+        }
+      }
+    },
     "extra": {
       "eas": {
         "projectId": "7e3e3568-a25b-4dae-95bf-a62fe46929b3"
