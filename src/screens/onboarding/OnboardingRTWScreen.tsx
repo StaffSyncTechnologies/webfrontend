@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Linking } from 'react-native';
+import { View, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOrgTheme } from '../../contexts';
 import { Button, Input, H1, Body, StepHeader } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
+import { useWorkerVerifyRTWMutation } from '../../store';
+import { useAppSelector } from '../../store/hooks';
 import type { AuthStackScreenProps } from '../../types/navigation';
 
 type Props = AuthStackScreenProps<'OnboardingRTW'>;
@@ -15,6 +17,8 @@ export function OnboardingRTWScreen({ navigation }: Props) {
   const [shareCode, setShareCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [verifyRTW, { isLoading: isSubmitting }] = useWorkerVerifyRTWMutation();
+  const worker = useAppSelector((state) => state.auth.worker);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -25,10 +29,25 @@ export function OnboardingRTWScreen({ navigation }: Props) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!validate()) return;
-    // TODO: Submit RTW to backend
-    navigation.navigate('VerificationSuccess');
+    try {
+      await verifyRTW({
+        email: worker?.email || '',
+        shareCode: shareCode.trim().replace(/[-\s]/g, ''),
+        dateOfBirth: dateOfBirth.trim(),
+      }).unwrap();
+      navigation.navigate('VerificationSuccess');
+    } catch (err: any) {
+      Alert.alert(
+        'RTW Verification',
+        err?.data?.message || 'Failed to verify Right to Work. You can complete this later.',
+        [
+          { text: 'Try Again', style: 'cancel' },
+          { text: 'Skip for Now', onPress: () => navigation.navigate('VerificationSuccess') },
+        ]
+      );
+    }
   };
 
   const openHelp = () => {
@@ -100,8 +119,8 @@ export function OnboardingRTWScreen({ navigation }: Props) {
       </View>
 
       <View className="px-6 pb-4">
-        <Button onPress={handleComplete}>
-          {t('onboarding.completeSetup')}
+        <Button onPress={handleComplete} disabled={isSubmitting}>
+          {isSubmitting ? 'Verifying...' : t('onboarding.completeSetup')}
         </Button>
       </View>
     </View>

@@ -43,6 +43,7 @@ export const authSlice = createSlice({
       state.worker = null;
       state.isAuthenticated = false;
       state.isLoading = false;
+      
       AsyncStorage.removeItem(AUTH_TOKEN_KEY);
       AsyncStorage.removeItem(AUTH_WORKER_KEY);
     },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
@@ -47,14 +47,31 @@ function getShiftType(iso: string): string {
   return 'Night shift';
 }
 
+function isShiftElapsed(shift: any): boolean {
+  const now = new Date();
+  const endTime = new Date(shift.endAt);
+  return now > endTime;
+}
+
 export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
   const insets = useSafeAreaInsets();
   const worker = useAppSelector((state) => state.auth.worker);
-  const { primaryColor, secondaryColor } = useOrgTheme();
+  const { primaryColor } = useOrgTheme();
+  const [refreshing, setRefreshing] = React.useState(false);
   const { data: homeResponse, isLoading, refetch } = useGetHomeQuery();
   const homeData = homeResponse?.data;
-  const { data: unreadCount } = useGetUnreadCountQuery();
+  const { data: unreadCount, refetch: refetchNotifications } = useGetUnreadCountQuery();
   const { t } = useTranslation();
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      await refetchNotifications();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch, refetchNotifications]);
 
   // Transform backend data into component-ready formats
   const stats = [
@@ -65,7 +82,7 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
 
   const todayShift = homeData?.todayShift ?? null;
 
-  const nextShifts: ShiftCardData[] = (homeData?.nextShifts ?? []).map((s) => {
+  const nextShifts: ShiftCardData[] = (homeData?.nextShifts ?? []).map((s:any) => {
     const { month, day } = formatShiftDate(s.startAt);
     return {
       id: s.id,
@@ -78,7 +95,7 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
     };
   });
 
-  const upcomingHolidays: HolidayCardData[] = (homeData?.upcomingHolidays ?? []).map((h) => ({
+  const upcomingHolidays: HolidayCardData[] = (homeData?.upcomingHolidays ?? []).map((h:any) => ({
     id: h.id,
     title: h.title,
     startDate: formatHolidayDate(h.startDate),
@@ -97,7 +114,20 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
 
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00AFEF"
+            colors={['#00AFEF', '#000035']}
+            progressBackgroundColor="#F5F7FA"
+            progressViewOffset={20}
+          />
+        }
+      >
 
         {/* Header */}
         <View className="flex-row justify-between items-center px-5 pt-4 pb-3">
@@ -105,34 +135,36 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             <Body color="secondary" className="mb-0.5">{homeData?.greeting ?? t('home.greeting')},</Body>
             <H2>{homeData?.worker.firstName || worker?.fullName || 'Worker'}</H2>
           </View>
-          <TouchableOpacity
-            className="w-11 h-11 rounded-full border border-light-border-light dark:border-dark-border-light items-center justify-center"
-            onPress={() => navigation.getParent()?.navigate('Notifications')}
-          >
-            <Ionicons name="notifications-outline" size={20} color="#6B7280" />
-            {(unreadCount ?? 0) > 0 && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  backgroundColor: '#EF4444',
-                  borderRadius: 10,
-                  minWidth: 18,
-                  height: 18,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingHorizontal: 4,
-                  borderWidth: 2,
-                  borderColor: '#FFFFFF',
-                }}
-              >
-                <Caption className="text-white text-[10px] font-outfit-bold">
-                  {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
-                </Caption>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity
+              className="w-11 h-11 rounded-full border border-light-border-light dark:border-dark-border-light items-center justify-center"
+              onPress={() => navigation.getParent()?.navigate('Notifications')}
+            >
+              <Ionicons name="notifications-outline" size={20} color="#6B7280" />
+              {(unreadCount ?? 0) > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -2,
+                    right: -2,
+                    backgroundColor: '#EF4444',
+                    borderRadius: 10,
+                    minWidth: 18,
+                    height: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 4,
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF',
+                  }}
+                >
+                  <Caption className="text-white text-[10px] font-outfit-bold">
+                    {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
+                  </Caption>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* THIS WEEK Stats */}
@@ -168,15 +200,55 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
         {todayShift ? (
           <View className="px-5 pt-5 pb-4">
             <View className="flex-row justify-between items-center mb-4">
-              <View className="px-3 py-1.5 rounded-full border" style={{ borderColor: `${primaryColor}30`, backgroundColor: `${primaryColor}10` }}>
-                <Caption className="font-outfit-bold tracking-wider" style={{ color: primaryColor }}>
+              <View className={`px-3 py-1.5 rounded-full border ${
+                isShiftElapsed(todayShift) 
+                  ? 'border-red-200 bg-red-50' 
+                  : todayShift.clockedIn 
+                  ? 'border-green-200 bg-green-50' 
+                  : `border-[${primaryColor}30] bg-[${primaryColor}10]`
+              }`}>
+                <Caption className={`font-outfit-bold tracking-wider ${
+                  isShiftElapsed(todayShift) 
+                    ? 'text-red-600' 
+                    : todayShift.clockedIn 
+                    ? 'text-green-600' 
+                    : ''
+                }`} style={{ color: !isShiftElapsed(todayShift) && !todayShift.clockedIn ? primaryColor : undefined }}>
                   {t('home.todayShift').toUpperCase()}
                 </Caption>
               </View>
               <View className="flex-row items-center gap-1">
-                <Ionicons name="time-outline" size={16} color="#6B7280" />
-                <Caption color="secondary">
-                  {todayShift.clockedIn ? 'In progress' : `Starts in ${formatStartsIn(todayShift.startsIn)}`}
+                <Ionicons 
+                  name={
+                    isShiftElapsed(todayShift) 
+                      ? 'time-outline' 
+                      : todayShift.clockedIn 
+                      ? 'radio-button-on' 
+                      : 'time-outline'
+                  } 
+                  size={16} 
+                  color={
+                    isShiftElapsed(todayShift) 
+                      ? '#EF4444' 
+                      : todayShift.clockedIn 
+                      ? '#10B981' 
+                      : '#6B7280'
+                  } 
+                />
+                <Caption color={
+                  isShiftElapsed(todayShift) 
+                    ? 'error' 
+                    : todayShift.clockedIn 
+                    ? 'success' 
+                    : 'secondary'
+                }>
+                  {
+                    isShiftElapsed(todayShift)
+                      ? 'Shift ended'
+                      : todayShift.clockedIn 
+                      ? 'In progress' 
+                      : `Starts in ${formatStartsIn(todayShift.startsIn)}`
+                  }
                 </Caption>
               </View>
             </View>
@@ -202,7 +274,8 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
               )}
             </View>
 
-            {!todayShift.clockedIn && (
+            {/* Show appropriate button based on shift state */}
+            {!isShiftElapsed(todayShift) && !todayShift.clockedIn && (
               <Button
                 onPress={() => navigation.getParent()?.navigate('ClockIn', { shiftId: todayShift.id })}
                 leftIcon={<Ionicons name="log-in-outline" size={20} color="#FFFFFF" />}
@@ -210,13 +283,29 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
                 {t('shifts.clockIn')}
               </Button>
             )}
-            {todayShift.clockedIn && !todayShift.clockedOut && (
+            {!isShiftElapsed(todayShift) && todayShift.clockedIn && !todayShift.clockedOut && (
               <Button
                 onPress={() => navigation.getParent()?.navigate('ClockIn', { shiftId: todayShift.id })}
                 leftIcon={<Ionicons name="log-out-outline" size={20} color="#FFFFFF" />}
               >
                 {t('shifts.clockOut')}
               </Button>
+            )}
+            {isShiftElapsed(todayShift) && (
+              <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="alert-circle" size={20} color="#EF4444" />
+                  <View className="flex-1">
+                    <Body className="font-outfit-semibold text-red-600 dark:text-red-400">Shift Ended</Body>
+                    <Caption color="error" className="text-xs mt-0.5">
+                      {todayShift.clockedIn 
+                        ? 'You successfully completed this shift' 
+                        : 'This shift has ended and cannot be started'
+                      }
+                    </Caption>
+                  </View>
+                </View>
+              </View>
             )}
           </View>
         ) : (

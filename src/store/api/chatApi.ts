@@ -69,7 +69,7 @@ export const chatApi = baseApi.injectEndpoints({
     }),
 
     // Get unread message count
-    getUnreadCount: builder.query<ApiResponse<{ count: number }>, void>({
+    getChatUnreadCount: builder.query<ApiResponse<{ count: number }>, void>({
       query: () => CHAT.UNREAD_COUNT,
     }),
   }),
@@ -80,5 +80,5 @@ export const {
   useGetMyRoomsQuery,
   useGetRoomMessagesQuery,
   useMarkMessagesAsReadMutation,
-  useGetUnreadCountQuery,
+  useGetChatUnreadCountQuery,
 } = chatApi;

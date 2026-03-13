@@ -6,11 +6,10 @@ import { brandColors } from '../../constants/colors';
 import { Badge, Button, H1, Body } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
 import type { AuthStackScreenProps } from '../../types/navigation';
+import { buildFileUrl } from '../../utils/buildFileUrl';
 
 type Props = AuthStackScreenProps<'AgencyConfirm'>;
 
-// Backend base URL for images
-const API_URL = __DEV__ ? 'http://localhost:3001' : 'https://api.staffsync.com';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export function AgencyConfirmScreen({ navigation, route }: Props) {
@@ -19,14 +18,8 @@ export function AgencyConfirmScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
   const { agency } = route.params;
 
-  // Build full URLs
-  const buildUrl = (path?: string) => {
-    if (!path) return undefined;
-    return path.startsWith('http') ? path : `${API_URL}${path}`;
-  };
-
-  const logoUrl = buildUrl(agency.logoUrl);
-  const coverImageUrl = buildUrl(agency.coverImageUrl);
+  const logoUrl = buildFileUrl(agency.logoUrl);
+  const coverImageUrl = buildFileUrl(agency.coverImageUrl);
   const primaryColor = agency.primaryColor || brandColors.primary.navy;
   const secondaryColor = agency.secondaryColor || brandColors.primary.blue;
 

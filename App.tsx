@@ -61,6 +61,16 @@ function AppContent() {
   // Register push notifications when authenticated
   const { lastNotificationResponse } = useNotifications();
 
+  // Navigate to Auth screen when logged out
+  useEffect(() => {
+    if (!isAuthenticated && navigationRef.current) {
+      navigationRef.current.resetRoot({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
+    }
+  }, [isAuthenticated]);
+
   // Handle notification tap deep linking
   useEffect(() => {
     if (!lastNotificationResponse || !isAuthenticated) return;

@@ -5,8 +5,6 @@ import type { RootState } from '../index';
 
 const AUTH_TOKEN_KEY = '@staffsync_auth_token';
 
-console.log('API_BASE_URL:', API_BASE_URL);
-
 // Custom base query with auth token
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,

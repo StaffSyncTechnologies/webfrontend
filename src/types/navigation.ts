@@ -13,6 +13,22 @@ export interface AgencyInfo {
   inviteCode: string;
 }
 
+// Nearby agency info for workers without invite code
+export interface NearbyAgencyInfo {
+  id: string;
+  name: string;
+  address?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  distance?: number; // in miles
+  email?: string;
+  website?: string;
+  phone?: string;
+  contactName?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 // Auth Stack
 export type AuthStackParamList = {
   LanguageSelect: undefined;
@@ -30,6 +46,8 @@ export type AuthStackParamList = {
   OnboardingRTW: undefined;
   VerificationSuccess: undefined;
   ForgotPassword: undefined;
+  NearbyAgencies: undefined;
+  AgencyContact: { agency: NearbyAgencyInfo };
 };
 
 // Main Tab Navigator
@@ -64,6 +82,7 @@ export type RootStackParamList = {
   Language: undefined;
   Notifications: undefined;
   Settings: undefined;
+  ChangePassword: undefined;
   Documents: undefined;
   PaySlips: undefined;
 };

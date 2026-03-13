@@ -160,10 +160,19 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ['Worker'],
     }),
 
-    // Forgot password – request reset link
+    // Forgot password – sends OTP to email
     forgotPassword: builder.mutation<{ success: boolean; message: string }, { email: string }>({
       query: (body) => ({
         url: AUTH.FORGOT_PASSWORD,
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // Reset password with OTP
+    resetPasswordWithOtp: builder.mutation<{ success: boolean; message: string }, { email: string; code: string; newPassword: string }>({
+      query: (body) => ({
+        url: AUTH.RESET_PASSWORD,
         method: 'POST',
         body,
       }),
@@ -205,6 +214,27 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Change password
+    changePassword: builder.mutation<{ success: boolean; message: string }, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({
+        url: AUTH.CHANGE_PASSWORD,
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // Verify RTW (onboarding Step 6 - share code + DOB)
+    workerVerifyRTW: builder.mutation<
+      { success: boolean; message: string; data?: { verified: boolean; status: string; expiryDate?: string } },
+      { email: string; shareCode: string; dateOfBirth: string }
+    >({
+      query: (body) => ({
+        url: AUTH.WORKER_VERIFY_RTW,
+        method: 'POST',
+        body,
+      }),
+    }),
+
     // Complete onboarding
     completeOnboarding: builder.mutation<AuthResponse, void>({
       query: () => ({
@@ -228,6 +258,9 @@ export const {
   useUpdateMeMutation,
   useForgotPasswordMutation,
   useLogoutMutation,
+  useChangePasswordMutation,
   useCompleteOnboardingMutation,
   useWorkerUploadProfilePicMutation,
+  useWorkerVerifyRTWMutation,
+  useResetPasswordWithOtpMutation,
 } = authApi;

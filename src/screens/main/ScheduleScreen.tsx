@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
@@ -87,7 +87,7 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
   // Fetch shifts for the visible month range
   const from = new Date(currentYear, currentMonth, 1).toISOString();
   const to = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
-  const { data: scheduleResponse, isLoading } = useGetMyScheduleQuery({ from, to });
+  const { data: scheduleResponse, isLoading, isFetching, refetch } = useGetMyScheduleQuery({ from, to }, { refetchOnMountOrArgChange: true });
 
   // Group shifts by day-of-month
   const shiftsByDay = useMemo(() => {
@@ -264,7 +264,13 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
       <View className="h-px bg-light-border-light dark:bg-dark-border-light" />
 
       {/* Shift List */}
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isFetching && !isLoading} onRefresh={refetch} tintColor={primaryColor} colors={[primaryColor]} />
+        }
+      >
         {viewMode === 'week' ? (
           <View className="px-5 pt-4">
             <H3 className="mb-3">{getDayName(currentYear, currentMonth, selectedDay)}, {MONTH_NAMES[currentMonth].slice(0, 3)} {selectedDay}</H3>

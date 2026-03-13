@@ -54,7 +54,7 @@ export function useAuth() {
   const logout = useCallback(async () => {
     try {
       await logoutMutation().unwrap();
-    } catch {
+    } catch (error) {
       // Logout locally even if API fails
     } finally {
       dispatch(logoutAction());

@@ -77,10 +77,10 @@ export function InviteCodeScreen({ navigation }: Props) {
         <Button onPress={handleVerify} loading={isLoading}>
           {t('auth.verifyCode')}
         </Button>
-        <TouchableOpacity className="mt-4 py-2">
+        <TouchableOpacity className="mt-4 py-2" onPress={() => navigation.navigate('NearbyAgencies')}>
           <Body color="secondary" className="text-center">
             {t('auth.dontHaveCode')}{' '}
-            <Body className="text-primary-blue">{t('auth.contactAgency')}</Body>
+            <Body className="text-primary-blue">{t('auth.findNearbyAgencies')}</Body>
           </Body>
         </TouchableOpacity>
         <TouchableOpacity className="mt-2 py-2" onPress={() => navigation.navigate('Login', {})}>

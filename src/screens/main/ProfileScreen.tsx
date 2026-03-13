@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { logout } from '../../store/slices/authSlice';
+import { useAuth } from '../../hooks/useAuth';
 import { H2, H3, Body, Caption } from '../../components/ui';
 import { useGetMeQuery } from '../../store/api/authApi';
 import { useGetMyRTWQuery } from '../../store/api/workerApi';
@@ -43,14 +43,21 @@ function getRTWSubtitle(status?: string, expiresAt?: string | null): { subtitle:
 
 export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
   const insets = useSafeAreaInsets();
-  const dispatch = useAppDispatch();
   const worker = useAppSelector((state) => state.auth.worker);
-  const { data: meResponse } = useGetMeQuery();
-  const profile = meResponse?.data;
-
+  const { logout } = useAuth();
+  const { data: profile } = useGetMeQuery();
+  const { data: rtw } = useGetMyRTWQuery();
   const { t } = useTranslation();
-  const { data: rtwRes } = useGetMyRTWQuery();
-  const rtwData = rtwRes?.data;
+
+  const displayName = profile?.data?.fullName || worker?.fullName || 'Worker';
+  const employeeId = profile?.data?.id ? profile.data.id.slice(-8).toUpperCase() : '--------';
+  const profilePicUrl = worker?.profilePicUrl || null;
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const rtwData = rtw?.data;
   const rtwInfo = getRTWSubtitle(rtwData?.rtwStatus, rtwData?.rtwExpiresAt);
 
   const MENU_SECTIONS: MenuSection[] = [
@@ -65,6 +72,7 @@ export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
     {
       title: t('profile.generalSettings'),
       items: [
+        { icon: 'lock-closed-outline', label: t('profile.changePassword'), route: 'ChangePassword' },
         { icon: 'notifications-outline', label: t('profile.notification'), route: 'NotificationSettings' },
         { icon: 'globe-outline', label: t('profile.language'), route: 'Language' },
         { icon: 'color-palette-outline', label: t('profile.appearance'), route: 'Appearance' },
@@ -80,13 +88,7 @@ export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
     },
   ];
 
-  const displayName = profile?.fullName || worker?.fullName || 'Worker';
-  const employeeId = profile?.id ? profile.id.slice(-8).toUpperCase() : '--------';
-  const profilePicUrl = worker?.profilePicUrl || null;
 
-  const handleLogout = () => {
-    dispatch(logout());
-  };
 
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>

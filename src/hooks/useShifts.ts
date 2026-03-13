@@ -24,7 +24,7 @@ export function useShifts(status?: string) {
   const attendance = attendanceData?.data || null;
 
   const categorized = useMemo(() => ({
-    upcoming: shifts.filter((s) => new Date(s.startTime) > new Date()),
+    upcoming: shifts.filter((s) => new Date(s.startAt) > new Date()),
     available: shifts.filter((s) => s.status === 'OPEN'),
     completed: history.filter((s) => s.status === 'COMPLETED'),
   }), [shifts, history]);

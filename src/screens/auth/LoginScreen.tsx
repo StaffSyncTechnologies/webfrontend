@@ -7,6 +7,7 @@ import { useWorkerPasswordLoginMutation } from '../../store/api/authApi';
 import { Container, Input, Button, H1, Body } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
 import type { AuthStackScreenProps } from '../../types/navigation';
+import { buildFileUrl } from '../../utils/buildFileUrl';
 
 type Props = AuthStackScreenProps<'Login'>;
 
@@ -45,7 +46,7 @@ export function LoginScreen({ navigation }: Props) {
           setOrgTheme({
             organizationId: org.id,
             organizationName: org.name,
-            logoUrl: org.logoUrl,
+            logoUrl: buildFileUrl(org.logoUrl),
             primaryColor: org.primaryColor || '#000035',
             secondaryColor: org.secondaryColor,
           });

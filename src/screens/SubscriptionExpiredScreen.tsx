@@ -3,12 +3,19 @@ import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { H2, Body, Caption } from '../components/ui';
-import { useAppDispatch } from '../store/hooks';
-import { logout } from '../store/slices/authSlice';
+import { useAuth } from '../hooks/useAuth';
 
 export function SubscriptionExpiredScreen() {
   const insets = useSafeAreaInsets();
-  const dispatch = useAppDispatch();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.log('Logout error:', error);
+    }
+  };
 
   return (
     <View
@@ -60,7 +67,7 @@ export function SubscriptionExpiredScreen() {
 
         {/* Logout button */}
         <TouchableOpacity
-          onPress={() => dispatch(logout())}
+          onPress={handleLogout}
           className="flex-row items-center justify-center py-3.5 px-8 rounded-xl"
           style={{ backgroundColor: '#F3F4F6' }}
         >

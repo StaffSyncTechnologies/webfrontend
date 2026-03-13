@@ -5,8 +5,8 @@
 // Base URL - change for production
 // iOS Simulator can use localhost, Android emulator needs 10.0.2.2
 export const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3001/api/v1' 
-  : 'https://api.staffsync.com/api/v1';
+  ? 'https://backend-rp5c.onrender.com/api/v1' 
+  : 'https://backend-rp5c.onrender.com/api/v1';
 
 // Auth endpoints (worker passwordless auth)
 export const AUTH = {
@@ -82,6 +82,11 @@ export const CHAT = {
   MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
   MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
   UNREAD_COUNT: '/chat/unread-count',
+} as const;
+
+// Agencies (public)
+export const AGENCIES = {
+  NEARBY: '/agencies/nearby',
 } as const;
 
 // Notifications

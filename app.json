@@ -16,11 +16,14 @@
       "bundleIdentifier": "com.staffsync.worker",
       "infoPlist": {
         "UIBackgroundModes": [
+          "remote-notification",
           "remote-notification"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -47,6 +50,7 @@
         }
       ]
     ],
+
     "extra": {
       "eas": {
         "projectId": "7e3e3568-a25b-4dae-95bf-a62fe46929b3"

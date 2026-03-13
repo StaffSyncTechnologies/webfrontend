@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRegisterPushTokenMutation } from '../store/api/notificationsApi';
+import { useAppSelector } from '../store/hooks';
 import { store } from '../store';
 import { baseApi } from '../store/api/baseApi';
 import { API_BASE_URL } from '../services/endpoints';
@@ -117,7 +118,6 @@ async function handleShiftAction(shiftId: string, action: 'accept' | 'decline') 
           body: action === 'accept'
             ? 'You have accepted the shift. Check your schedule for details.'
             : 'You have declined the shift.',
-          sound: 'default',
         },
         trigger: null, // show immediately
       });
@@ -144,14 +144,15 @@ export function useNotifications() {
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
   const [registerToken] = useRegisterPushTokenMutation();
+  const isAuthenticated = useAppSelector((state) => state?.auth.isAuthenticated);
+  const hasRegistered = useRef(false);
 
   const registerForPushNotifications = useCallback(async () => {
-    if (!Device.isDevice) {
-      setError('Push notifications require a physical device');
-      return null;
-    }
-
     try {
+      if (!Device.isDevice) {
+        throw new Error('Push notifications require a physical device');
+      }
+
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -161,8 +162,7 @@ export function useNotifications() {
       }
 
       if (finalStatus !== 'granted') {
-        setError('Push notification permission denied');
-        return null;
+        throw new Error('Push notification permission denied');
       }
 
       // Set up Android notification channels
@@ -171,7 +171,6 @@ export function useNotifications() {
           name: 'Shift Notifications',
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
-          sound: 'default',
         });
         await Notifications.setNotificationChannelAsync('default', {
           name: 'General',
@@ -180,20 +179,30 @@ export function useNotifications() {
         });
       }
 
-      // Register interactive notification categories (Accept/Decline buttons)
       await setupNotificationCategories();
 
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-      const token = await Notifications.getExpoPushTokenAsync({
-        ...(projectId && { projectId }),
-      });
-      setExpoPushToken(token.data);
+     const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId: '7e3e3568-a25b-4dae-95bf-a62fe46929b3', });
 
-      return token.data;
+      console.log('[PushToken] Expo Push Token:', tokenResponse.data);
+      setExpoPushToken(tokenResponse.data);
+      setError(null);
+
+      return tokenResponse.data;
     } catch (e: any) {
-      setError(e.message);
+      console.error('[PushToken] Full Error:', e);
+      setError(e?.message ?? 'Failed to get push token');
       return null;
     }
+  }, []);
+
+  // Get a stable device ID
+  const getDeviceId = useCallback((): string => {
+    return [
+      Device.deviceName ?? 'unknown',
+      Device.osName ?? Platform.OS,
+      Device.osVersion ?? '',
+      Device.modelName ?? '',
+    ].join('-').replace(/\s+/g, '_').toLowerCase();
   }, []);
 
   // Register token with the backend
@@ -202,19 +211,42 @@ export function useNotifications() {
       await registerToken({
         pushToken: token,
         platform: Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'expo',
+        deviceId: getDeviceId(),
       }).unwrap();
-      console.log('Push token registered with backend');
+      console.log('Push token registered with backend:', token.slice(0, 20) + '...');
     } catch (e) {
       console.error('Failed to register push token with backend:', e);
     }
-  }, [registerToken]);
+  }, [registerToken, getDeviceId]);
 
+  // On login: get push token and register it with the backend
   useEffect(() => {
+    console.log('[PushToken] Auth state changed:', isAuthenticated);
+    if (!isAuthenticated) {
+      console.log('[PushToken] User logged out, resetting registration flag');
+      hasRegistered.current = false; // reset on logout so next login re-registers
+      return;
+    }
+    if (hasRegistered.current) {
+      console.log('[PushToken] Already registered for this session');
+      return;
+    }
+    console.log('[PushToken] User authenticated, registering push token...');
+
     registerForPushNotifications().then((token) => {
       if (token) {
+        hasRegistered.current = true;
+        console.log('[PushToken] Got token, registering with backend...');
         registerTokenWithBackend(token);
+      } else {
+        hasRegistered.current = false;
+        console.log('[PushToken] Failed to get token');
       }
     });
+  }, [isAuthenticated, registerForPushNotifications, registerTokenWithBackend]);
+
+  // Set up foreground/response listeners once on mount
+  useEffect(() => {
 
     notificationListener.current = Notifications.addNotificationReceivedListener((n) => {
       setNotification(n);

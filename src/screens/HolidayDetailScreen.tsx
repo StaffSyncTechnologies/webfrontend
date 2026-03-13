@@ -51,7 +51,7 @@ export function HolidayDetailScreen({ route, navigation }: RootStackScreenProps<
           <Ionicons name="chevron-back" size={24} color="#000035" />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
-          <H2>Shifts</H2>
+          <H2>Holiday Details</H2>
         </View>
       </View>
 

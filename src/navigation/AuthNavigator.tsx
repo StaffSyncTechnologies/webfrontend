@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
-import { LanguageSelectScreen, InviteCodeScreen, AgencyConfirmScreen, LoginScreen, RegisterScreen, VerifyOTPScreen, VerificationSuccessScreen, ForgotPasswordScreen } from '../screens/auth';
+import { LanguageSelectScreen, InviteCodeScreen, AgencyConfirmScreen, NearbyAgenciesScreen, AgencyContactScreen, LoginScreen, RegisterScreen, VerifyOTPScreen, VerificationSuccessScreen, ForgotPasswordScreen } from '../screens/auth';
 import { OnboardingProfileScreen, OnboardingProfilePictureScreen, OnboardingSkillsScreen, OnboardingDocumentsScreen, OnboardingBankAccountScreen, OnboardingRTWScreen } from '../screens/onboarding';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -18,6 +18,8 @@ export function AuthNavigator() {
       <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} />
       <Stack.Screen name="InviteCode" component={InviteCodeScreen} />
       <Stack.Screen name="AgencyConfirm" component={AgencyConfirmScreen} />
+      <Stack.Screen name="NearbyAgencies" component={NearbyAgenciesScreen} />
+      <Stack.Screen name="AgencyContact" component={AgencyContactScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Body, Caption } from './index';
+import { Body, Caption } from './Typography';
 
 export type HolidayStatus = 'approved' | 'pending' | 'denied';
 

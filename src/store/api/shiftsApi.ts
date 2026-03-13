@@ -3,20 +3,54 @@ import { SHIFTS, ATTENDANCE } from '../../services/endpoints';
 
 export interface Shift {
   id: string;
-  title?: string;
-  clientCompanyId: string;
+  title: string;
+  clientCompanyId?: string;
   clientCompany?: {
     id: string;
     name: string;
     address?: string;
   };
-  startTime: string;
-  endTime: string;
+  startAt: string;
+  endAt: string;
   breakMinutes?: number;
   hourlyRate?: number;
+  payRate?: number;
   status: 'DRAFT' | 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  requiredWorkers: number;
+  workersNeeded?: number;
+  role?: string;
   notes?: string;
+  siteLocation?: string;
+  siteLat?: number;
+  siteLng?: number;
+  geofenceRadius?: number;
+  location?: {
+    id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    geofenceRadius: number;
+  };
+  assignments?: Array<{
+    id: string;
+    workerId: string;
+    status: string;
+    worker: { id: string; fullName: string; email: string };
+  }>;
+  attendances?: Array<{
+    id: string;
+    workerId: string;
+    clockInTime?: string;
+    clockOutTime?: string;
+    status: string;
+  }>;
+  broadcasts?: Array<{
+    id: string;
+    filters: {
+      targetWorkerIds?: string[];
+      [key: string]: any;
+    };
+  }>;
 }
 
 export interface AttendanceRecord {
@@ -39,8 +73,8 @@ export const shiftsApi = baseApi.injectEndpoints({
       query: () => SHIFTS.MY_HISTORY,
       providesTags: ['Shifts'],
     }),
-    getShiftById: builder.query<{ success: boolean; data: Shift }, string>({
-      query: (shiftId) => SHIFTS.GET_BY_ID(shiftId),
+    getById: builder.query<{ success: boolean; data: Shift }, string>({
+      query: (shiftId) => `/shifts/${shiftId}`,
       providesTags: (r, e, id) => [{ type: 'Shifts', id }],
     }),
     acceptShift: builder.mutation<{ success: boolean }, string>({
@@ -73,7 +107,7 @@ export const shiftsApi = baseApi.injectEndpoints({
 export const {
   useGetShiftsQuery,
   useGetMyShiftHistoryQuery,
-  useGetShiftByIdQuery,
+  useGetByIdQuery,
   useAcceptShiftMutation,
   useDeclineShiftMutation,
   useClockInMutation,

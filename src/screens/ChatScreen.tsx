@@ -175,8 +175,8 @@ export function ChatScreen({ navigation, route }: RootStackScreenProps<'Chat'>) 
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 10 : 0}
       >
         {/* Messages */}
         <ScrollView

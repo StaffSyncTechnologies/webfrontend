@@ -4,7 +4,9 @@ import { RootStackParamList } from '../types/navigation';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
 import { ShiftDetailsScreen, ShiftConfirmedScreen, ClockInScreen, PayslipDetailScreen, HolidaysScreen, RequestHolidayScreen, HolidayRequestSubmittedScreen, HolidayDetailScreen, PrivacyPolicyScreen, ChatListScreen, ChatScreen, AppearanceScreen, NotificationSettingsScreen, SkillsCertificateScreen, ProfileDetailsScreen, RightToWorkScreen, LanguageScreen, NotificationsScreen } from '../screens';
+import { ChangePasswordScreen } from '../screens/ChangePasswordScreen';
 import { SubscriptionExpiredScreen } from '../screens/SubscriptionExpiredScreen';
+import { RTWBlockerModal } from '../components/RTWBlockerModal';
 import { useGetSubscriptionSummaryQuery } from '../store/api/subscriptionApi';
 import { useAppSelector } from '../store/hooks';
 
@@ -28,7 +30,12 @@ function SubscriptionGatedMain() {
     return <SubscriptionExpiredScreen />;
   }
 
-  return <MainTabNavigator />;
+  return (
+    <>
+      <RTWBlockerModal />
+      <MainTabNavigator />
+    </>
+  );
 }
 
 export function RootNavigator({ isAuthenticated = false }: RootNavigatorProps) {
@@ -156,7 +163,11 @@ export function RootNavigator({ isAuthenticated = false }: RootNavigatorProps) {
         component={NotificationsScreen}
         options={{ animation: 'slide_from_right', presentation: 'card' }}
       />
-      {/* Add more root-level screens here */}
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
     </Stack.Navigator>
   );
 }

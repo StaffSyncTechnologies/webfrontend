@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
@@ -39,7 +39,7 @@ export function ShiftsScreen({ navigation }: MainTabScreenProps<'Shifts'>) {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('Date');
   const { primaryColor } = useOrgTheme();
-  const { data: shiftsResponse, isLoading } = useGetShiftsQuery({});
+  const { data: shiftsResponse, isLoading, isFetching, refetch } = useGetShiftsQuery({});
 
   const shifts: ShiftCardData[] = (shiftsResponse?.data || []).map((s: any) => {
     const startDate = new Date(s.startAt || s.startTime);
@@ -120,14 +120,22 @@ export function ShiftsScreen({ navigation }: MainTabScreenProps<'Shifts'>) {
       </View>}
 
       {/* Shift List */}
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 px-5"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isFetching && !isLoading} onRefresh={refetch} tintColor={primaryColor} colors={[primaryColor]} />
+        }
+      >
         {isLoading ? (
           <View className="items-center py-12">
             <ActivityIndicator size="large" color={primaryColor} />
           </View>
         ) : filtered.length === 0 ? (
           <View className="items-center py-12">
-            <Body color="secondary">No shifts available</Body>
+            <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
+            <Body color="secondary" className="mt-3">No shifts available</Body>
+            <Caption color="muted" className="mt-1">Pull down to refresh</Caption>
           </View>
         ) : (
           filtered.map((shift) => (
