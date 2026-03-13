@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "185671754262",
+    "project_id": "staffsync-bd55b",
+    "storage_bucket": "staffsync-bd55b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185671754262:android:ea74a7606d25c6968d4b37",
+        "android_client_info": {
+          "package_name": "com.staffsync.worker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAseiZfhUweTs_vu4XuyO3ylHmqSQMzPbw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
