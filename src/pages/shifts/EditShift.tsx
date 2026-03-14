@@ -14,6 +14,7 @@ import { colors } from '../../utilities/colors';
 import { useGetShiftDetailQuery, useUpdateShiftMutation } from '../../store/slices/shiftSlice';
 import { useGetClientsQuery } from '../../store/slices/organizationSlice';
 import { useGetSkillsQuery } from '../../store/slices/skillSlice';
+import { FrontendGeocodingService } from '../../utils/geocoding';
 
 // ============ STYLED COMPONENTS ============
 const BackLink = styled(Box)({
@@ -212,6 +213,11 @@ export function EditShift() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // GPS coordinates display state
+  const [currentCoordinates, setCurrentCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
   // API calls
   const { data: shift, isLoading: isLoadingShift } = useGetShiftDetailQuery(shiftId!, { skip: !shiftId });
   const [updateShift, { isLoading: isUpdating }] = useUpdateShiftMutation();
@@ -267,6 +273,35 @@ export function EditShift() {
     }
   };
 
+  // 🎯 Live geocoding when address changes
+  const handleAddressChange = async (address: string) => {
+    setSiteLocation(address);
+    setLocationError(null);
+    
+    if (!address || address.trim().length < 3) {
+      setCurrentCoordinates(null);
+      return;
+    }
+    
+    setIsGeocoding(true);
+    
+    try {
+      const coordinates = await FrontendGeocodingService.geocodeAddress(address);
+      if (coordinates) {
+        setCurrentCoordinates(coordinates);
+        setLocationError(null);
+      } else {
+        setCurrentCoordinates(null);
+        setLocationError('Address not found');
+      }
+    } catch (error) {
+      setCurrentCoordinates(null);
+      setLocationError('Geocoding failed');
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setError(null);
     setSuccess(null);
@@ -288,12 +323,24 @@ export function EditShift() {
         endAt.setDate(endAt.getDate() + 1);
       }
 
+      // 🎯 Geocode the address in frontend first
+      console.log('🌐 Geocoding address:', siteLocation);
+      const coordinates = await FrontendGeocodingService.geocodeAddress(siteLocation);
+      
+      if (!coordinates) {
+        console.warn('⚠️ Geocoding failed, updating shift without coordinates');
+      } else {
+        console.log('✅ Geocoded successfully:', coordinates);
+      }
+
       await updateShift({
         shiftId: shiftId!,
         updates: {
           title: title.trim(),
           clientCompanyId: clientCompanyId || undefined,
           siteLocation: siteLocation || undefined,
+          siteLat: coordinates?.lat,  // 🚀 Frontend geocoded coordinates
+          siteLng: coordinates?.lng,  // 🚀 Frontend geocoded coordinates
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
           workersNeeded,
@@ -396,10 +443,54 @@ export function EditShift() {
           <FormGroup>
             <Label>Site Location</Label>
             <StyledInput 
-              placeholder="Enter shift location" 
+              placeholder="Enter shift location (e.g. Westminster Street, Crewe)" 
               value={siteLocation}
-              onChange={(e) => setSiteLocation(e.target.value)}
+              onChange={(e) => handleAddressChange(e.target.value)}
             />
+            
+            {/* 📍 Live Coordinates Display */}
+            {isGeocoding && (
+              <Box sx={{ mt: 1, fontSize: 12, color: '#666', fontFamily: "'Outfit', sans-serif" }}>
+                🌐 Geocoding address...
+              </Box>
+            )}
+            
+            {currentCoordinates && (
+              <Box sx={{ 
+                mt: 1, 
+                p: 2, 
+                border: '1px solid #4caf50', 
+                borderRadius: 1, 
+                backgroundColor: '#f8fff8',
+                fontFamily: "'Outfit', sans-serif"
+              }}>
+                <Box sx={{ fontSize: 13, fontWeight: 500, color: '#2e7d32', mb: 1 }}>
+                  ✅ Location Coordinates Found:
+                </Box>
+                <Box sx={{ fontSize: 12, color: '#333', fontFamily: 'monospace' }}>
+                  📍 Latitude: {currentCoordinates.lat.toFixed(6)}<br/>
+                  📍 Longitude: {currentCoordinates.lng.toFixed(6)}
+                </Box>
+              </Box>
+            )}
+            
+            {locationError && (
+              <Box sx={{ 
+                mt: 1, 
+                p: 2, 
+                border: '1px solid #f44336', 
+                borderRadius: 1, 
+                backgroundColor: '#fff8f8',
+                fontFamily: "'Outfit', sans-serif"
+              }}>
+                <Box sx={{ fontSize: 13, fontWeight: 500, color: '#d32f2f' }}>
+                  ❌ {locationError}
+                </Box>
+                <Box sx={{ fontSize: 11, color: '#666', mt: 1 }}>
+                  Try a more specific address (e.g. "Street Name, City")
+                </Box>
+              </Box>
+            )}
           </FormGroup>
           <FormGroup>
             <Label>Priority</Label>

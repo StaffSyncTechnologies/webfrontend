@@ -102,21 +102,39 @@ const WorkerName = styled(Box)({
 });
 
 const WorkerEmail = styled(Box)({
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Outfit', sans-serif",
   fontSize: '12px',
   color: colors.text.secondary,
 });
 
+const WorkerSkills = styled(Box)({
+  display: 'flex',
+  gap: '4px',
+  flexWrap: 'wrap',
+  marginTop: '4px',
+});
+
 const SkillChip = styled(Chip)({
-  height: '24px',
-  fontSize: '11px',
-  fontFamily: "'Inter', sans-serif",
-  backgroundColor: colors.secondary.lightGray,
+  height: '20px',
+  fontSize: '10px',
+  fontFamily: "'Outfit', sans-serif",
+  backgroundColor: colors.primary.blue + '15',
+  color: colors.primary.blue,
+  fontWeight: 500,
+  '& .MuiChip-label': {
+    padding: '0 6px',
+  },
+});
+
+const NoSkillsText = styled(Box)({
+  fontFamily: "'Outfit', sans-serif",
+  fontSize: '10px',
   color: colors.text.secondary,
+  fontStyle: 'italic',
 });
 
 const SelectedCount = styled(Box)({
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Outfit', sans-serif",
   fontSize: '14px',
   color: colors.text.secondary,
   padding: '8px 0',
@@ -151,7 +169,7 @@ const AlreadyAssignedBadge = styled(Box)({
   borderRadius: '6px',
   backgroundColor: colors.status.success + '20',
   color: colors.status.success,
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Outfit', sans-serif",
   fontSize: '11px',
   fontWeight: 500,
 });
@@ -299,17 +317,30 @@ export const AssignWorkerModal = ({ open, onClose, shiftId, shiftTitle }: Assign
                   <WorkerInfo>
                     <WorkerName>{worker.fullName}</WorkerName>
                     <WorkerEmail>{worker.email}</WorkerEmail>
+                    <WorkerSkills>
+                      {worker.workerSkills && worker.workerSkills.length > 0 ? (
+                        worker.workerSkills.slice(0, 3).map((skill: any) => (
+                          <SkillChip
+                            key={skill.id || skill.skillId || Math.random()}
+                            label={skill.skill?.name || skill.name || 'Unknown Skill'}
+                            size="small"
+                          />
+                        ))
+                      ) : (
+                        <NoSkillsText>No skills listed</NoSkillsText>
+                      )}
+                      {worker.workerSkills && worker.workerSkills.length > 3 && (
+                        <SkillChip
+                          label={`+${worker.workerSkills.length - 3} more`}
+                          size="small"
+                          sx={{ backgroundColor: colors.secondary.lightGray, color: colors.text.secondary }}
+                        />
+                      )}
+                    </WorkerSkills>
                   </WorkerInfo>
                   {isAssigned && (
                     <AlreadyAssignedBadge>Already Assigned</AlreadyAssignedBadge>
                   )}
-                  {worker.skills?.slice(0, 2).map((skill: any) => (
-                    <SkillChip
-                      key={skill.id || skill.skillId}
-                      label={skill.name || skill.skill?.name}
-                      size="small"
-                    />
-                  ))}
                 </WorkerRow>
               );
             })
