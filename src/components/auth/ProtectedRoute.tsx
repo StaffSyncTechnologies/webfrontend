@@ -38,11 +38,24 @@ const ALLOWED_WHEN_EXPIRED = ['/settings/billing', '/settings', '/help', '/conta
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
+  // Check if we're currently on the login page to prevent redirect loops
+  const isLoginPage = location.pathname === '/login';
+
   // Only allow access if token is valid (exists AND not expired)
-  if (!isTokenValid()) {
+  if (!isTokenValid() && !isLoginPage) {
     // Clear any stale auth data
     clearExpiredAuth();
     // Redirect to login page but save the attempted URL
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If we're on login page but somehow have valid token, redirect to dashboard
+  if (isTokenValid() && isLoginPage) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // If we don't have a valid token and we're not on login page, show loading or redirect
+  if (!isTokenValid() && !isLoginPage) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

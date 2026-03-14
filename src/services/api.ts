@@ -36,9 +36,19 @@ api.interceptors.response.use(
     // Only redirect on 401 for protected routes, not auth routes
     const isAuthRoute = error.config?.url?.includes('/auth/');
     if (error.response?.status === 401 && !isAuthRoute) {
-      // Token expired or invalid - clear auth state
+      // Token expired or invalid - clear auth state and redirect
       store.dispatch(clearAuth());
-      window.location.href = '/login';
+      
+      // Clear any stale auth data from localStorage
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('tokenExpiration');
+      
+      // Use React Router navigation instead of hard redirect
+      // This prevents "Not Found" issues on page reload
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
     }
     return Promise.reject(error);
   }
