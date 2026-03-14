@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppSelector } from '../store';
-import type { ChatMessage } from '../types/api';
+import type { ChatMessage } from '../store/api/chatApi';
 
 const API_BASE = 'https://backend-rp5c.onrender.com';
 

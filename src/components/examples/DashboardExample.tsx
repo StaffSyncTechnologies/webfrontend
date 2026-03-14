@@ -9,6 +9,14 @@ import {
   useGetShiftsOverviewQuery
 } from '../../store/slices/dashboardSlice';
 import { useAuth } from '../../hooks/useAuth';
+import type { 
+  ClientDashboard, 
+  WorkerDashboard, 
+  AdminDashboard,
+  OpsManagerDashboard,
+  ShiftCoordinatorDashboard,
+  ComplianceOfficerDashboard 
+} from '../../types/api';
 
 export const DashboardExample: React.FC = () => {
   const { user, isAuthenticated } = useAuth();

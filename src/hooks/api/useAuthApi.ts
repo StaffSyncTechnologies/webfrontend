@@ -17,6 +17,8 @@ import type {
   WorkerLoginCredentials,
   WorkerVerifyOtpRequest,
   WorkerRegisterCredentials,
+  User,
+  Worker,
 } from '../../types/api';
 
 // Query keys

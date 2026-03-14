@@ -1,5 +1,4 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../../services/endpoints';
 import type { RootState } from '../index';
 
@@ -13,9 +12,9 @@ const baseQuery = fetchBaseQuery({
     const state = getState() as RootState;
     let token = state.auth.token;
     
-    // If not in state, try AsyncStorage
+    // If not in state, try localStorage
     if (!token) {
-      token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      token = localStorage.getItem(AUTH_TOKEN_KEY);
     }
     
     if (token) {

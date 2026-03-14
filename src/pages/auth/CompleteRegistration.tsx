@@ -16,8 +16,8 @@ import { Visibility, VisibilityOff, HelpOutline, ArrowForward } from '@mui/icons
 import { colors } from '../../utilities/colors';
 import { AuthContainer } from '../../components/layout';
 import { Input } from '../../components/controls';
-import { useAuthApi } from '../../store/slices/authSlice';
-import { useRegisterClientMutation } from '../../store/slices/clientSlice';
+import { useAcceptStaffInvite } from '../../hooks/api/useAuthApi';
+import { useRegisterClientMutation } from '../../store/slices/clientRegistrationSlice';
 import { getApiError } from '../../services';
 
 const Container = styled(Box)({
@@ -161,20 +161,19 @@ export function CompleteRegistration({ type = 'team' }: Props) {
     phone: '',
     address: '',
     postcode: '',
+    niNumber: '',
     password: '',
     confirmPassword: '',
   });
 
   // RTK Query hooks
-  const authApi = useAuthApi();
-  const [acceptTeamInvite, { isLoading: teamLoading, error: teamError, isSuccess: teamSuccess }] = 
-    authApi.useAcceptInviteCodeMutation();
+  const acceptTeamInviteMutation = useAcceptStaffInvite();
   const [registerClient, { isLoading: clientLoading, error: clientError, isSuccess: clientSuccess }] = 
     useRegisterClientMutation();
 
-  const isLoading = type === 'client' ? clientLoading : teamLoading;
-  const error = type === 'client' ? clientError : teamError;
-  const isSuccess = type === 'client' ? clientSuccess : teamSuccess;
+  const isLoading = type === 'client' ? clientLoading : acceptTeamInviteMutation.isPending;
+  const error = type === 'client' ? clientError : acceptTeamInviteMutation.error;
+  const isSuccess = type === 'client' ? clientSuccess : acceptTeamInviteMutation.isSuccess;
 
   // Redirect if not verified
   useEffect(() => {
@@ -218,27 +217,27 @@ export function CompleteRegistration({ type = 'team' }: Props) {
     if (type === 'client') {
       registerClient({
         inviteCode: state.inviteCode,
-        company: {
-          name: formData.fullName.split(' ')[0] + "'s Company",
+        companyName: formData.fullName.split(' ')[0] + "'s Company",
+        contactEmail: formData.email,
+        contactPhone: formData.phone,
+        contactName: formData.fullName,
+        billingAddress: {
+          street: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
         },
-        admin: {
-          fullName: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          jobTitle: formData.jobTitle,
-        },
+        companySize: 'SMALL',
+        industry: 'General',
       });
     } else {
-      acceptTeamInvite({
-        inviteCode: state.inviteCode,
-        fullName: formData.fullName,
-        email: formData.email,
+      acceptTeamInviteMutation.mutate({
+        token: state.inviteCode,
         password: formData.password,
+        fullName: formData.fullName,
         phone: formData.phone,
-        jobTitle: formData.jobTitle,
-        address: formData.address,
-        postcode: formData.postcode,
+        niNumber: formData.niNumber,
       });
     }
   };

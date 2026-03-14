@@ -7,7 +7,7 @@ import {
   Close,
   Save,
 } from '@mui/icons-material';
-import { Box, styled, TextField, Select, MenuItem, Chip, CircularProgress, Alert } from '@mui/material';
+import { Box, styled, TextField, Select, MenuItem, Chip, CircularProgress, Alert, Button } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer } from '../../components/layout';
 import { colors } from '../../utilities/colors';
@@ -15,6 +15,9 @@ import { useGetShiftDetailQuery, useUpdateShiftMutation } from '../../store/slic
 import { useGetClientsQuery } from '../../store/slices/organizationSlice';
 import { useGetSkillsQuery } from '../../store/slices/skillSlice';
 import { FrontendGeocodingService } from '../../utils/geocoding';
+import { LeafletPicker } from '../../components/map';
+import { geocodeWithFallback, resolvePendingGeocode, rejectPendingGeocode } from '../../utils/geocodeWithFallback';
+import type { Shift } from '../../types/api';
 
 // ============ STYLED COMPONENTS ============
 const BackLink = styled(Box)({
@@ -217,6 +220,9 @@ export function EditShift() {
   const [currentCoordinates, setCurrentCoordinates] = useState<{lat: number, lng: number} | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  
+  // Leaflet picker fallback state
+  const [showLeafletPicker, setShowLeafletPicker] = useState(false);
 
   // API calls
   const { data: shift, isLoading: isLoadingShift } = useGetShiftDetailQuery(shiftId!, { skip: !shiftId });
@@ -250,7 +256,7 @@ export function EditShift() {
       setSiteLocation(shift.siteLocation || shift.location?.name || '');
       setWorkersNeeded(shift.workersNeeded || 1);
       setPayRate(shift.payRate?.toString() || '');
-      setSelectedSkillIds(shift.requiredSkills?.map((rs: any) => rs.skillId) || []);
+      setSelectedSkillIds(shift.requiredSkills?.map((rs) => rs.skillId) || []);
       setNotes(shift.notes || '');
       setPriority(shift.priority || 'NORMAL');
       
@@ -273,7 +279,7 @@ export function EditShift() {
     }
   };
 
-  // 🎯 Live geocoding when address changes
+  // 🎯 Live geocoding when address changes (with Leaflet fallback)
   const handleAddressChange = async (address: string) => {
     setSiteLocation(address);
     setLocationError(null);
@@ -286,13 +292,14 @@ export function EditShift() {
     setIsGeocoding(true);
     
     try {
-      const coordinates = await FrontendGeocodingService.geocodeAddress(address);
+      // Use the geocodeWithFallback utility
+      const coordinates = await geocodeWithFallback(address, () => {
+        setShowLeafletPicker(true);
+      });
+      
       if (coordinates) {
         setCurrentCoordinates(coordinates);
         setLocationError(null);
-      } else {
-        setCurrentCoordinates(null);
-        setLocationError('Address not found');
       }
     } catch (error) {
       setCurrentCoordinates(null);
@@ -300,6 +307,18 @@ export function EditShift() {
     } finally {
       setIsGeocoding(false);
     }
+  };
+
+  // Leaflet picker handlers
+  const handleLeafletConfirm = (coords: { lat: number; lng: number }) => {
+    setCurrentCoordinates(coords);
+    setShowLeafletPicker(false);
+    resolvePendingGeocode(coords);
+  };
+
+  const handleLeafletClose = () => {
+    setShowLeafletPicker(false);
+    rejectPendingGeocode(new Error('User cancelled location selection'));
   };
 
   const handleSubmit = async () => {
@@ -471,26 +490,31 @@ export function EditShift() {
                   📍 Latitude: {currentCoordinates.lat.toFixed(6)}<br/>
                   📍 Longitude: {currentCoordinates.lng.toFixed(6)}
                 </Box>
-              </Box>
-            )}
-            
-            {locationError && (
-              <Box sx={{ 
-                mt: 1, 
-                p: 2, 
-                border: '1px solid #f44336', 
-                borderRadius: 1, 
-                backgroundColor: '#fff8f8',
-                fontFamily: "'Outfit', sans-serif"
-              }}>
-                <Box sx={{ fontSize: 13, fontWeight: 500, color: '#d32f2f' }}>
-                  ❌ {locationError}
-                </Box>
                 <Box sx={{ fontSize: 11, color: '#666', mt: 1 }}>
                   Try a more specific address (e.g. "Street Name, City")
                 </Box>
               </Box>
             )}
+            
+            {/* Manual location picker button */}
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowLeafletPicker(true)}
+              sx={{ 
+                mt: 2,
+                textTransform: 'none',
+                fontFamily: "'Outfit', sans-serif",
+                borderColor: colors.primary.navy,
+                color: colors.primary.navy,
+                '&:hover': {
+                  borderColor: colors.primary.blue,
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                }
+              }}
+            >
+              🗺️ Select Location on Map
+            </Button>
           </FormGroup>
           <FormGroup>
             <Label>Priority</Label>
@@ -617,6 +641,15 @@ export function EditShift() {
           </SubmitButton>
         </ButtonRow>
       </FormCard>
+      
+      {/* Leaflet Picker Fallback */}
+      <LeafletPicker
+        open={showLeafletPicker}
+        onClose={handleLeafletClose}
+        onConfirm={handleLeafletConfirm}
+        initialAddress={siteLocation}
+        initialCoordinates={currentCoordinates || undefined}
+      />
     </DashboardContainer>
   );
 }

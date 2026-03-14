@@ -494,11 +494,11 @@ const ClientStatusBadge = styled('span')<{ status: string }>(({ status }) => ({
 }));
 
 // ============ HELPERS ============
-const formatCurrency = (value: number, currency = 'GBP'): string => {
+const formatCurrencyValue = (value: number, currency = 'GBP'): string => {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(value);
 };
 
-const formatDateTime = (dateString: string | null): string => {
+const formatDateTime = (dateString: string | null | undefined): string => {
   if (!dateString) return '-';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
@@ -536,7 +536,7 @@ export function AdminDashboard() {
   const stats = useMemo(() => ({
     totalWorkers: statsData?.totalWorkers?.value ?? 0,
     totalClients: statsData?.totalClients?.value ?? 0,
-    totalRevenue: statsData?.totalRevenue ? formatCurrency(statsData.totalRevenue.value, statsData.totalRevenue.currency) : '£0',
+    totalRevenue: statsData?.totalRevenue?.value ? formatCurrencyValue(statsData.totalRevenue.value) : '£0',
     shiftsToday: statsData?.shiftsToday?.value ?? 0,
     changes: {
       workers: statsData?.totalWorkers?.change ?? 0,
@@ -548,25 +548,52 @@ export function AdminDashboard() {
 
   // Process shift chart data
   const shiftChartData = useMemo(() => {
-    if (!shiftsData?.shifts) {
+    if (!shiftsData?.shifts || !Array.isArray(shiftsData.shifts)) {
       return [{ day: 'MON', value: 0 }, { day: 'TUE', value: 0 }, { day: 'WED', value: 0 }, { day: 'THU', value: 0 }, { day: 'FRI', value: 0 }, { day: 'SAT', value: 0 }, { day: 'SUN', value: 0 }];
     }
     const maxCount = Math.max(...shiftsData.shifts.map(s => s.count), 1);
-    return shiftsData.shifts.map(s => ({
-      day: s.day,
-      value: Math.round((s.count / maxCount) * 100),
+    return shiftsData.shifts.map((shiftData) => ({
+      day: shiftData.day,
+      value: Math.round((shiftData.count / maxCount) * 100),
     }));
   }, [shiftsData]);
 
   // Process availability data for donut chart
-  const availability = useMemo(() => ({
-    activePercentage: availabilityData?.activePercentage ?? 0,
-    available: availabilityData?.available?.percentage ?? 0,
-    booked: availabilityData?.booked?.percentage ?? 0,
-  }), [availabilityData]);
+  const availability = useMemo(() => {
+    if (!availabilityData) {
+      return {
+        activePercentage: 0,
+        available: 0,
+        booked: 0,
+      };
+    }
+    
+    const total = availabilityData.total || 1;
+    const availableCount = availabilityData.available?.count || 0;
+    const bookedCount = availabilityData.booked?.count || 0;
+    
+    return {
+      activePercentage: availabilityData.activePercentage || 0,
+      available: availabilityData.available?.percentage || 0,
+      booked: availabilityData.booked?.percentage || 0,
+    };
+  }, [availabilityData]);
 
   // Process activities
-  const activities = useMemo(() => activityData?.activities ?? [], [activityData]);
+  const activities = useMemo(() => (activityData?.activities ?? []) as Array<{
+    id: string;
+    worker: {
+      id: string;
+      name: string;
+      avatar?: string;
+    };
+    clockIn: string;
+    clockOut?: string;
+    location: string;
+    status: 'Completed' | 'Ongoing';
+    shiftId: string;
+    shiftTitle: string;
+  }>, [activityData]);
   const pagination = useMemo(() => activityData?.pagination ?? { page: 1, limit: 8, total: 0, totalPages: 1 }, [activityData]);
 
   // Process recent clients

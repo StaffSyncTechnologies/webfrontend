@@ -7,7 +7,7 @@ import {
   Close,
   ArrowForward,
 } from '@mui/icons-material';
-import { Box, styled, TextField, Select, MenuItem, Chip, CircularProgress, Alert } from '@mui/material';
+import { Box, styled, TextField, Select, MenuItem, Chip, CircularProgress, Alert, Button } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer } from '../../components/layout';
 import { colors } from '../../utilities/colors';
@@ -15,6 +15,8 @@ import { useCreateShiftMutation, useGetShiftDetailQuery } from '../../store/slic
 import { useGetClientsQuery } from '../../store/slices/organizationSlice';
 import { useGetSkillsQuery } from '../../store/slices/skillSlice';
 import { FrontendGeocodingService } from '../../utils/geocoding';
+import { LeafletPicker } from '../../components/map';
+import { geocodeWithFallback, resolvePendingGeocode, rejectPendingGeocode } from '../../utils/geocodeWithFallback';
 
 // ============ STYLED COMPONENTS ============
 const BackLink = styled(Box)({
@@ -233,6 +235,9 @@ export function CreateShift() {
   const [currentCoordinates, setCurrentCoordinates] = useState<{lat: number, lng: number} | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  
+  // Leaflet picker fallback state
+  const [showLeafletPicker, setShowLeafletPicker] = useState(false);
 
   // API calls
   const [createShift, { isLoading: isCreating }] = useCreateShiftMutation();
@@ -282,7 +287,7 @@ export function CreateShift() {
     }
   };
 
-  // 🎯 Live geocoding when address changes
+  // 🎯 Live geocoding when address changes (with Leaflet fallback)
   const handleAddressChange = async (address: string) => {
     setSiteLocation(address);
     setLocationError(null);
@@ -295,13 +300,14 @@ export function CreateShift() {
     setIsGeocoding(true);
     
     try {
-      const coordinates = await FrontendGeocodingService.geocodeAddress(address);
+      // Use the geocodeWithFallback utility
+      const coordinates = await geocodeWithFallback(address, () => {
+        setShowLeafletPicker(true);
+      });
+      
       if (coordinates) {
         setCurrentCoordinates(coordinates);
         setLocationError(null);
-      } else {
-        setCurrentCoordinates(null);
-        setLocationError('Address not found');
       }
     } catch (error) {
       setCurrentCoordinates(null);
@@ -309,6 +315,18 @@ export function CreateShift() {
     } finally {
       setIsGeocoding(false);
     }
+  };
+
+  // Leaflet picker handlers
+  const handleLeafletConfirm = (coords: { lat: number; lng: number }) => {
+    setCurrentCoordinates(coords);
+    setShowLeafletPicker(false);
+    resolvePendingGeocode(coords);
+  };
+
+  const handleLeafletClose = () => {
+    setShowLeafletPicker(false);
+    rejectPendingGeocode(new Error('User cancelled location selection'));
   };
 
   const handleSubmit = async () => {
@@ -461,7 +479,7 @@ export function CreateShift() {
                 </Box>
                 <Box sx={{ fontSize: 12, color: '#333', fontFamily: 'monospace' }}>
                   📍 Latitude: {currentCoordinates.lat.toFixed(6)}<br/>
-                  📍 Longitude: {currentCoordinates.lng.toFixed(6)}
+                  📍 Longitude: {currentCoordinates.lng.toFixed(6)}<br/>
                 </Box>
               </Box>
             )}
@@ -490,9 +508,29 @@ export function CreateShift() {
                 📍 Shift Location Coordinates (for worker matching)
               </Box>
               
-              <Box sx={{ fontSize: 12, color: 'text.secondary', fontFamily: "'Outfit', sans-serif" }}>
+              <Box sx={{ fontSize: 12, color: 'text.secondary', fontFamily: "'Outfit', sans-serif", mb: 2 }}>
                 Coordinates will be automatically generated from your site location address
               </Box>
+              
+              {/* Manual location picker button */}
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setShowLeafletPicker(true)}
+                sx={{ 
+                  mb: 2,
+                  textTransform: 'none',
+                  fontFamily: "'Outfit', sans-serif",
+                  borderColor: colors.primary.navy,
+                  color: colors.primary.navy,
+                  '&:hover': {
+                    borderColor: colors.primary.blue,
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                  }
+                }}
+              >
+                🗺️ Select Location on Map
+              </Button>
             </Box>
             
             {locationError && (
@@ -621,6 +659,15 @@ export function CreateShift() {
           </SubmitButton>
         </ButtonRow>
       </FormCard>
+      
+      {/* Leaflet Picker Fallback */}
+      <LeafletPicker
+        open={showLeafletPicker}
+        onClose={handleLeafletClose}
+        onConfirm={handleLeafletConfirm}
+        initialAddress={siteLocation}
+        initialCoordinates={currentCoordinates || undefined}
+      />
     </DashboardContainer>
   );
 }

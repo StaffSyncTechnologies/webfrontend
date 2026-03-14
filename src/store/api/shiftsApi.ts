@@ -15,7 +15,7 @@ export interface Shift {
   breakMinutes?: number;
   hourlyRate?: number;
   payRate?: number;
-  status: 'DRAFT' | 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   workersNeeded?: number;
   role?: string;
   notes?: string;
@@ -31,6 +31,11 @@ export interface Shift {
     longitude: number;
     geofenceRadius: number;
   };
+  requiredSkills?: Array<{
+    skillId: string;
+  }>;
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  createdAt: string;
   assignments?: Array<{
     id: string;
     workerId: string;
@@ -40,8 +45,8 @@ export interface Shift {
   attendances?: Array<{
     id: string;
     workerId: string;
-    clockInTime?: string;
-    clockOutTime?: string;
+    clockInAt?: string;
+    clockOutAt?: string;
     status: string;
   }>;
   broadcasts?: Array<{
@@ -51,16 +56,19 @@ export interface Shift {
       [key: string]: any;
     };
   }>;
+  _count?: {
+    assignments: number;
+    attendances: number;
+  };
 }
 
 export interface AttendanceRecord {
   id: string;
   shiftId: string;
-  clockInTime?: string;
-  clockOutTime?: string;
-  status: 'PENDING' | 'CLOCKED_IN' | 'CLOCKED_OUT' | 'APPROVED' | 'FLAGGED';
-  totalHours?: number;
-  totalPay?: number;
+  clockInAt?: string;
+  clockOutAt?: string;
+  status: 'PENDING' | 'APPROVED' | 'FLAGGED';
+  hoursWorked?: number;
 }
 
 export const shiftsApi = baseApi.injectEndpoints({

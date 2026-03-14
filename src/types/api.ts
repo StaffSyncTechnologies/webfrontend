@@ -296,6 +296,13 @@ export interface Attendance {
   workerId: string;
   clockInAt?: string;
   clockOutAt?: string;
+  clockInLat?: number;
+  clockInLng?: number;
+  clockInAccuracy?: number;
+  clockInDistance?: number;
+  clockInDevice?: string;
+  clockOutLat?: number;
+  clockOutLng?: number;
   clockInLocation?: {
     lat: number;
     lng: number;
@@ -305,9 +312,13 @@ export interface Attendance {
     lng: number;
   };
   geofenceValid?: boolean;
-  flags?: AttendanceFlag[];
+  hoursWorked?: number;
   status: 'PENDING' | 'APPROVED' | 'FLAGGED';
-  totalHours?: number;
+  flagReason?: 'LATE_CLOCK_IN' | 'EARLY_CLOCK_OUT' | 'LOCATION_MISMATCH' | 'HOURS_DISCREPANCY' | null;
+  flagNote?: string;
+  flags?: AttendanceFlag[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AttendanceFlag {

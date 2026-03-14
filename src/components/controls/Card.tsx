@@ -13,6 +13,7 @@ export interface StatsCardProps {
   icon?: ReactNode;
   iconBgColor?: string;
   iconColor?: string;
+  color?: string;
   trend?: {
     value: string;
     label?: string;

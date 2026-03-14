@@ -784,11 +784,20 @@ export function ShiftDetails() {
               </tr>
             ) : (
               assignments.map((assignment: any) => {
-                const attendance = attendances.find((a: any) => a.workerId === assignment.workerId);
+                const attendance = attendances.find((a: any) => a.workerId === assignment.workerId) as {
+                  id: string;
+                  workerId: string;
+                  clockIn?: string;
+                  clockOut?: string;
+                  clockInAt?: string;
+                  clockOutAt?: string;
+                  status: string;
+                } | undefined;
                 const getAttendanceStatus = () => {
                   if (!attendance) return 'Not Started';
-                  if (attendance.clockOut) return 'Completed';
-                  if (attendance.clockIn) return 'Ongoing';
+                  // Handle both old and new field names for compatibility
+                  if (attendance.clockOutAt || attendance.clockOut) return 'Completed';
+                  if (attendance.clockInAt || attendance.clockIn) return 'Ongoing';
                   return 'Pending';
                 };
                 
@@ -801,8 +810,8 @@ export function ShiftDetails() {
                         {assignment.worker?.fullName || 'Unknown Worker'}
                       </WorkerCell>
                     </Td>
-                    <Td>{attendance?.clockIn ? formatDateTime(attendance.clockIn) : '-'}</Td>
-                    <Td>{attendance?.clockOut ? formatDateTime(attendance.clockOut) : '-'}</Td>
+                    <Td>{attendance?.clockInAt || attendance?.clockIn ? formatDateTime(attendance.clockInAt || attendance.clockIn!) : '-'}</Td>
+                    <Td>{attendance?.clockOutAt || attendance?.clockOut ? formatDateTime(attendance.clockOutAt || attendance.clockOut!) : '-'}</Td>
                     <Td><StatusBadge>{getAttendanceStatus()}</StatusBadge></Td>
                     <Td>
                       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>

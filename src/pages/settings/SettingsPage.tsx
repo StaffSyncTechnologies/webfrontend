@@ -668,11 +668,11 @@ export function SettingsPage() {
     try {
       await updateOrganization({
         name: orgForm.name,
-        tradingName: orgForm.tradingName || null,
-        registrationNumber: orgForm.registrationNumber || null,
-        industry: orgForm.industry || null,
-        website: orgForm.website || null,
-        phone: orgForm.phone || null,
+        tradingName: orgForm.tradingName || undefined,
+        registrationNumber: orgForm.registrationNumber || undefined,
+        industry: orgForm.industry || undefined,
+        website: orgForm.website || undefined,
+        phone: orgForm.phone || undefined,
       }).unwrap();
       await updateBranding({
         primaryColor: orgForm.primaryColor,
@@ -1398,7 +1398,7 @@ export function SettingsPage() {
                   : 'Unlimited access'}
               </Box>
             </Box>
-            {isTrialing && daysRemaining !== null && daysRemaining <= 30 && (
+            {isTrialing && daysRemaining !== null && daysRemaining !== undefined && daysRemaining <= 30 && (
               <Box sx={{ 
                 fontFamily: "'Outfit', sans-serif", 
                 fontSize: '12px', 

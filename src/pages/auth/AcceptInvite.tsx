@@ -137,10 +137,23 @@ export function AcceptInvite({ type = 'team' }: Props) {
   useEffect(() => {
     if (isSuccess && data) {
       const registerPath = type === 'client' ? '/client/register/complete' : '/accept-invite/complete';
+      
+      // Handle different response structures for client vs team validation
+      let agencyData;
+      if (type === 'client') {
+        // Client validation response type
+        const clientResponse = data as { valid: boolean; agency: { id: string; name: string; logo?: string; primaryColor?: string } };
+        agencyData = clientResponse.agency;
+      } else {
+        // Team validation response type
+        const teamResponse = data as { success: boolean; message: string; data?: { organizationId: string; organizationName: string; logoUrl?: string; primaryColor?: string } };
+        agencyData = teamResponse.data;
+      }
+      
       navigate(registerPath, { 
         state: { 
           inviteCode: inviteCode.trim(),
-          agency: data.agency,
+          agency: agencyData,
           verified: true,
         } 
       });
@@ -153,7 +166,7 @@ export function AcceptInvite({ type = 'team' }: Props) {
     if (type === 'client') {
       validateClientCode({ inviteCode: inviteCode.trim() });
     } else {
-      validateTeamCode({ inviteCode: inviteCode.trim() });
+      validateTeamCode({ code: inviteCode.trim() });
     }
   };
 

@@ -1,7 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { ORGANIZATION } from '../../utilities/endpoint';
 import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
-import type { Organization, Client } from '../../types/api';
+import type { Organization, Client, OrganizationBranding } from '../../types/api';
 
 export const organizationApi = createApi({
   reducerPath: 'organizationApi',
@@ -40,7 +40,7 @@ export const organizationApi = createApi({
       }),
       invalidatesTags: ['Organization'],
     }),
-    updateOrganizationBranding: builder.mutation<any, Partial<Organization['branding']>>({
+    updateOrganizationBranding: builder.mutation<any, Partial<OrganizationBranding>>({
       query: (branding) => ({
         url: ORGANIZATION.BRANDING,
         method: 'PUT',

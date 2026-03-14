@@ -4,7 +4,7 @@
 
 // Base URL - change for production
 // iOS Simulator can use localhost, Android emulator needs 10.0.2.2
-export const API_BASE_URL = __DEV__ 
+export const API_BASE_URL = import.meta.env.DEV 
   ? 'https://backend-rp5c.onrender.com/api/v1' 
   : 'https://backend-rp5c.onrender.com/api/v1';
 

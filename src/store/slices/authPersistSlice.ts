@@ -71,7 +71,7 @@ export const authSlice = createSlice({
     // Update user information
     updateUser: (state, action: PayloadAction<Partial<User | Worker>>) => {
       if (state.user) {
-        state.user = { ...state.user, ...action.payload };
+        Object.assign(state.user, action.payload);
       }
     },
     

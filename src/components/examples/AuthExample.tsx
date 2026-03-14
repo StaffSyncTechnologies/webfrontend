@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useLoginMutation, useLogoutMutation, useMeQuery } from '../../store/slices/authSlice';
+import { useWorkerPasswordLoginMutation, useLogoutMutation, useGetMeQuery } from '../../store/api/authApi';
 import { tokenManager } from '../../utilities/auth';
+import { ROLE_PERMISSIONS } from '../../utilities/roles';
+import type { User, Worker } from '../../types/api';
 
 export const AuthExample: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [login, { isLoading: isLoggingIn, error: loginError }] = useLoginMutation();
+  const [login, { isLoading: isLoggingIn, error: loginError }] = useWorkerPasswordLoginMutation();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const { data: userData, isLoading: isLoadingUser, error: userError } = useMeQuery();
+  const { data: userData, isLoading: isLoadingUser, error: userError } = useGetMeQuery();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +35,16 @@ export const AuthExample: React.FC = () => {
   // Check authentication status
   const isAuthenticated = tokenManager.isAuthenticated();
 
+  // Calculate permissions from user role
+  const getUserPermissions = (user: User | Worker): string[] => {
+    if ('role' in user) {
+      // This is a User (staff/admin)
+      return ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || [];
+    }
+    // This is a Worker - workers have basic permissions
+    return ROLE_PERMISSIONS.WORKER || [];
+  };
+
   return (
     <div className="auth-example">
       <h2>Authentication Example</h2>
@@ -46,11 +58,14 @@ export const AuthExample: React.FC = () => {
             <p>Error loading user data</p>
           ) : userData ? (
             <div>
-              <p>Welcome, {userData.user.fullName}!</p>
-              <p>Email: {userData.user.email}</p>
-              {userData.permissions && (
-                <p>Permissions: {userData.permissions.join(', ')}</p>
-              )}
+              <p>Welcome, {userData.data.fullName}!</p>
+              <p>Email: {userData.data.email}</p>
+              {(() => {
+                const permissions = getUserPermissions(userData.data as unknown as User | Worker);
+                return permissions.length > 0 && (
+                  <p>Permissions: {permissions.join(', ')}</p>
+                );
+              })()}
               <button 
                 onClick={handleLogout} 
                 disabled={isLoggingOut}

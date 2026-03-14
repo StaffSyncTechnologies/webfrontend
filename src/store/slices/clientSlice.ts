@@ -18,7 +18,8 @@ import type {
   ClientUser,
   CreateClientUserRequest,
   UpdateClientUserRequest,
-  ApiResponse
+  ApiResponse,
+  ClientRegistrationRequest
 } from '../../types/api.ts';
 
 export const clientApi = createApi({
@@ -276,26 +277,7 @@ export const clientApi = createApi({
       }),
     }),
 
-    registerClient: builder.mutation<ApiResponse, {
-      inviteCode: string;
-      company: {
-        name: string;
-        registrationNumber?: string;
-        industry?: string;
-        address?: string;
-        city?: string;
-        postcode?: string;
-        contactPhone?: string;
-        billingEmail?: string;
-      };
-      admin: {
-        fullName: string;
-        email: string;
-        password: string;
-        phone?: string;
-        jobTitle?: string;
-      };
-    }>({
+    registerClient: builder.mutation<ApiResponse, ClientRegistrationRequest>({
       query: (data) => ({
         url: CLIENT_REGISTRATION.REGISTER,
         method: 'POST',
