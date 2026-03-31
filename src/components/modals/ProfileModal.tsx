@@ -2,7 +2,7 @@ import { Close, Person, Email, Phone, Work, Language } from '@mui/icons-material
 import { Box, styled, IconButton, Modal, Avatar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../../utilities/colors';
-import type { User, Worker } from '../../types/api';
+import type { User, Worker, ClientAuthUser } from '../../types/api';
 
 // ============ STYLED COMPONENTS ============
 const ProfileModalOverlay = styled(Box)({
@@ -134,7 +134,7 @@ const RoleBadge = styled('span')({
 interface ProfileModalProps {
   open: boolean;
   onClose: () => void;
-  user: User | Worker | null;
+  user: User | Worker | ClientAuthUser | null;
 }
 
 export function ProfileModal({ open, onClose, user }: ProfileModalProps) {

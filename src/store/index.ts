@@ -2,36 +2,38 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
-import authPersistReducer from './slices/authPersistSlice.ts';
-import { clientRegistrationApi } from './slices/clientRegistrationSlice.ts';
-import { chatApi } from './slices/chatSlice.ts';
-import { dashboardApi } from './slices/dashboardSlice.ts';
-import { userApi } from './slices/userSlice.ts';
-import { workerApi } from './slices/workerSlice.ts';
-import { shiftApi } from './slices/shiftSlice.ts';
-import { attendanceApi } from './slices/attendanceSlice.ts';
-import { clientApi } from './slices/clientSlice.ts';
-import { organizationApi } from './slices/organizationSlice.ts';
-import { onboardingApi } from './slices/onboardingSlice.ts';
-import { reportApi } from './slices/reportSlice.ts';
-import { notificationApi } from './slices/notificationSlice.ts';
-import { skillApi } from './slices/skillSlice.ts';
-import { payrollApi } from './slices/payrollSlice.ts';
-import { holidayApi } from './slices/holidaySlice.ts';
-import { hrApi } from './slices/hrSlice.ts';
-import { complianceApi } from './slices/complianceSlice.ts';
-import { subscriptionApi } from './slices/subscriptionSlice.ts';
-import { settingsApi } from './slices/settingsSlice.ts';
-import { bankAccountApi } from './slices/bankAccountSlice.ts';
-import toastReducer from './slices/toastSlice.ts';
-import { inviteRequestApi } from './slices/inviteRequestSlice.ts';
+import authPersistReducer from './slices/authPersistSlice';
+import { clientRegistrationApi } from './slices/clientRegistrationSlice';
+import { chatApi } from './slices/chatSlice';
+import { dashboardApi } from './slices/dashboardSlice';
+import { clientDashboardApi } from './slices/clientDashboardSlice';
+import { userApi } from './slices/userSlice';
+import { workerApi } from './slices/workerSlice';
+import { shiftApi } from './slices/shiftSlice';
+import { attendanceApi } from './slices/attendanceSlice';
+import { clientApi } from './slices/clientSlice';
+import { organizationApi } from './slices/organizationSlice';
+import { onboardingApi } from './slices/onboardingSlice';
+import { reportApi } from './slices/reportSlice';
+import { notificationApi } from './slices/notificationSlice';
+import { skillApi } from './slices/skillSlice';
+import { payrollApi } from './slices/payrollSlice';
+import { holidayApi } from './slices/holidaySlice';
+import { hrApi } from './slices/hrSlice';
+import { complianceApi } from './slices/complianceSlice';
+import { subscriptionApi } from './slices/subscriptionSlice';
+import { settingsApi } from './slices/settingsSlice';
+import { bankAccountApi } from './slices/bankAccountSlice';
+import toastReducer from './slices/toastSlice';
+import { inviteRequestApi } from './slices/inviteRequestSlice';
+import { matchingApi } from './api/matchingApi';
 
 // Redux persist configuration for auth
 const persistConfig = {
   key: 'auth',
   storage,
   version: 4, // Increment to force clear all stale auth data
-  whitelist: ['user', 'token', 'refreshToken', 'isAuthenticated', 'tokenExpiration'],
+  whitelist: ['user', 'token', 'refreshToken', 'isAuthenticated', 'tokenExpiration', 'agencies', 'currentAgency'],
   migrate: (state: any) => {
     // Check if logout forced a clear
     const forceAuthClear = localStorage.getItem('forceAuthClear');
@@ -69,6 +71,7 @@ const rootReducer = combineReducers({
   [clientRegistrationApi.reducerPath]: clientRegistrationApi.reducer,
   [chatApi.reducerPath]: chatApi.reducer,
   [dashboardApi.reducerPath]: dashboardApi.reducer,
+  [clientDashboardApi.reducerPath]: clientDashboardApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [workerApi.reducerPath]: workerApi.reducer,
   [shiftApi.reducerPath]: shiftApi.reducer,
@@ -87,6 +90,7 @@ const rootReducer = combineReducers({
   [settingsApi.reducerPath]: settingsApi.reducer,
   [bankAccountApi.reducerPath]: bankAccountApi.reducer,
   [inviteRequestApi.reducerPath]: inviteRequestApi.reducer,
+  [matchingApi.reducerPath]: matchingApi.reducer,
 });
 
 export const store = configureStore({
@@ -102,6 +106,7 @@ export const store = configureStore({
       clientRegistrationApi.middleware,
       chatApi.middleware,
       dashboardApi.middleware,
+      clientDashboardApi.middleware,
       userApi.middleware,
       workerApi.middleware,
       shiftApi.middleware,
@@ -119,7 +124,8 @@ export const store = configureStore({
       subscriptionApi.middleware,
       settingsApi.middleware,
       bankAccountApi.middleware,
-      inviteRequestApi.middleware
+      inviteRequestApi.middleware,
+      matchingApi.middleware
     ),
 });
 

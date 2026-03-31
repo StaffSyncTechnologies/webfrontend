@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useDocumentTitle, useLogin } from '../../hooks';
-import { Box, styled, TextField, IconButton, InputAdornment, CircularProgress, Alert } from '@mui/material';
+import { useDocumentTitle, useLogin, useToast, useAuth } from '../../hooks';
+import { Box, styled, TextField, IconButton, InputAdornment, CircularProgress } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowBack, Visibility, VisibilityOff, HelpOutline } from '@mui/icons-material';
 import { colors } from '../../utilities/colors';
 import { AuthContainer } from '../../components/layout';
-import { getApiError } from '../../services';
+import { useAppDispatch } from '../../store';
+import { setError } from '../../store/slices/authPersistSlice';
 import type { UserRole } from '../../utilities/roles';
 
 // Get dashboard redirect path based on user role
@@ -175,6 +176,9 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useLogin();
+  const toast = useToast();
+  const { error: authError } = useAuth();
+  const dispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -182,6 +186,13 @@ export function Login() {
   });
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
+
+  // Show error toast when login fails
+  useEffect(() => {
+    if (authError) {
+      toast.error(authError);
+    }
+  }, [authError, toast]);
 
   // Navigate on successful login based on user role
   useEffect(() => {
@@ -193,6 +204,10 @@ export function Login() {
   }, [loginMutation.isSuccess, loginMutation.data, navigate, from]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Clear error when user starts typing
+    if (authError) {
+      dispatch(setError(null));
+    }
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -211,7 +226,6 @@ export function Login() {
   };
 
   const isValid = formData.email && formData.password;
-  const errorMessage = loginMutation.isError ? getApiError(loginMutation.error).message : null;
 
   return (
     <AuthContainer>
@@ -223,12 +237,6 @@ export function Login() {
 
         <Title>Login to your account</Title>
         <Subtitle>Login to your account to have access to your account</Subtitle>
-
-        {errorMessage && (
-          <Alert severity="error" sx={{ marginBottom: '24px', fontFamily: "'Outfit', sans-serif" }}>
-            {errorMessage}
-          </Alert>
-        )}
 
         <FormGroup>
           <Label>Email Address<span>*</span></Label>

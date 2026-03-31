@@ -511,6 +511,40 @@ export interface AuthResponse {
   expiresIn?: number;
 }
 
+export interface Agency {
+  id: string;
+  name: string;
+  organizationId: string;
+  isPrimary: boolean;
+}
+
+export interface ClientAuthUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+}
+
+export interface ClientAuthResponse {
+  token: string;
+  user: ClientAuthUser;
+  agencies: Agency[];
+  currentAgency: {
+    id: string;
+    name: string;
+    organizationId: string;
+  };
+}
+
+export interface AgencySwitchResponse {
+  token: string;
+  currentAgency: {
+    id: string;
+    name: string;
+    organizationId: string;
+  };
+}
+
 export interface MeResponse {
   user: User | Worker;
   permissions?: string[];
@@ -528,22 +562,31 @@ export interface StaffInviteValidation {
 export interface ChatUser {
   id: string;
   fullName: string;
-  role: string;
+  role?: string;
 }
 
 export interface ChatRoom {
   id: string;
   organizationId: string;
-  hrUserId: string;
-  workerId: string;
+  type: 'HR_WORKER' | 'CLIENT_AGENCY';
+  // HR-Worker fields
+  hrUserId?: string;
+  workerId?: string;
+  hrUser?: ChatUser;
+  worker?: ChatUser;
+  // Client-Agency fields
+  clientUserId?: string;
+  agencyUserId?: string;
+  clientCompanyId?: string;
+  clientUser?: ChatUser;
+  agencyUser?: ChatUser;
+  clientCompany?: { id: string; name: string };
+  // Common fields
   lastMessageAt: string | null;
   createdAt: string;
-  hrUser: ChatUser;
-  worker: ChatUser;
   messages: ChatMessage[];
   unreadCount: number;
   name?: string;
-  type?: string;
   participants?: ChatUser[];
   lastMessage?: ChatMessage;
 }
@@ -552,11 +595,13 @@ export interface ChatMessage {
   id: string;
   chatRoomId: string;
   senderId: string;
+  senderType: 'user' | 'client_user';
   content: string;
   status: 'SENT' | 'DELIVERED' | 'READ';
   createdAt: string;
   readAt: string | null;
-  sender: ChatUser;
+  sender?: ChatUser;
+  senderUser?: ChatUser;
 }
 
 export interface GetOrCreateRoomRequest {
@@ -804,23 +849,43 @@ export interface AgencyPublicInfo {
   supportPhone?: string;
 }
 
+export interface InviteValidation {
+  valid: boolean;
+  agency: {
+    id: string;
+    name: string;
+    logo?: string;
+    primaryColor?: string;
+  };
+  isNewUser: boolean;
+  existingAgencies: Array<{
+    id: string;
+    name: string;
+    clientCompanyId: string;
+    isPrimary: boolean;
+  }>;
+  inviteEmail: string;
+}
+
 export interface ClientRegistrationRequest {
   inviteCode: string;
-  companyName: string;
-  contactEmail: string;
-  contactPhone: string;
-  contactName: string;
-  billingAddress: {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
+  company: {
+    name: string;
+    registrationNumber?: string;
+    industry?: string;
+    address?: string;
+    city?: string;
+    postcode?: string;
+    contactPhone?: string;
+    billingEmail?: string;
   };
-  companySize: 'SMALL' | 'MEDIUM' | 'LARGE' | 'ENTERPRISE';
-  industry: string;
-  website?: string;
-  description?: string;
+  admin: {
+    fullName: string;
+    email: string;
+    password: string;
+    phone?: string;
+    jobTitle?: string;
+  };
 }
 
 export interface ClientRegistrationResponse {

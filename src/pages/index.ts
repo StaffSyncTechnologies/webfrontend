@@ -1,5 +1,5 @@
 export { NotFound } from './NotFound';
-export { Login, Register } from './auth';
+export { Login, ClientLogin, Register } from './auth';
 export { 
   Dashboard, 
   RoleDashboard,

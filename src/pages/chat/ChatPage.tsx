@@ -464,7 +464,7 @@ export function ChatPage() {
   // Filter rooms by search
   const filteredRooms = rooms.filter((r: ChatRoom) => {
     if (!searchTerm) return true;
-    const name = r.hrUserId === currentUserId ? r.worker.fullName : r.hrUser.fullName;
+    const name = r.hrUserId === currentUserId ? (r.worker?.fullName || 'Unknown') : (r.hrUser?.fullName || 'Unknown');
     return name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -536,10 +536,10 @@ export function ChatPage() {
                     onClick={() => handleSelectRoom(room.id)}
                   >
                     <Avatar sx={{ width: 44, height: 44, bgcolor: '#E5E7EB', fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 600 }}>
-                      {getInitials(other.fullName)}
+                      {getInitials(other?.fullName || '?')}
                     </Avatar>
                     <InboxItemContent>
-                      <div className="name">{other.fullName}</div>
+                      <div className="name">{other?.fullName || 'Unknown'}</div>
                       <div className="preview">
                         {lastMsg ? lastMsg.content : 'No messages yet'}
                       </div>
@@ -608,7 +608,7 @@ export function ChatPage() {
                       <MessageRow key={msg.id} isMine={isMine} sx={{ mb: 2 }}>
                         {!isMine && (
                           <Avatar sx={{ width: 28, height: 28, bgcolor: '#E5E7EB', fontSize: 11 }}>
-                            {msg.sender ? getInitials(msg.sender.fullName) : '?'}
+                            {msg.sender || msg.senderUser ? getInitials((msg.sender || msg.senderUser)?.fullName || '') : '?'}
                           </Avatar>
                         )}
                         <Box>

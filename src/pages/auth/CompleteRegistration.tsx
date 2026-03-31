@@ -217,19 +217,16 @@ export function CompleteRegistration({ type = 'team' }: Props) {
     if (type === 'client') {
       registerClient({
         inviteCode: state.inviteCode,
-        companyName: formData.fullName.split(' ')[0] + "'s Company",
-        contactEmail: formData.email,
-        contactPhone: formData.phone,
-        contactName: formData.fullName,
-        billingAddress: {
-          street: '',
-          city: '',
-          state: '',
-          postalCode: '',
-          country: '',
+        company: {
+          name: formData.fullName.split(' ')[0] + "'s Company",
+          contactPhone: formData.phone,
         },
-        companySize: 'SMALL',
-        industry: 'General',
+        admin: {
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+        },
       });
     } else {
       acceptTeamInviteMutation.mutate({

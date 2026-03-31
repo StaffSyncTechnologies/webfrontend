@@ -1,14 +1,20 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { User, Worker } from '../../types/api.ts';
+import type { User, Worker, Agency, ClientAuthUser } from '../../types/api';
 
 export interface AuthState {
-  user: User | Worker | null;
+  user: User | Worker | ClientAuthUser | null;
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
   tokenExpiration: number | null;
+  agencies: Agency[] | null;
+  currentAgency: {
+    id: string;
+    name: string;
+    organizationId: string;
+  } | null;
 }
 
 const initialState: AuthState = {
@@ -19,6 +25,8 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
   tokenExpiration: null,
+  agencies: null,
+  currentAgency: null,
 };
 
 export const authSlice = createSlice({
@@ -27,13 +35,24 @@ export const authSlice = createSlice({
   reducers: {
     // Set authentication state after successful login
     setAuth: (state, action: PayloadAction<{
-      user: User | Worker;
+      user?: User | Worker | ClientAuthUser;
       token: string;
       refreshToken?: string;
       expiresIn?: number;
+      agencies?: Agency[];
+      currentAgency?: {
+        id: string;
+        name: string;
+        organizationId: string;
+      };
     }>) => {
-      const { user, token, refreshToken, expiresIn } = action.payload;
-      state.user = user;
+      const { user, token, refreshToken, expiresIn, agencies, currentAgency } = action.payload;
+      
+      // Only update user if provided (allows partial updates for agency switching)
+      if (user !== undefined) {
+        state.user = user;
+      }
+      
       state.token = token;
       state.refreshToken = refreshToken || null;
       state.isAuthenticated = true;
@@ -43,6 +62,15 @@ export const authSlice = createSlice({
         state.tokenExpiration = Date.now() + expiresIn * 1000;
       }
       
+      // Update agency data if provided
+      if (agencies !== undefined) {
+        state.agencies = agencies;
+      }
+      
+      if (currentAgency !== undefined) {
+        state.currentAgency = currentAgency;
+      }
+      
       // Also store in localStorage for backup
       localStorage.setItem('authToken', token);
       if (refreshToken) {
@@ -50,6 +78,12 @@ export const authSlice = createSlice({
       }
       if (expiresIn) {
         localStorage.setItem('tokenExpiration', (Date.now() + expiresIn * 1000).toString());
+      }
+      if (agencies) {
+        localStorage.setItem('agencies', JSON.stringify(agencies));
+      }
+      if (currentAgency) {
+        localStorage.setItem('currentAgency', JSON.stringify(currentAgency));
       }
     },
     
@@ -61,15 +95,19 @@ export const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       state.tokenExpiration = null;
+      state.agencies = null;
+      state.currentAgency = null;
       
       // Clear localStorage
       localStorage.removeItem('authToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('tokenExpiration');
+      localStorage.removeItem('agencies');
+      localStorage.removeItem('currentAgency');
     },
     
     // Update user information
-    updateUser: (state, action: PayloadAction<Partial<User | Worker>>) => {
+    updateUser: (state, action: PayloadAction<Partial<User | Worker | ClientAuthUser>>) => {
       if (state.user) {
         Object.assign(state.user, action.payload);
       }

@@ -71,13 +71,19 @@ export const axiosBaseQuery = ({
       
       // Handle 401 Unauthorized - redirect to login
       if (err.response?.status === 401) {
+        // Get user role from store before clearing to determine correct login page
+        const state = store.getState();
+        const userRole = state.auth.user?.role;
+        const isClientUser = userRole === 'CLIENT_ADMIN' || userRole === 'CLIENT_USER';
+        const loginPage = isClientUser ? '/client-login' : '/login';
+        
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('tokenExpiration');
         localStorage.removeItem('persist:auth');
         localStorage.setItem('forceAuthClear', 'true');
         store.dispatch(addToast({ message: 'Session expired. Please login again.', type: 'warning', duration: 4000 }));
-        window.location.replace('/login');
+        window.location.replace(loginPage);
       }
       
       return {

@@ -586,13 +586,13 @@ export function SettingsPage() {
 
   // Form state for organization
   const [orgForm, setOrgForm] = useState({
-    name: '',
-    email: '',
-    tradingName: '',
-    registrationNumber: '',
-    industry: '',
-    website: '',
-    phone: '',
+    name: 'StaffSync Agency',
+    email: 'admin@staffsync.com',
+    tradingName: 'StaffSync Solutions Ltd',
+    registrationNumber: '12345678',
+    industry: 'healthcare',
+    website: 'www.staffsync.com',
+    phone: '+44 20 7123 4567',
     primaryColor: '#1E3A5F',
     secondaryColor: '#3B82F6',
   });
@@ -1019,7 +1019,7 @@ export function SettingsPage() {
           </FormGroup>
           <FormGroup>
             <Label>Phone Number</Label>
-            <StyledInput value={currentUser?.phone || ''} disabled />
+            <StyledInput value={currentUser && 'phone' in currentUser ? currentUser.phone : ''} disabled />
           </FormGroup>
           <FormGroup>
             <Label>Role</Label>

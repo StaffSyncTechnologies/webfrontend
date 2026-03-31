@@ -82,6 +82,19 @@ export const CHAT = {
   MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
   MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
   UNREAD_COUNT: '/chat/unread-count',
+  SEND_MESSAGE: (roomId: string) => `/chat/rooms/${roomId}/send`,
+  
+  // Client-Agency chat endpoints
+  CLIENT_ROOMS: '/chat/client/rooms',
+  CLIENT_CREATE_ROOM: '/chat/client/rooms',
+  CLIENT_MESSAGES: (roomId: string) => `/chat/client/rooms/${roomId}/messages`,
+  CLIENT_MARK_READ: (roomId: string) => `/chat/client/rooms/${roomId}/read`,
+  CLIENT_UNREAD_COUNT: '/chat/client/unread-count',
+  CLIENT_SEND_MESSAGE: (roomId: string) => `/chat/client/rooms/${roomId}/send`,
+  
+  AGENCY_ROOMS: '/chat/agency/rooms',
+  AGENCY_CREATE_ROOM: '/chat/agency/rooms',
+  AGENCY_CLIENTS: '/chat/agency/clients',
 } as const;
 
 // Agencies (public)

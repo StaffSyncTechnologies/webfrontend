@@ -37,7 +37,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // If we're on a public route, allow access
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/contact-us', '/watch-demo', '/get-started', '/'];
+  const publicRoutes = ['/login', '/client-login', '/register', '/forgot-password', '/reset-password', '/contact-us', '/watch-demo', '/get-started', '/'];
   const isPublicRoute = publicRoutes.some(route => location.pathname === route || location.pathname.startsWith(route + '/'));
 
   if (isPublicRoute) {

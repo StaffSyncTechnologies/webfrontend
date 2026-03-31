@@ -4,11 +4,12 @@ import { AdminDashboard } from './AdminDashboard';
 import { OpsManagerDashboard } from './OpsManagerDashboard';
 import { ShiftCoordinatorDashboard } from './ShiftCoordinatorDashboard';
 import { ComplianceOfficerDashboard } from './ComplianceOfficerDashboard';
-import type { User, Worker } from '../../types/api';
+import { ClientDashboard } from './ClientDashboard';
+import type { User, Worker, ClientAuthUser } from '../../types/api';
 
 type UserRole = 'ADMIN' | 'OPS_MANAGER' | 'SHIFT_COORDINATOR' | 'COMPLIANCE_OFFICER' | 'CLIENT_ADMIN' | 'CLIENT_USER' | 'WORKER';
 
-function getUserRole(user: User | Worker | null): UserRole | null {
+function getUserRole(user: User | Worker | ClientAuthUser | null): UserRole | null {
   if (!user) return null;
   if ('role' in user) {
     return user.role as UserRole;
@@ -18,7 +19,7 @@ function getUserRole(user: User | Worker | null): UserRole | null {
 
 export function RoleDashboard() {
   useDocumentTitle('Dashboard');
-  const { user } = useAppSelector((state: { auth: { user: User | Worker | null } }) => state.auth);
+  const { user } = useAppSelector((state: { auth: { user: User | Worker | ClientAuthUser | null } }) => state.auth);
   const role = getUserRole(user);
 
   switch (role) {
@@ -32,8 +33,7 @@ export function RoleDashboard() {
       return <ComplianceOfficerDashboard />;
     case 'CLIENT_ADMIN':
     case 'CLIENT_USER':
-      // TODO: Create ClientDashboard
-      return <AdminDashboard />;
+      return <ClientDashboard />;
     case 'WORKER':
       // TODO: Create WorkerDashboard
       return <AdminDashboard />;

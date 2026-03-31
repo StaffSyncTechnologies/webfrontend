@@ -1,7 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { ATTENDANCE } from '../../utilities/endpoint.ts';
-import { axiosBaseQuery } from '../../utilities/axiosBaseQuery.ts';
-import type { Attendance, AttendanceFlag } from '../../types/api.ts';
+import { ATTENDANCE } from '../../utilities/endpoint';
+import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
+import type { Attendance, AttendanceFlag } from '../../types/api';
 
 export const attendanceApi = createApi({
   reducerPath: 'attendanceApi',

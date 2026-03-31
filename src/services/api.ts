@@ -29,14 +29,12 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle errors
+// Response interceptor - handle auth errors
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Only redirect on 401 for protected routes, not auth routes
-    const isAuthRoute = error.config?.url?.includes('/auth/');
-    if (error.response?.status === 401 && !isAuthRoute) {
-      // Token expired or invalid - clear auth state and redirect
+    if (error.response?.status === 401) {
+      // Clear auth state
       store.dispatch(clearAuth());
       
       // Clear any stale auth data from localStorage
@@ -44,10 +42,16 @@ api.interceptors.response.use(
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('tokenExpiration');
       
+      // Get user role from store before clearing to determine correct login page
+      const state = store.getState();
+      const userRole = state.auth.user?.role;
+      const isClientUser = userRole === 'CLIENT_ADMIN' || userRole === 'CLIENT_USER';
+      const loginPage = isClientUser ? '/client-login' : '/login';
+      
       // Use React Router navigation instead of hard redirect
       // This prevents "Not Found" issues on page reload
-      if (window.location.pathname !== '/login') {
-        window.location.replace('/login');
+      if (window.location.pathname !== loginPage) {
+        window.location.replace(loginPage);
       }
     }
     return Promise.reject(error);

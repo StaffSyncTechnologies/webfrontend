@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { DASHBOARD } from '../../utilities/endpoint.ts';
-import { axiosBaseQuery } from '../../utilities/axiosBaseQuery.ts';
+import { DASHBOARD } from '../../utilities/endpoint';
+import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
 import type { 
   DashboardStats, 
   PendingApprovals, 
@@ -11,7 +11,7 @@ import type {
   WorkersAvailability,
   RecentActivity,
   RecentActivityParams,
-} from '../../types/api.ts';
+} from '../../types/api';
 
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',

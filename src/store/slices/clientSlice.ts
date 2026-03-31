@@ -1,6 +1,9 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { CLIENT, CLIENT_REGISTRATION } from '../../utilities/endpoint.ts';
-import { axiosBaseQuery } from '../../utilities/axiosBaseQuery.ts';
+import { CLIENT, CLIENT_REGISTRATION } from '../../utilities/endpoint';
+import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
+import { store } from '../index';
+import { setAuth } from './authPersistSlice';
+import { clientDashboardApi } from './clientDashboardSlice';
 import type { 
   ClientDashboard,
   ClientWorker,
@@ -19,8 +22,13 @@ import type {
   CreateClientUserRequest,
   UpdateClientUserRequest,
   ApiResponse,
-  ClientRegistrationRequest
-} from '../../types/api.ts';
+  ClientRegistrationRequest,
+  AuthResponse,
+  ClientAuthResponse,
+  AgencySwitchResponse,
+  Agency,
+  InviteValidation,
+} from '../../types/api';
 
 export const clientApi = createApi({
   reducerPath: 'clientApi',
@@ -36,12 +44,30 @@ export const clientApi = createApi({
   tagTypes: ['Client', 'ClientWorker', 'ClientShift', 'ClientTimesheet', 'ClientInvoice', 'ClientUser'],
   endpoints: (builder) => ({
     // Authentication
-    clientLogin: builder.mutation<ApiResponse, { email: string; password: string }>({
+    clientLogin: builder.mutation<ApiResponse<ClientAuthResponse>, { email: string; password: string }>({
       query: (credentials) => ({
         url: CLIENT.LOGIN,
         method: 'POST',
         body: credentials,
       }),
+      onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          if (data.success && data.data) {
+            // Set authentication state in Redux store
+            dispatch(setAuth({
+              user: data.data.user,
+              token: data.data.token,
+              refreshToken: data.data.token, // Use same token for now
+              expiresIn: undefined,
+              agencies: data.data.agencies,
+              currentAgency: data.data.currentAgency,
+            }));
+          }
+        } catch (error) {
+          console.error('Login failed:', error);
+        }
+      },
     }),
     
     clientForgotPassword: builder.mutation<ApiResponse, { email: string }>({
@@ -50,6 +76,48 @@ export const clientApi = createApi({
         method: 'POST',
         body: request,
       }),
+    }),
+
+    // Agency management
+    getAgencies: builder.query<ApiResponse<{ agencies: Agency[]; currentAgency: { id: string; organizationId: string } }>, void>({
+      query: () => ({
+        url: `${CLIENT.BASE_URL}/agencies`,
+        method: 'GET',
+      }),
+    }),
+
+    switchAgency: builder.mutation<ApiResponse<AgencySwitchResponse>, { clientCompanyId: string }>({
+      query: (data) => ({
+        url: `${CLIENT.BASE_URL}/switch-agency`,
+        method: 'POST',
+        body: data,
+      }),
+      onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          if (data.success && data.data) {
+            // Update authentication state with new agency and token
+            dispatch(setAuth({
+              user: undefined, // Keep existing user
+              token: data.data.token,
+              refreshToken: data.data.token,
+              expiresIn: undefined,
+              agencies: undefined, // Keep existing agencies
+              currentAgency: data.data.currentAgency,
+            }));
+
+            // Invalidate all client data queries to force refetch with new agency context
+            dispatch(clientDashboardApi.util.invalidateTags([
+              'ClientDashboard', 
+              'ClientShifts', 
+              'ClientTimesheets', 
+              'ClientInvoices'
+            ]));
+          }
+        } catch (error) {
+          console.error('Agency switch failed:', error);
+        }
+      },
     }),
     
     // Dashboard
@@ -269,7 +337,7 @@ export const clientApi = createApi({
     }),
 
     // Client Registration (public endpoints)
-    validateClientCode: builder.mutation<{ valid: boolean; agency: { id: string; name: string; logo?: string; primaryColor?: string } }, { inviteCode: string }>({
+    validateClientCode: builder.mutation<InviteValidation, { inviteCode: string }>({
       query: (data) => ({
         url: CLIENT_REGISTRATION.VALIDATE_CODE,
         method: 'POST',
@@ -284,12 +352,22 @@ export const clientApi = createApi({
         body: data,
       }),
     }),
+
+    joinAgency: builder.mutation<ApiResponse, { inviteCode: string; email: string; password: string }>({
+      query: (data) => ({
+        url: CLIENT_REGISTRATION.JOIN_AGENCY,
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
 export const {
   useClientLoginMutation,
   useClientForgotPasswordMutation,
+  useGetAgenciesQuery,
+  useSwitchAgencyMutation,
   useGetClientDashboardQuery,
   useGetAssignedWorkersQuery,
   useGetWorkerProfileQuery,
@@ -316,4 +394,5 @@ export const {
   useDeleteUserMutation,
   useValidateClientCodeMutation,
   useRegisterClientMutation,
+  useJoinAgencyMutation,
 } = clientApi;

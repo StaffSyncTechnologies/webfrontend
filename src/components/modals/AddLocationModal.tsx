@@ -177,7 +177,15 @@ export function AddLocationModal({ open, onClose, editLocation }: AddLocationMod
           isPrimary: editLocation.isPrimary,
         });
       } else {
-        setForm({ name: '', addressLine1: '', addressLine2: '', city: '', postcode: '', country: 'uk', isPrimary: false });
+        setForm({ 
+          name: 'Head Office', 
+          addressLine1: '123 Business Avenue', 
+          addressLine2: 'Suite 100', 
+          city: 'London', 
+          postcode: 'EC1A 1BB', 
+          country: 'uk', 
+          isPrimary: true 
+        });
       }
     }
   }, [open, editLocation]);

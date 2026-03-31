@@ -19,6 +19,7 @@ export interface StatsCardProps {
     label?: string;
     direction: 'up' | 'down' | 'neutral';
   };
+  onClick?: () => void | Promise<void>;
 }
 
 const StyledCard = styled(Paper, {
@@ -145,9 +146,10 @@ export function StatsCard({
   iconBgColor,
   iconColor,
   trend,
+  onClick,
 }: StatsCardProps) {
   return (
-    <Card>
+    <Card onClick={onClick} sx={{ cursor: onClick ? 'pointer' : 'default' }}>
       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
         <Box>
           <StatsTitle>{title}</StatsTitle>

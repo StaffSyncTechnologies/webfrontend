@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../components/auth';
 import { AuthGuard } from '../components/auth/AuthGuard';
+import { RoleBasedRoute } from '../components/auth/RoleBasedRoute';
 import { 
   Login, 
+  ClientLogin,
   Register, 
   NotFound, 
   RoleDashboard,
@@ -24,6 +26,16 @@ import {
   ContactUsPage,
   InviteRequestsPage,
 } from '../pages';
+import { 
+  ClientWorkersPage,
+  ClientShiftsPage,
+  RequestShiftPage,
+  ClientTimesheetsPage,
+  ClientInvoicesPage,
+  ClientReportsPage,
+  ClientSettingsPage,
+  ClientShiftDetailsPage,
+} from '../pages/client/index';
 import { BillingPage } from '../pages/settings';
 import { CreateShift, ShiftDetails, EditShift } from '../pages/shifts';
 import { WorkerDetails } from '../pages/workers';
@@ -38,6 +50,7 @@ import OnboardingFlow from '../pages/auth/onboarding';
 import ForgotPasswordPage from '../pages/auth/forgotPassword';
 import ResetPasswordPage from '../pages/auth/resetPassword';
 import { AcceptInvite, CompleteRegistration } from '../pages/auth';
+import { EnhancedClientOnboarding } from '../pages/auth/EnhancedClientOnboarding';
 
 export function AppRouter() {
   return (
@@ -55,6 +68,14 @@ export function AppRouter() {
             element={
               <PublicRoute>
                 <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/client-login"
+            element={
+              <PublicRoute>
+                <ClientLogin />
               </PublicRoute>
             }
           />
@@ -125,6 +146,16 @@ export function AppRouter() {
             }
           />
 
+          {/* Enhanced Client Onboarding (multi-agency) */}
+          <Route
+            path="/client/onboarding"
+            element={
+              <PublicRoute>
+                <EnhancedClientOnboarding />
+              </PublicRoute>
+            }
+          />
+
           {/* Client Invite Flow */}
           <Route
             path="/client/register"
@@ -153,10 +184,32 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/workers"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute
+                  clientComponent={<ClientWorkersPage />}
+                  adminComponent={<WorkersPage />}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workers/:id"
+            element={
+              <ProtectedRoute>
+                <WorkerDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/shifts"
             element={
               <ProtectedRoute>
-                <ShiftsPage />
+                <RoleBasedRoute
+                  clientComponent={<ClientShiftsPage />}
+                  adminComponent={<ShiftsPage />}
+                />
               </ProtectedRoute>
             }
           />
@@ -185,18 +238,54 @@ export function AppRouter() {
             }
           />
           <Route
-            path="/workers"
+            path="/timesheet"
             element={
               <ProtectedRoute>
-                <WorkersPage />
+                <RoleBasedRoute
+                  clientComponent={<ClientTimesheetsPage />}
+                  adminComponent={<TimesheetPage />}
+                />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/workers/:id"
+            path="/timesheet/:id"
             element={
               <ProtectedRoute>
-                <WorkerDetails />
+                <TimesheetDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute
+                  clientComponent={<ClientInvoicesPage />}
+                  adminComponent={<InvoicesPage />}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute
+                  clientComponent={<ClientReportsPage />}
+                  adminComponent={<ReportsPage />}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute
+                  clientComponent={<ClientSettingsPage />}
+                  adminComponent={<SettingsPage />}
+                />
               </ProtectedRoute>
             }
           />
@@ -297,50 +386,10 @@ export function AppRouter() {
             }
           />
           <Route
-            path="/timesheet"
-            element={
-              <ProtectedRoute>
-                <TimesheetPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/timesheet/:id"
-            element={
-              <ProtectedRoute>
-                <TimesheetDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/invoices"
-            element={
-              <ProtectedRoute>
-                <InvoicesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <ReportsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/compliance"
             element={
               <ProtectedRoute>
                 <CompliancePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
               </ProtectedRoute>
             }
           />
@@ -367,6 +416,72 @@ export function AppRouter() {
                 <HelpPage />
               </ProtectedRoute>
             }
+          />
+          {/* client management */}
+          <Route
+          path="/client/shifts"
+          element={
+            <ProtectedRoute>
+              <ClientShiftsPage/>
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/client/shifts/request"
+          element={
+            <ProtectedRoute>
+              <RequestShiftPage/>
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/client/shifts/:id"
+          element={
+            <ProtectedRoute>
+              <ClientShiftDetailsPage/>
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/client/invoices"
+          element={
+            <ProtectedRoute>
+            <ClientInvoicesPage/>
+            </ProtectedRoute>
+           
+          }
+          />
+          <Route
+          path="/client/settings"
+          element={
+            <ProtectedRoute>
+              <ClientSettingsPage/>
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/client/workers"
+          element={
+            <ProtectedRoute>
+              <ClientWorkersPage/>
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/client/reports"
+          element={
+            <ProtectedRoute>
+              <ClientReportsPage/>
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/client/timesheets"
+          element={
+            <ProtectedRoute>
+              <ClientTimesheetsPage/>
+            </ProtectedRoute>
+          }
           />
           {/* Fallback for unknown routes */}
           <Route path="*" element={<NotFound />} />

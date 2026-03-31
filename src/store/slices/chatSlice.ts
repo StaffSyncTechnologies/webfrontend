@@ -1,13 +1,13 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { CHAT } from '../../utilities/endpoint.ts';
-import { axiosBaseQuery } from '../../utilities/axiosBaseQuery.ts';
+import { CHAT } from '../../utilities/endpoint';
+import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
 import type { 
   ChatRoom,
   ChatMessage,
   GetOrCreateRoomRequest,
   UnreadCountResponse,
   AssignedWorker,
-} from '../../types/api.ts';
+} from '../../types/api';
 
 interface ApiResponse<T> {
   success: boolean;

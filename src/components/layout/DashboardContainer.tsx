@@ -8,7 +8,7 @@ import LogoBrand from './LogoBrand';
 import { NotificationDropdown, ProfileModal } from '../modals';
 import { useAppSelector } from '../../store';
 import { useGetUnreadCountQuery } from '../../store/slices/notificationSlice';
-import type { User, Worker } from '../../types/api';
+import type { User, Worker, ClientAuthUser } from '../../types/api';
 import type { UserRole } from '../../utilities/roles';
 
 const SIDEBAR_WIDTH = 240;
@@ -284,7 +284,7 @@ export const GridCols2 = styled(GridRow)({
   },
 });
 
-function getUserRole(user: User | Worker | null): UserRole | null {
+function getUserRole(user: User | Worker | ClientAuthUser | null): UserRole | null {
   if (!user) return null;
   if ('role' in user) {
     return user.role as UserRole;
@@ -304,7 +304,10 @@ export function DashboardContainer({
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
-  const { data: unreadData } = useGetUnreadCountQuery(undefined, { pollingInterval: 15000 });
+  const { data: unreadData } = useGetUnreadCountQuery(undefined, { 
+    pollingInterval: 15000,
+    skip: !user || !('role' in user) || (!!user.role && user.role.startsWith('CLIENT_')) // Skip for client users
+  });
   
   const unreadCount = unreadData?.count || 0;
   const role = getUserRole(user);
@@ -325,8 +328,9 @@ export function DashboardContainer({
     sessionStorage.clear();
     // Set a flag to force persist migration on next load
     localStorage.setItem('forceAuthClear', 'true');
-    // Force immediate redirect
-    window.location.replace('/login');
+    // Force immediate redirect to correct login page based on user role
+    const isClientUser = role === 'CLIENT_ADMIN' || role === 'CLIENT_USER';
+    window.location.replace(isClientUser ? '/client-login' : '/login');
   };
 
   const handleNavigation = (path: string) => {
@@ -463,11 +467,14 @@ export function DashboardContainer({
             </SearchWrapper>
           </HeaderLeft>
           <HeaderRight>
-            <NotificationButton onClick={() => setNotificationOpen(true)}>
-              <Badge badgeContent={unreadCount} color="error">
-                <Notifications />
-              </Badge>
-            </NotificationButton>
+            {/* Only show notifications for non-client users */}
+            {(!user || !('role' in user) || !(user.role && user.role.startsWith('CLIENT_'))) && (
+              <NotificationButton onClick={() => setNotificationOpen(true)}>
+                <Badge badgeContent={unreadCount} color="error">
+                  <Notifications />
+                </Badge>
+              </NotificationButton>
+            )}
             <UserAvatar 
               src={user && 'profilePicture' in user ? (user.profilePicture as string | undefined) : undefined}
               alt={user?.fullName ?? 'User'}

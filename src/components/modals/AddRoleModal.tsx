@@ -1,6 +1,8 @@
 import { Close } from '@mui/icons-material';
-import { Box, styled, TextField, IconButton, Modal, Switch } from '@mui/material';
+import { Box, styled, TextField, IconButton, Modal, Switch, CircularProgress } from '@mui/material';
 import { colors } from '../../utilities/colors';
+import { useToast } from '../../hooks';
+import { useState } from 'react';
 
 // ============ STYLED COMPONENTS ============
 const ModalOverlay = styled(Box)({
@@ -133,6 +135,46 @@ const permissions = [
 
 // ============ COMPONENT ============
 export function AddRoleModal({ open, onClose }: AddRoleModalProps) {
+  const toast = useToast();
+  const [roleName, setRoleName] = useState('Operations Manager');
+  const [permissionsState, setPermissionsState] = useState<Record<string, boolean>>(
+    permissions.reduce((acc, perm) => ({ ...acc, [perm.key]: perm.defaultChecked }), {})
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handlePermissionChange = (key: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPermissionsState({ ...permissionsState, [key]: event.target.checked });
+  };
+
+  const handleSubmit = async () => {
+    if (!roleName.trim()) {
+      toast.error('Please enter a role name');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const selectedPermissions = Object.entries(permissionsState)
+        .filter(([_, enabled]) => enabled)
+        .map(([key]) => key);
+
+      console.log('Creating role:', { name: roleName, permissions: selectedPermissions });
+      toast.success('Role created successfully');
+      
+      // Reset form
+      setRoleName('');
+      setPermissionsState(permissions.reduce((acc, perm) => ({ ...acc, [perm.key]: perm.defaultChecked }), {}));
+      onClose();
+    } catch (error) {
+      toast.error('Failed to create role');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Modal open={open} onClose={onClose}>
       <ModalOverlay>
@@ -141,7 +183,11 @@ export function AddRoleModal({ open, onClose }: AddRoleModalProps) {
           <ModalTitle>Add New Role</ModalTitle>
           <ModalFormGroup>
             <ModalLabel>Role Name<span className="required">*</span></ModalLabel>
-            <StyledInput placeholder="Enter Role name" />
+            <StyledInput 
+              placeholder="Enter Role name" 
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
+            />
           </ModalFormGroup>
           <Box sx={{ marginBottom: '16px' }}>
             <ModalLabel style={{ marginBottom: '4px' }}>Permissions</ModalLabel>
@@ -154,13 +200,19 @@ export function AddRoleModal({ open, onClose }: AddRoleModalProps) {
                   <div className="name">{perm.name}</div>
                   <div className="desc">{perm.desc}</div>
                 </PermissionInfo>
-                <Switch defaultChecked={perm.defaultChecked} color="primary" />
+                <Switch 
+                  checked={permissionsState[perm.key] || false}
+                  onChange={handlePermissionChange(perm.key)}
+                  color="primary" 
+                />
               </PermissionItem>
             ))}
           </Box>
           <ModalButtonsRow>
-            <CancelBtn onClick={onClose}>Cancel</CancelBtn>
-            <SubmitBtn onClick={onClose}>Add Role</SubmitBtn>
+            <CancelBtn onClick={onClose} disabled={isLoading}>Cancel</CancelBtn>
+            <SubmitBtn onClick={handleSubmit} disabled={isLoading}>
+              {isLoading ? <CircularProgress size={18} sx={{ color: 'white' }} /> : 'Add Role'}
+            </SubmitBtn>
           </ModalButtonsRow>
         </ModalCard>
       </ModalOverlay>

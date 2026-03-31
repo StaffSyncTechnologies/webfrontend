@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { colors } from '../../utilities/colors';
 import { getRoutesForRole } from '../../routes';
 import { useAppSelector } from '../../store';
-import type { User, Worker } from '../../types/api';
+import type { User, Worker, ClientAuthUser } from '../../types/api';
 import type { UserRole } from '../../utilities/roles';
 
 const SidebarContainer = styled(Box)({
@@ -58,7 +58,7 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
-function getUserRole(user: User | Worker | null): UserRole | null {
+function getUserRole(user: User | Worker | ClientAuthUser | null): UserRole | null {
   if (!user) return null;
   if ('role' in user) {
     return user.role as UserRole;
@@ -69,7 +69,7 @@ function getUserRole(user: User | Worker | null): UserRole | null {
 export function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state: { auth: { user: User | Worker | null } }) => state.auth);
+  const { user } = useAppSelector((state: { auth: { user: User | Worker | ClientAuthUser | null } }) => state.auth);
   
   const role = getUserRole(user);
   const { main: mainNavRoutes, bottom: bottomNavRoutes } = getRoutesForRole(role);
@@ -85,8 +85,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     sessionStorage.clear();
     // Set a flag to force persist migration on next load
     localStorage.setItem('forceAuthClear', 'true');
-    // Force immediate redirect - don't wait for Redux
-    window.location.replace('/login');
+    // Force immediate redirect to correct login page based on user role
+    const isClientUser = role === 'CLIENT_ADMIN' || role === 'CLIENT_USER';
+    window.location.replace(isClientUser ? '/client-login' : '/login');
   };
 
   const handleNavigation = (path: string) => {

@@ -24,6 +24,7 @@ export const colors = {
     success: '#34A853',   // Green - Success, Approved, Valid
     warning: '#FBBC04',   // Yellow - Warning, Pending, Expiring
     error: '#EA4335',     // Red - Error, Expired, Blocked
+    info: '#00AFEF',      // Blue - Information, In Progress
   },
 
   // Semantic aliases for easier usage
@@ -50,6 +51,14 @@ export const colors = {
     hover: '#0099D6',
     active: '#0088C2',
     disabled: '#9CA3AF',
+  },
+
+  // Neutral colors for UI elements
+  neutral: {
+    white: '#FFFFFF',
+    grey100: '#F5F7FA',
+    grey200: '#E5E7EB',
+    grey300: '#D1D5DB',
   },
 } as const;
 

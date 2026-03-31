@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { CLIENT_REGISTRATION } from '../../utilities/endpoint.ts';
-import { axiosBaseQuery } from '../../utilities/axiosBaseQuery.ts';
+import { CLIENT_REGISTRATION } from '../../utilities/endpoint';
+import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
 import type { 
   ValidateInviteCodeRequest,
   ValidateInviteCodeResponse,
@@ -11,7 +11,7 @@ import type {
   VerifyEmailResponse,
   ResendVerificationRequest,
   ResendVerificationResponse
-} from '../../types/api.ts';
+} from '../../types/api';
 
 export const clientRegistrationApi = createApi({
   reducerPath: 'clientRegistrationApi',

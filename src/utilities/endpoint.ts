@@ -5,7 +5,7 @@
 
 /// <reference types="../vite-env" />
 
-export const API_BASE = 'https://backend-rp5c.onrender.com';
+export const API_BASE = 'http://localhost:3001';
 
 // Dashboard endpoints
 export const DASHBOARD = {
@@ -190,9 +190,15 @@ export const HR = {
 
 // Client portal endpoints
 export const CLIENT = {
+  BASE_URL: `${API_BASE}/api/v1/client`,
+  
   // Authentication
   LOGIN: `${API_BASE}/api/v1/client/auth/login`,
   FORGOT_PASSWORD: `${API_BASE}/api/v1/client/auth/forgot-password`,
+  
+  // Agency management
+  AGENCIES: `${API_BASE}/api/v1/client/agencies`,
+  SWITCH_AGENCY: `${API_BASE}/api/v1/client/switch-agency`,
   
   // Dashboard
   DASHBOARD: `${API_BASE}/api/v1/client/dashboard`,
@@ -211,12 +217,15 @@ export const CLIENT = {
   
   // Timesheets
   TIMESHEETS: `${API_BASE}/api/v1/client/timesheets`,
+  WEEKLY_TIMESHEETS: `${API_BASE}/api/v1/client/timesheets/weekly`,
+  WEEKLY_TIMESHEET_DETAILS: `${API_BASE}/api/v1/client/timesheets/weekly/details`,
   TIMESHEET_DETAILS: (timesheetId: string) => `${API_BASE}/api/v1/client/timesheets/${timesheetId}`,
   APPROVE_TIMESHEET: (timesheetId: string) => `${API_BASE}/api/v1/client/timesheets/${timesheetId}/approve`,
   DISPUTE_TIMESHEET: (timesheetId: string) => `${API_BASE}/api/v1/client/timesheets/${timesheetId}/dispute`,
   
   // Invoices
   INVOICES: `${API_BASE}/api/v1/client/invoices`,
+  GENERATE_INVOICE: `${API_BASE}/api/v1/client/invoices/generate`,
   INVOICE_DETAILS: (invoiceId: string) => `${API_BASE}/api/v1/client/invoices/${invoiceId}`,
   DOWNLOAD_INVOICE: (invoiceId: string) => `${API_BASE}/api/v1/client/invoices/${invoiceId}/download`,
   
@@ -237,6 +246,7 @@ export const CLIENT_REGISTRATION = {
   VALIDATE_CODE: `${API_BASE}/api/v1/client-registration/validate-code`,
   REGISTER: `${API_BASE}/api/v1/client-registration/register`,
   VERIFY_EMAIL: `${API_BASE}/api/v1/client-registration/verify-email`,
+  JOIN_AGENCY: `${API_BASE}/api/v1/enhanced-client-registration/join-agency`,
   RESEND_VERIFICATION: `${API_BASE}/api/v1/client-registration/resend-verification`,
   AGENCY_INFO: (inviteCode: string) => `${API_BASE}/api/v1/client-registration/agency/${inviteCode}`,
 } as const;

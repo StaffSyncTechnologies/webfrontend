@@ -225,6 +225,31 @@ const AccountCard = styled(Box)<{ selected?: boolean }>(({ selected }) => ({
   },
 }));
 
+const ClientLoginCard = styled(Box)({
+  padding: '24px',
+  borderRadius: '12px',
+  border: `2px solid ${colors.primary.navy}`,
+  backgroundColor: 'rgba(26, 45, 74, 0.05)',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+  '&:hover': {
+    borderColor: colors.primary.navy,
+    backgroundColor: 'rgba(26, 45, 74, 0.1)',
+  },
+});
+
+const LoginArrow = styled('span')({
+  fontSize: '24px',
+  fontWeight: 'bold',
+  color: colors.primary.navy,
+  marginTop: '8px',
+});
+
 const RadioIndicator = styled(Box)<{ selected?: boolean }>(({ selected }) => ({
   position: 'absolute',
   top: '16px',
@@ -251,6 +276,22 @@ const IconWrapper = styled(Box)({
   height: '48px',
   borderRadius: '12px',
   backgroundColor: colors.primary.blue,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: '16px',
+  '& svg': {
+    color: colors.secondary.white,
+    fontSize: '24px',
+  },
+});
+
+// Override for ClientLoginCard
+const ClientLoginCardIconWrapper = styled(Box)({
+  width: '48px',
+  height: '48px',
+  borderRadius: '12px',
+  backgroundColor: colors.primary.navy,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -639,11 +680,24 @@ const OnboardingFlow = () => {
                   <FeatureItem>Manage invoices</FeatureItem>
                 </FeatureList>
               </AccountCard>
+              <ClientLoginCard onClick={() => navigate('/client-login')}>
+                <ClientLoginCardIconWrapper><Storefront /></ClientLoginCardIconWrapper>
+                <CardTitle>CLIENT LOGIN</CardTitle>
+                <CardSubtitle>Sign in to your client account</CardSubtitle>
+                <LoginArrow>→</LoginArrow>
+              </ClientLoginCard>
             </CardsContainer>
             <ContinueButton onClick={handleContinue} disabled={!isStep1Valid}>
               Continue <ArrowForward sx={{ fontSize: 18 }} />
             </ContinueButton>
-            <LoginLink>Already have an account?<a onClick={() => navigate('/login')}>Login</a></LoginLink>
+            <LoginLink>
+              Already have an account?
+              {accountType === 'client' ? (
+                <a onClick={() => navigate('/client-login')}>Client Login</a>
+              ) : (
+                <a onClick={() => navigate('/login')}>Staff Login</a>
+              )}
+            </LoginLink>
           </>
         )}
 
