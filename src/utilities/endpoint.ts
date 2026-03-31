@@ -5,7 +5,7 @@
 
 /// <reference types="../vite-env" />
 
-export const API_BASE = 'https://backend-rp5c.onrender.com/api/v1';
+export const API_BASE = 'https://backend-rp5c.onrender.com';
 
 // Dashboard endpoints
 export const DASHBOARD = {
