@@ -61,7 +61,7 @@ export const ClientChat: React.FC<ClientChatProps> = ({ clientUserId }) => {
   const [markAsRead] = useClientMarkMessagesAsReadMutation();
 
   // Get rooms data properly
-  const roomsData = rooms?.data || [];
+  const roomsData: ChatRoom[] = rooms?.data || [];
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

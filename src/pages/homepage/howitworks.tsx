@@ -8,6 +8,7 @@ const Section = styled(Box)({
   minHeight: '75vh',
   justifyContent: 'center',
   alignItems: 'center',
+  position: 'relative',
   top: 0,
   zIndex: 0,
   overflow: 'hidden',
@@ -16,7 +17,20 @@ const Section = styled(Box)({
   },
 });
 
-
+const LogoBackground = styled(Box)({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundImage: 'url(/logo.png)',
+  backgroundRepeat: 'repeat',
+  backgroundSize: '120px',
+  opacity: 0.04,
+  maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 80%)',
+  WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 80%)',
+  pointerEvents: 'none',
+});
 
 const Content = styled(Box)({
   position: 'relative',
@@ -179,6 +193,7 @@ const steps = [
 const HowItWorks = () => {
   return (
     <Section id="how-it-works">
+      <LogoBackground />
       <Content>
         <Badge>
           <span>How It Works</span>

@@ -42,6 +42,22 @@ const HeroSection = styled(Box)({
   },
 });
 
+const LogoBackground = styled(Box)({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundImage: 'url(/logo.png)',
+  backgroundRepeat: 'repeat',
+  backgroundSize: '120px',
+  opacity: 0.04,
+  maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 80%)',
+  WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 80%)',
+  pointerEvents: 'none',
+  zIndex: 0,
+});
+
 const WaveBackground = styled(Box)({
   position: 'absolute',
   top: 0,
@@ -252,6 +268,7 @@ const Body = () => {
   return (
     <main style={{ height: '100vh' }}>
       <HeroSection>
+        <LogoBackground />
         <WaveBackground>
           <svg viewBox="0 0 1200 300" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
             <defs>
