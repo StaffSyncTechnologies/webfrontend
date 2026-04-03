@@ -2,6 +2,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useGetSubscriptionSummaryQuery } from '../../store/slices/subscriptionSlice';
 import { SubscriptionExpiredPage } from '../../pages/SubscriptionExpiredPage';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -64,7 +66,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 function SubscriptionGuard({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const { data: summary, isLoading } = useGetSubscriptionSummaryQuery();
+  const { user } = useSelector((state: RootState) => state.auth);
+  
+  // Skip subscription check for client users - they don't have agency subscriptions
+  const isClientUser = user?.role === 'CLIENT_ADMIN' || user?.role === 'CLIENT_USER';
+  
+  if (isClientUser) {
+    return <>{children}</>;
+  }
+  
+  const { data: summary, isLoading } = useGetSubscriptionSummaryQuery(undefined, {
+    skip: isClientUser
+  });
 
   // Don't block while loading
   if (isLoading || !summary) {
