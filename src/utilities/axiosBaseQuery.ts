@@ -75,7 +75,7 @@ export const axiosBaseQuery = ({
         const state = store.getState();
         const userRole = state.auth.user?.role;
         const isClientUser = userRole === 'CLIENT_ADMIN' || userRole === 'CLIENT_USER';
-        const loginPage = isClientUser ? '/client-login' : '/login';
+        const loginPage = isClientUser ? '/#/client-login' : '/#/login';
         
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');

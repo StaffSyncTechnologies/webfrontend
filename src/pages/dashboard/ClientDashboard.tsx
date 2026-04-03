@@ -166,12 +166,18 @@ export function ClientDashboard() {
   const [shiftStatus, setShiftStatus] = useState('all');
   
   // Get current client user
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, token } = useSelector((state: RootState) => state.auth);
 
-  // Fetch client dashboard data
-  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useGetClientDashboardQuery();
-  const { data: shiftsData } = useGetClientShiftsQuery({ status: shiftStatus !== 'all' ? shiftStatus : undefined });
-  const { data: timesheetsData } = useGetClientTimesheetsQuery({ status: 'PENDING' });
+  // Fetch client dashboard data - only if token exists
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useGetClientDashboardQuery(undefined, {
+    skip: !token || !localStorage.getItem('authToken')
+  });
+  const { data: shiftsData } = useGetClientShiftsQuery({ status: shiftStatus !== 'all' ? shiftStatus : undefined }, {
+    skip: !token || !localStorage.getItem('authToken')
+  });
+  const { data: timesheetsData } = useGetClientTimesheetsQuery({ status: 'PENDING' }, {
+    skip: !token || !localStorage.getItem('authToken')
+  });
 
   // Derived stats from real backend data
   const stats = useMemo(() => {

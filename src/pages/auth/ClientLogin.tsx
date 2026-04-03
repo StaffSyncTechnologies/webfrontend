@@ -190,9 +190,22 @@ export function ClientLogin() {
   useEffect(() => {
     if (isSuccess) {
       toast.success('Login successful!');
+      
+      // Store token immediately to prevent race condition
+      if (data?.data?.token) {
+        localStorage.setItem('authToken', data.data.token);
+        if (data.data.token) {
+          localStorage.setItem('refreshToken', data.data.token);
+        }
+      }
+      
       const userRole = data?.data?.user?.role as UserRole | undefined;
       const redirectPath = from || getDashboardPath(userRole);
-      navigate(redirectPath, { replace: true });
+      
+      // Add a small delay to ensure token is stored before navigation
+      setTimeout(() => {
+        navigate(redirectPath, { replace: true });
+      }, 100);
     }
     if (isError) {
       toast.error('Invalid credentials. Please try again.');

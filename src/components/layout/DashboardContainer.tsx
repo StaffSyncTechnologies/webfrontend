@@ -330,7 +330,7 @@ export function DashboardContainer({
     localStorage.setItem('forceAuthClear', 'true');
     // Force immediate redirect to correct login page based on user role
     const isClientUser = role === 'CLIENT_ADMIN' || role === 'CLIENT_USER';
-    window.location.replace(isClientUser ? '/client-login' : '/login');
+    window.location.replace(isClientUser ? '/#/client-login' : '/#/login');
   };
 
   const handleNavigation = (path: string) => {

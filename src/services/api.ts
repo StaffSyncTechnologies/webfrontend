@@ -46,7 +46,7 @@ api.interceptors.response.use(
       const state = store.getState();
       const userRole = state.auth.user?.role;
       const isClientUser = userRole === 'CLIENT_ADMIN' || userRole === 'CLIENT_USER';
-      const loginPage = isClientUser ? '/client-login' : '/login';
+      const loginPage = isClientUser ? '/#/client-login' : '/#/login';
       
       // Use React Router navigation instead of hard redirect
       // This prevents "Not Found" issues on page reload
