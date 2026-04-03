@@ -23,7 +23,6 @@ import { Box, styled, Select, MenuItem, Button, Chip, CircularProgress } from '@
 import { DashboardContainer, GridCols4 } from '../../components/layout';
 import { StatsCard } from '../../components/controls';
 import AgencySelector from '../../components/client/AgencySelector';
-import { ClientChat } from '../../components/client/ClientChat';
 import { colors } from '../../utilities/colors';
 
 // ============ STYLED COMPONENTS ============
@@ -320,11 +319,6 @@ export function ClientDashboard() {
           }}
         />
       </GridCols4>
-
-      {/* Chat Section */}
-      <Box sx={{ marginTop: '32px' }}>
-        <ClientChat clientUserId={user?.id || ''} />
-      </Box>
 
       {/* Filters */}
       <FilterRow>
