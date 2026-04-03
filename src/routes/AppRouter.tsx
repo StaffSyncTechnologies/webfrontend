@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../components/auth';
 import { AuthGuard } from '../components/auth/AuthGuard';
 import { RoleBasedRoute } from '../components/auth/RoleBasedRoute';
@@ -54,7 +54,7 @@ import { EnhancedClientOnboarding } from '../pages/auth/EnhancedClientOnboarding
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthGuard>
         <Routes>
           {/* Homepage - accessible to all users */}
@@ -487,7 +487,7 @@ export function AppRouter() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthGuard>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

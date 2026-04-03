@@ -58,17 +58,19 @@ const Subtitle = styled('p')({
 
 const Pricing = () => {
   return (
-    <Section id="pricing">
-      <Content>
-        <Badge>
-          <span>Pricing</span>
-        </Badge>
-        <Title>Simple Pricing Plan</Title>
-        <Subtitle>Scale your agency without hidden fees. Choose the plan that fit your goal.</Subtitle>
-        
-        <PricingPlans showTitle={false} />
-      </Content>
-    </Section>
+   
+      <Section id="pricing">
+        <Content>
+          <Badge>
+            <span>Pricing</span>
+          </Badge>
+          <Title>Simple Pricing Plan</Title>
+          <Subtitle>Scale your agency without hidden fees. Choose the plan that fit your goal.</Subtitle>
+          
+          <PricingPlans showTitle={false} />
+        </Content>
+      </Section>
+   
   );
 };
 

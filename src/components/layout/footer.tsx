@@ -14,12 +14,29 @@ const NewsletterSection = styled(Box)({
   padding: '32px 48px',
   backgroundColor: colors.secondary.white,
   borderBottom: `1px solid ${colors.border.light}`,
+  position: 'relative',
+  overflow: 'hidden',
   '@media (max-width: 768px)': {
     flexDirection: 'column',
     gap: '24px',
     padding: '24px 16px',
     alignItems: 'flex-start',
   },
+});
+
+const LogoBackgroundPattern = styled(Box)({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundImage: 'url(/logo.png)',
+  backgroundRepeat: 'repeat',
+  backgroundSize: '100px',
+  opacity: 0.15,
+  pointerEvents: 'none',
+  zIndex: 0,
+  backgroundColor: 'rgba(0,0,0,0.02)',
 });
 
 const NewsletterText = styled(Box)({
@@ -212,18 +229,21 @@ const Footer = () => {
   return (
     <FooterWrapper>
       <NewsletterSection>
-        <NewsletterText>
-          <h3>Join our newsletter</h3>
-          <p>We'll send you a nice letter once per week. No spam.</p>
-        </NewsletterText>
-        <NewsletterForm>
-          <EmailInput
-            placeholder="Enter your email"
-            variant="outlined"
-            size="small"
-          />
-          <Button variant="primary">Subscribe</Button>
-        </NewsletterForm>
+        <LogoBackgroundPattern />
+        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', '@media (max-width: 768px)': { flexDirection: 'column', gap: '24px', alignItems: 'flex-start' } }}>
+          <NewsletterText>
+            <h3>Join our newsletter</h3>
+            <p>We'll send you a nice letter once per week. No spam.</p>
+          </NewsletterText>
+          <NewsletterForm>
+            <EmailInput
+              placeholder="Enter your email"
+              variant="outlined"
+              size="small"
+            />
+            <Button variant="primary">Subscribe</Button>
+          </NewsletterForm>
+        </Box>
       </NewsletterSection>
 
       <MainFooter>

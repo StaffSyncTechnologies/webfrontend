@@ -253,7 +253,7 @@ export const AgencyChat: React.FC<AgencyChatProps> = ({ agencyUserId }) => {
                   <ListItemButton
                     key={roomId}
                     onClick={() => handleRoomSelect(room)}
-                    selected={selectedRoom?.id === roomId} // @ts-ignore
+                    selected={(selectedRoom as any)?.id === roomId}
                     sx={{
                       borderBottom: 1,
                       borderColor: 'divider',

@@ -185,33 +185,34 @@ const features = [
 
 const Features = () => {
   return (
-    <FeaturesSection id="features">
-      <Badge>Features</Badge>
-      <Title>Powerful tools you need for agencies and companies</Title>
-      <Subtitle>Everything you need to manage your workforce</Subtitle>
-      
-      <FeaturesGrid>
-        {features.map((feature, index) => (
-          <FeatureCard key={index}>
-            <IconWrapper className="icon-wrapper">{feature.icon}</IconWrapper>
-            <FeatureTitle>{feature.title}</FeatureTitle>
-            <FeatureDescription>{feature.description}</FeatureDescription>
-            {feature.showAppBadges && (
-              <AppBadges>
-                <AppBadge>
-                  <Apple />
-                  <span>iOS</span>
-                </AppBadge>
-                <AppBadge>
-                  <Android />
-                  <span>Android</span>
-                </AppBadge>
-              </AppBadges>
-            )}
-          </FeatureCard>
-        ))}
-      </FeaturesGrid>
-    </FeaturesSection>
+      <FeaturesSection id="features">
+        <Badge>Features</Badge>
+        <Title>Powerful tools you need for agencies and companies</Title>
+        <Subtitle>Everything you need to manage your workforce</Subtitle>
+        
+        <FeaturesGrid>
+          {features.map((feature, index) => (
+            <FeatureCard key={index}>
+              <IconWrapper className="icon-wrapper">{feature.icon}</IconWrapper>
+              <FeatureTitle>{feature.title}</FeatureTitle>
+              <FeatureDescription>{feature.description}</FeatureDescription>
+              {feature.showAppBadges && (
+                <AppBadges>
+                  <AppBadge>
+                    <Apple />
+                    <span>iOS</span>
+                  </AppBadge>
+                  <AppBadge>
+                    <Android />
+                    <span>Android</span>
+                  </AppBadge>
+                </AppBadges>
+              )}
+            </FeatureCard>
+          ))}
+        </FeaturesGrid>
+      </FeaturesSection>
+   
   );
 };
 
