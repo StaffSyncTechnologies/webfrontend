@@ -10,17 +10,29 @@ interface PricingPlansProps {
 }
 
 const PlansContainer = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+  display: 'flex',
+  flexDirection: 'column',
   gap: '20px',
   maxWidth: '1400px',
   margin: '0 auto',
+});
+
+const TopTierGrid = styled(Box)({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: '20px',
   '@media (max-width: 1200px)': {
     gridTemplateColumns: 'repeat(2, 1fr)',
   },
   '@media (max-width: 800px)': {
     gridTemplateColumns: '1fr',
   },
+});
+
+const EnterpriseContainer = styled(Box)({
+  width: '100%',
+  maxWidth: '600px',
+  margin: '0 auto',
 });
 
 const PlanCard = styled(Box, {
@@ -238,13 +250,13 @@ function mapPlanToDisplay(plan: Plan) {
   return {
     id: plan.id,
     name: isProfessional ? `${plan.name} 👑` : plan.name,
-    price: isEnterprise ? 'Custom' : isFree ? '£0' : `£${plan.monthlyPricePerWorker}`,
+    price: isEnterprise ? 'Custom' : isFree ? '£0' : `£${(plan.monthlyPricePerWorker / 100).toFixed(2)}`,
     period: isEnterprise ? '' : isFree ? '/month' : '/worker/month',
     billing: isEnterprise 
       ? 'Contact us for pricing.' 
       : isFree 
         ? '180-day free trial, then upgrade to continue.'
-        : `£${plan.yearlyPricePerWorker}/worker/month billed annually. Save £${yearlySavings}/year with ${exampleWorkers} workers.`,
+        : `£${(plan.yearlyPricePerWorker / 100).toFixed(2)}/worker/month billed annually. Save £${yearlySavings}/year with ${exampleWorkers} workers.`,
     features: plan.features,
     buttonText: isFree ? 'Start Free Trial' : isEnterprise ? 'Contact Sales' : 'Get Started',
     featured: isProfessional,
@@ -258,6 +270,9 @@ const PricingPlans = ({ onSelectPlan, showTitle = true }: PricingPlansProps) => 
 
   const backendPlans = plansData?.plans ?? fallbackPlans;
   const displayPlans = backendPlans.map(mapPlanToDisplay);
+
+  const topTierPlans = displayPlans.filter(p => p.id !== 'ENTERPRISE');
+  const enterprisePlan = displayPlans.find(p => p.id === 'ENTERPRISE');
 
   const handleSelectPlan = (planId: string) => {
     if (onSelectPlan) {
@@ -285,31 +300,60 @@ const PricingPlans = ({ onSelectPlan, showTitle = true }: PricingPlansProps) => 
         </Box>
       ) : (
         <PlansContainer>
-          {displayPlans.map(plan => (
-            <PlanCard key={plan.id} featured={plan.featured}>
-              {plan.popular && <PopularBadge>MOST POPULAR</PopularBadge>}
-              <PlanName featured={plan.featured}>{plan.name}</PlanName>
-              <PlanPrice featured={plan.featured}>
-                <span className="amount">{plan.price}</span>
-                <span className="period">{plan.period}</span>
-              </PlanPrice>
-              <BillingNote featured={plan.featured}>{plan.billing}</BillingNote>
-              <FeatureList>
-                {plan.features.map((feature, index) => (
-                  <FeatureItem key={index} featured={plan.featured}>
-                    <Check />
-                    {feature}
-                  </FeatureItem>
-                ))}
-              </FeatureList>
-              <PlanButton
-                featured={plan.featured}
-                onClick={() => handleSelectPlan(plan.id)}
-              >
-                {plan.buttonText}
-              </PlanButton>
-            </PlanCard>
-          ))}
+          <TopTierGrid>
+            {topTierPlans.map((plan) => (
+              <PlanCard key={plan.id} featured={plan.featured}>
+                {plan.popular && <PopularBadge>MOST POPULAR</PopularBadge>}
+                <PlanName featured={plan.featured}>{plan.name}</PlanName>
+                <PlanPrice featured={plan.featured}>
+                  <span className="amount">{plan.price}</span>
+                  <span className="period">{plan.period}</span>
+                </PlanPrice>
+                <BillingNote featured={plan.featured}>{plan.billing}</BillingNote>
+                <FeatureList>
+                  {plan.features.map((feature, index) => (
+                    <FeatureItem key={index} featured={plan.featured}>
+                      <Check />
+                      {feature}
+                    </FeatureItem>
+                  ))}
+                </FeatureList>
+                <PlanButton
+                  featured={plan.featured}
+                  onClick={() => handleSelectPlan(plan.id)}
+                >
+                  {plan.buttonText}
+                </PlanButton>
+              </PlanCard>
+            ))}
+          </TopTierGrid>
+          {enterprisePlan && (
+            <EnterpriseContainer>
+              <PlanCard featured={enterprisePlan.featured}>
+                {enterprisePlan.popular && <PopularBadge>MOST POPULAR</PopularBadge>}
+                <PlanName featured={enterprisePlan.featured}>{enterprisePlan.name}</PlanName>
+                <PlanPrice featured={enterprisePlan.featured}>
+                  <span className="amount">{enterprisePlan.price}</span>
+                  <span className="period">{enterprisePlan.period}</span>
+                </PlanPrice>
+                <BillingNote featured={enterprisePlan.featured}>{enterprisePlan.billing}</BillingNote>
+                <FeatureList>
+                  {enterprisePlan.features.map((feature, idx) => (
+                    <FeatureItem key={idx} featured={enterprisePlan.featured}>
+                      <Check />
+                      {feature}
+                    </FeatureItem>
+                  ))}
+                </FeatureList>
+                <PlanButton
+                  featured={enterprisePlan.featured}
+                  onClick={() => handleSelectPlan(enterprisePlan.id)}
+                >
+                  {enterprisePlan.buttonText}
+                </PlanButton>
+              </PlanCard>
+            </EnterpriseContainer>
+          )}
         </PlansContainer>
       )}
     </>
