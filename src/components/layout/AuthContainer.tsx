@@ -120,8 +120,8 @@ export function AuthContainer({ children, maxWidth }: AuthContainerProps) {
         <LogoWrapper onClick={() => navigate('/')}>
           <LogoIcon src="/logo.png" alt="StaffSync" />
           <LogoText>
-            <span className="staff">STAFF</span>
-            <span className="sync">SYNC</span>
+            <span className="staff">Staff</span>
+            <span className="sync">Sync</span>
           </LogoText>
         </LogoWrapper>
       </Header>

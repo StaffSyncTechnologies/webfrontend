@@ -49,7 +49,7 @@ const LogoBrand = ({ textColor }: LogoBrandProps) => {
   return (
     <LogoContainer onClick={handleClick}>
       <LogoIcon src="/logo.png" alt="StaffSync" />
-      <LogoText textColor={textColor}>STAFFSYNC</LogoText>
+      <LogoText textColor={textColor}>StaffSync</LogoText>
     </LogoContainer>
   );
 };
