@@ -18,8 +18,10 @@ export interface SubscriptionSummary {
 export interface Plan {
   id: string;
   name: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
+  monthlyPricePerWorker: number;
+  yearlyPricePerWorker: number;
+  minWorkers: number;
+  maxWorkers: number | string;
   workerLimit: number | string;
   clientLimit: number | string;
   features: string[];
@@ -31,6 +33,7 @@ export interface PlansResponse {
   plans: Plan[];
   freeTrialDays: number;
   currency: string;
+  pricingModel: string;
 }
 
 export const subscriptionApi = createApi({
@@ -69,7 +72,10 @@ export const subscriptionApi = createApi({
     }),
 
     // Create checkout session
-    createCheckout: builder.mutation<{ sessionId: string; url: string }, { planTier: string; billingCycle: string }>({
+    createCheckout: builder.mutation<
+      { sessionId: string; url: string }, 
+      { planTier: string; billingCycle: string; workerCount: number }
+    >({
       query: (body) => ({
         url: `${API_BASE}/api/v1/subscriptions/checkout`,
         method: 'POST',
