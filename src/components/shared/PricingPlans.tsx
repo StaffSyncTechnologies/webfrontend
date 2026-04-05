@@ -11,8 +11,13 @@ interface PricingPlansProps {
 
 const PlansContainer = styled(Box)({
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
   gap: '20px',
+  maxWidth: '1400px',
+  margin: '0 auto',
+  '@media (max-width: 1200px)': {
+    gridTemplateColumns: 'repeat(2, 1fr)',
+  },
   '@media (max-width: 800px)': {
     gridTemplateColumns: '1fr',
   },
@@ -153,31 +158,63 @@ const fallbackPlans = [
   {
     id: 'FREE',
     name: 'Free Trial',
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    features: ['180-day free trial', 'Unlimited workers', 'Full scheduling features', 'Time tracking & timesheets', 'GPS clock-in'],
+    monthlyPricePerWorker: 0,
+    yearlyPricePerWorker: 0,
+    minWorkers: 1,
+    maxWorkers: 10,
+    features: ['180-day free trial', 'Up to 10 workers', 'Full scheduling features', 'Time tracking & timesheets', 'Invoicing & payroll', 'Reports & analytics', 'Email support'],
     isCustomPricing: false,
     trialDays: 180,
-    workerLimit: 'Unlimited',
+    workerLimit: 10,
     clientLimit: 'Unlimited',
   },
   {
-    id: 'STANDARD',
-    name: 'Standard',
-    monthlyPrice: 99,
-    yearlyPrice: 948,
-    features: ['Unlimited workers', 'Unlimited clients', 'Full scheduling features', 'Invoicing & payroll', 'Priority support'],
+    id: 'STARTER',
+    name: 'Starter',
+    monthlyPricePerWorker: 2.50,
+    yearlyPricePerWorker: 2.00,
+    minWorkers: 1,
+    maxWorkers: 10,
+    features: ['1-10 workers', 'Unlimited clients', 'Full scheduling features', 'Time tracking & timesheets', 'Invoicing & payroll', 'Reports & analytics', 'Email support'],
     isCustomPricing: false,
     trialDays: null,
-    workerLimit: 'Unlimited',
+    workerLimit: 10,
+    clientLimit: 'Unlimited',
+  },
+  {
+    id: 'PROFESSIONAL',
+    name: 'Professional',
+    monthlyPricePerWorker: 3.50,
+    yearlyPricePerWorker: 3.00,
+    minWorkers: 11,
+    maxWorkers: 50,
+    features: ['11-50 workers', 'Unlimited clients', 'Everything in Starter', 'Priority email support', 'Advanced reporting', 'Custom branding', 'API access'],
+    isCustomPricing: false,
+    trialDays: null,
+    workerLimit: 50,
+    clientLimit: 'Unlimited',
+  },
+  {
+    id: 'BUSINESS',
+    name: 'Business',
+    monthlyPricePerWorker: 4.50,
+    yearlyPricePerWorker: 4.00,
+    minWorkers: 51,
+    maxWorkers: 200,
+    features: ['51-200 workers', 'Unlimited clients', 'Everything in Professional', 'Dedicated account manager', 'Phone support', 'Custom integrations', 'SLA guarantee'],
+    isCustomPricing: false,
+    trialDays: null,
+    workerLimit: 200,
     clientLimit: 'Unlimited',
   },
   {
     id: 'ENTERPRISE',
     name: 'Enterprise',
-    monthlyPrice: null,
-    yearlyPrice: null,
-    features: ['Everything in Standard', 'White-label branding', 'Custom integrations', 'Dedicated account manager', '24/7 phone support'],
+    monthlyPricePerWorker: null,
+    yearlyPricePerWorker: null,
+    minWorkers: 201,
+    maxWorkers: 'Unlimited',
+    features: ['200+ workers', 'Everything in Business', 'White-label branding', 'Custom SLA', 'On-site training', 'Volume discounts', 'Contact sales'],
     isCustomPricing: true,
     trialDays: null,
     workerLimit: 'Unlimited',
@@ -188,18 +225,30 @@ const fallbackPlans = [
 function mapPlanToDisplay(plan: Plan) {
   const isFree = plan.id === 'FREE';
   const isEnterprise = plan.isCustomPricing;
-  const isStandard = !isFree && !isEnterprise;
+  const isProfessional = plan.id === 'PROFESSIONAL';
+  
+  // Calculate example pricing for 10 workers (or show per-worker price)
+  const exampleWorkers = isFree ? 10 : plan.id === 'STARTER' ? 10 : plan.id === 'PROFESSIONAL' ? 25 : plan.id === 'BUSINESS' ? 100 : 0;
+  const monthlyTotal = plan.monthlyPricePerWorker ? (plan.monthlyPricePerWorker * exampleWorkers).toFixed(2) : 0;
+  const yearlyTotal = plan.yearlyPricePerWorker ? (plan.yearlyPricePerWorker * exampleWorkers).toFixed(2) : 0;
+  const yearlySavings = plan.monthlyPricePerWorker && plan.yearlyPricePerWorker 
+    ? ((plan.monthlyPricePerWorker - plan.yearlyPricePerWorker) * exampleWorkers * 12).toFixed(2)
+    : 0;
 
   return {
     id: plan.id,
-    name: isStandard ? `${plan.name} 👑` : plan.name,
-    price: isEnterprise ? 'Custom' : `£${plan.monthlyPrice ?? 0}`,
-    period: isEnterprise ? '' : '/month',
-    billing: isEnterprise ? 'Contact us for pricing.' : plan.yearlyPrice ? `£${plan.yearlyPrice}/year when billed annually.` : 'Billed annually.',
+    name: isProfessional ? `${plan.name} 👑` : plan.name,
+    price: isEnterprise ? 'Custom' : isFree ? '£0' : `£${plan.monthlyPricePerWorker}`,
+    period: isEnterprise ? '' : isFree ? '/month' : '/worker/month',
+    billing: isEnterprise 
+      ? 'Contact us for pricing.' 
+      : isFree 
+        ? '180-day free trial, then upgrade to continue.'
+        : `£${plan.yearlyPricePerWorker}/worker/month billed annually. Save £${yearlySavings}/year with ${exampleWorkers} workers.`,
     features: plan.features,
-    buttonText: isFree ? 'Start Free' : isEnterprise ? 'Contact Us' : 'Start Trial',
-    featured: isStandard,
-    popular: isStandard,
+    buttonText: isFree ? 'Start Free Trial' : isEnterprise ? 'Contact Sales' : 'Get Started',
+    featured: isProfessional,
+    popular: isProfessional,
   };
 }
 

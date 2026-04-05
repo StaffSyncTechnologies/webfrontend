@@ -64,8 +64,8 @@ const Pricing = () => {
           <Badge>
             <span>Pricing</span>
           </Badge>
-          <Title>Simple Pricing Plan</Title>
-          <Subtitle>Scale your agency without hidden fees. Choose the plan that fit your goal.</Subtitle>
+          <Title>Simple Per-Worker Pricing</Title>
+          <Subtitle>Pay only for what you need. Scale your agency seamlessly as you grow.</Subtitle>
           
           <PricingPlans showTitle={false} />
         </Content>
