@@ -244,7 +244,7 @@ function mapPlanToDisplay(plan: Plan) {
   const monthlyTotal = plan.monthlyPricePerWorker ? (plan.monthlyPricePerWorker * exampleWorkers).toFixed(2) : 0;
   const yearlyTotal = plan.yearlyPricePerWorker ? (plan.yearlyPricePerWorker * exampleWorkers).toFixed(2) : 0;
   const yearlySavings = plan.monthlyPricePerWorker && plan.yearlyPricePerWorker 
-    ? ((plan.monthlyPricePerWorker - plan.yearlyPricePerWorker) * exampleWorkers * 12).toFixed(2)
+    ? (((plan.monthlyPricePerWorker - plan.yearlyPricePerWorker) * exampleWorkers * 12) / 100).toFixed(2)
     : 0;
 
   return {
