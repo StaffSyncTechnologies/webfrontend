@@ -157,7 +157,7 @@ const PrivacyPolicy = () => {
             StaffSync Technologies Ltd is the data controller for personal data processed through our platform, except where we act as a data processor on behalf of our customers.
           </Paragraph>
           <List>
-            <ListItem>Email: support@staffsync.app</ListItem>
+            <ListItem>Email: info@staffsynctech.co.uk</ListItem>
             <ListItem>Registered in England & Wales</ListItem>
             <ListItem>Company No: 17023276</ListItem>
           </List>
@@ -321,7 +321,7 @@ const PrivacyPolicy = () => {
             <ListItem>Withdraw consent at any time</ListItem>
           </List>
           <Paragraph>
-            To exercise your rights, contact: <strong>support@staffsync.app</strong>
+            To exercise your rights, contact: <strong>info@staffsynctech.co.uk</strong>
           </Paragraph>
         </Section>
 
@@ -418,7 +418,7 @@ const PrivacyPolicy = () => {
             Contact Us
           </Box>
           <Box sx={{ fontSize: '1rem' }}>
-            📧 <a href="mailto:support@staffsync.app">support@staffsync.app</a>
+            📧 <a href="mailto:info@staffsynctech.co.uk">info@staffsynctech.co.uk</a>
           </Box>
         </ContactBox>
       </ContentWrapper>

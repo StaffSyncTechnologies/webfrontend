@@ -316,7 +316,7 @@ const DataProcessingAgreement = () => {
             Questions About Data Processing?
           </Box>
           <Box sx={{ fontSize: '1rem' }}>
-            📧 <a href="mailto:support@staffsync.app">support@staffsync.app</a>
+            📧 <a href="mailto:info@staffsynctech.co.uk">info@staffsynctech.co.uk</a>
           </Box>
         </ContactBox>
       </ContentWrapper>
