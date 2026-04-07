@@ -221,6 +221,7 @@ const legalLinks = [
   { label: 'Cookies Policy', href: '/cookies' },
   { label: 'GDPR', href: '/gdpr' },
   { label: 'Delete Account', href: '/delete-account' },
+  { label: 'Delete Data', href: '/delete-data' },
 ];
 
 const Footer = () => {
