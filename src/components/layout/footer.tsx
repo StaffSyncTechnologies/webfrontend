@@ -207,14 +207,11 @@ const Copyright = styled('p')({
 const productLinks = [
   { label: 'Features', href: '#features' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'Integration', href: '#integration' },
-  { label: 'API Docs', href: '#api-docs' },
 ];
 
 const companyLinks = [
   { label: 'About us', href: '#about' },
   { label: 'Careers', href: '#careers' },
-  { label: 'Blog', href: '#blog' },
   { label: 'Contact', href: '#contact' },
 ];
 
