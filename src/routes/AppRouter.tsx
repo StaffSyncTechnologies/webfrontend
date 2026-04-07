@@ -23,9 +23,9 @@ import {
   CompliancePage,
   SettingsPage,
   HelpPage,
-  ContactUsPage,
   InviteRequestsPage,
   DeleteAccountPage,
+  DeleteDataPage,
   PrivacyPolicy,
   TermsOfUse,
   CookiePolicy,
@@ -127,6 +127,10 @@ export function AppRouter() {
           <Route
             path="/delete-account"
             element={<DeleteAccountPage />}
+          />
+          <Route
+            path="/delete-data"
+            element={<DeleteDataPage />}
           />
           <Route
             path="/get-started"
