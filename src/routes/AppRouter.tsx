@@ -109,35 +109,19 @@ export function AppRouter() {
           />
           <Route
             path="/privacy"
-            element={
-              <PublicRoute>
-                <PrivacyPolicy />
-              </PublicRoute>
-            }
+            element={<PrivacyPolicy />}
           />
           <Route
             path="/terms"
-            element={
-              <PublicRoute>
-                <TermsOfUse />
-              </PublicRoute>
-            }
+            element={<TermsOfUse />}
           />
           <Route
             path="/cookies"
-            element={
-              <PublicRoute>
-                <CookiePolicy />
-              </PublicRoute>
-            }
+            element={<CookiePolicy />}
           />
           <Route
             path="/gdpr"
-            element={
-              <PublicRoute>
-                <DataProcessingAgreement />
-              </PublicRoute>
-            }
+            element={<DataProcessingAgreement />}
           />
           <Route
             path="/get-started"
