@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Box, styled } from '@mui/material';
 import { Header, Footer } from '../../components/layout';
 import { colors } from '../../utilities/colors';
@@ -120,6 +121,10 @@ const ContactBox = styled(Box)({
 
 const DataProcessingAgreement = () => {
   useDocumentTitle('Data Processing Agreement');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <PageWrapper>
