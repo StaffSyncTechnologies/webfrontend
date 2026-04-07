@@ -25,3 +25,4 @@ export { SettingsPage } from './settings';
 export { HelpPage } from './help';
 export { InviteRequestsPage } from './invite-requests';
 export { default as ContactUsPage } from './contactUs';
+export { PrivacyPolicy, TermsOfUse, CookiePolicy, DataProcessingAgreement } from './legal';

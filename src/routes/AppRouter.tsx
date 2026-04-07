@@ -25,6 +25,10 @@ import {
   HelpPage,
   ContactUsPage,
   InviteRequestsPage,
+  PrivacyPolicy,
+  TermsOfUse,
+  CookiePolicy,
+  DataProcessingAgreement,
 } from '../pages';
 import { 
   ClientWorkersPage,
@@ -100,6 +104,38 @@ export function AppRouter() {
             element={
               <PublicRoute>
                 <WatchDemo />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/privacy"
+            element={
+              <PublicRoute>
+                <PrivacyPolicy />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/terms"
+            element={
+              <PublicRoute>
+                <TermsOfUse />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/cookies"
+            element={
+              <PublicRoute>
+                <CookiePolicy />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/gdpr"
+            element={
+              <PublicRoute>
+                <DataProcessingAgreement />
               </PublicRoute>
             }
           />
