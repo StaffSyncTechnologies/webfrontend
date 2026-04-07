@@ -24,6 +24,7 @@ import {
   SettingsPage,
   HelpPage,
   InviteRequestsPage,
+  ContactUsPage,
   DeleteAccountPage,
   DeleteDataPage,
   PrivacyPolicy,
