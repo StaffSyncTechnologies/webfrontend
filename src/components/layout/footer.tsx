@@ -220,6 +220,7 @@ const legalLinks = [
   { label: 'Terms of Use', href: '/terms' },
   { label: 'Cookies Policy', href: '/cookies' },
   { label: 'GDPR', href: '/gdpr' },
+  { label: 'Delete Account', href: '/delete-account' },
 ];
 
 const Footer = () => {

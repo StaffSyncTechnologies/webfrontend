@@ -25,4 +25,5 @@ export { SettingsPage } from './settings';
 export { HelpPage } from './help';
 export { InviteRequestsPage } from './invite-requests';
 export { default as ContactUsPage } from './contactUs';
+export { default as DeleteAccountPage } from './legal/DeleteAccount';
 export { PrivacyPolicy, TermsOfUse, CookiePolicy, DataProcessingAgreement } from './legal';
