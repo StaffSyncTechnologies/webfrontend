@@ -5,7 +5,7 @@
 // Base URL - change for production
 // iOS Simulator can use localhost, Android emulator needs 10.0.2.2
 export const API_BASE_URL = import.meta.env.DEV 
-  ? 'https://backend-rp5c.onrender.com/api/v1' 
+  ? 'https://app.staffsynctech.co.uk/api/v1' 
   : 'https://backend-rp5c.onrender.com/api/v1';
 
 // Auth endpoints (worker passwordless auth)
@@ -83,6 +83,8 @@ export const CHAT = {
   MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
   UNREAD_COUNT: '/chat/unread-count',
   SEND_MESSAGE: (roomId: string) => `/chat/rooms/${roomId}/send`,
+  UPLOAD_FILE: '/chat/upload',
+  SEND_WITH_ATTACHMENTS: (roomId: string) => `/chat/rooms/${roomId}/send-with-attachments`,
   
   // Client-Agency chat endpoints
   CLIENT_ROOMS: '/chat/client/rooms',

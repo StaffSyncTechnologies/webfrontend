@@ -565,6 +565,18 @@ export interface ChatUser {
   role?: string;
 }
 
+export interface ChatAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  mimeType: string;
+  duration?: number;
+  thumbnailUrl?: string;
+}
+
 export interface ChatRoom {
   id: string;
   organizationId: string;
@@ -596,12 +608,14 @@ export interface ChatMessage {
   chatRoomId: string;
   senderId: string;
   senderType: 'user' | 'client_user';
-  content: string;
+  content: string | null;
+  messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
   status: 'SENT' | 'DELIVERED' | 'READ';
   createdAt: string;
   readAt: string | null;
   sender?: ChatUser;
   senderUser?: ChatUser;
+  attachments: ChatAttachment[];
 }
 
 export interface GetOrCreateRoomRequest {

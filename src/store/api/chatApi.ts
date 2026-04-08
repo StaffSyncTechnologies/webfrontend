@@ -8,16 +8,30 @@ interface ChatUser {
   email?: string;
 }
 
+export interface ChatAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  mimeType: string;
+  duration?: number;
+  thumbnailUrl?: string;
+}
+
 export interface ChatMessage {
   id: string;
   chatRoomId: string;
   senderId: string;
   senderType: 'user' | 'client_user';
-  content: string;
+  content: string | null;
+  messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
   status: 'SENT' | 'DELIVERED' | 'READ';
   createdAt: string;
   readAt: string | null;
   senderUser?: ChatUser;
+  attachments: ChatAttachment[];
 }
 
 export interface ChatRoom {
@@ -124,6 +138,31 @@ export const chatApi = baseApi.injectEndpoints({
         url: CHAT.CLIENT_SEND_MESSAGE(roomId),
         method: 'POST',
         body: { content },
+      }),
+    }),
+
+    // File upload endpoints
+    uploadFile: builder.mutation<ApiResponse<ChatAttachment>, FormData>({
+      query: (formData) => ({
+        url: CHAT.UPLOAD_FILE,
+        method: 'POST',
+        body: formData,
+      }),
+    }),
+
+    sendMessageWithAttachments: builder.mutation<
+      ApiResponse<ChatMessage>,
+      {
+        roomId: string;
+        content?: string;
+        messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
+        attachments: ChatAttachment[];
+      }
+    >({
+      query: ({ roomId, content, messageType, attachments }) => ({
+        url: CHAT.SEND_WITH_ATTACHMENTS(roomId),
+        method: 'POST',
+        body: { content, messageType, attachments },
       }),
     }),
 

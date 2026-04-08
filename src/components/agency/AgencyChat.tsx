@@ -27,6 +27,10 @@ import {
   MarkEmailRead,
   Person,
   Business,
+  Image,
+  Description,
+  Mic,
+  PlayArrow,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { formatDistanceToNow } from 'date-fns';
@@ -188,9 +192,61 @@ export const AgencyChat: React.FC<AgencyChatProps> = ({ agencyUserId }) => {
             p: 1.5,
           }}
         >
-          <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-            {message.content}
-          </Typography>
+          {/* Text Message */}
+          {message.messageType === 'TEXT' && message.content && (
+            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+              {message.content}
+            </Typography>
+          )}
+          
+          {/* Image Message */}
+          {message.messageType === 'IMAGE' && message.attachments?.[0] && (
+            <Box>
+              <img
+                src={message.attachments[0].fileUrl}
+                alt={message.attachments[0].fileName}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: 200,
+                  borderRadius: 4,
+                  marginBottom: message.content ? 8 : 0,
+                }}
+              />
+              {message.content && (
+                <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                  {message.content}
+                </Typography>
+              )}
+            </Box>
+          )}
+          
+          {/* Document Message */}
+          {message.messageType === 'DOCUMENT' && message.attachments?.[0] && (
+            <Box display="flex" alignItems="center" gap={1}>
+              <Description fontSize="small" />
+              <Box flex={1}>
+                <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                  {message.attachments[0].fileName}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                  {Math.round(message.attachments[0].fileSize / 1024)} KB
+                </Typography>
+              </Box>
+            </Box>
+          )}
+          
+          {/* Audio Message */}
+          {message.messageType === 'AUDIO' && message.attachments?.[0] && (
+            <Box display="flex" alignItems="center" gap={1}>
+              <Mic fontSize="small" />
+              <Box>
+                <Typography variant="body2">Voice Message</Typography>
+                <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                  {message.attachments[0].duration}s
+                </Typography>
+              </Box>
+            </Box>
+          )}
           <Typography
             variant="caption"
             sx={{

@@ -8,6 +8,9 @@ import {
   DoneAll,
   Done,
   ChatBubbleOutline,
+  Image,
+  Description,
+  AudioFile,
 } from '@mui/icons-material';
 import {
   Box,
@@ -25,11 +28,14 @@ import {
   ListItemAvatar,
   ListItemText,
   Typography,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { useDocumentTitle, useWebSocket } from '../../hooks';
 import { useAppSelector } from '../../store';
 import { DashboardContainer } from '../../components/layout';
 import { colors } from '../../utilities/colors';
+import { API_BASE_URL } from '../../services/endpoints';
 import {
   useGetMyRoomsQuery,
   useGetOrCreateRoomMutation,
@@ -71,7 +77,38 @@ function formatDateLabel(dateStr: string) {
 }
 
 function getInitials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+}
+
+function transformMessage(message: any): ChatMessage {
+  return {
+    id: message.id || crypto.randomUUID(),
+    chatRoomId: message.chatRoomId || message.room || '',
+    senderId: message.senderId || message.from || '',
+    senderType: message.senderType || ('user' as const),
+    content: message.content || message.text || '',
+    messageType: message.messageType || 'TEXT',
+    status: message.status || ('SENT' as const),
+    createdAt: message.createdAt || message.timestamp || new Date().toISOString(),
+    readAt: message.readAt || null,
+    sender: message.sender || {
+      id: message.senderId || message.from || '',
+      fullName: '',
+      role: '',
+    },
+    senderUser: message.senderUser || message.sender || {
+      id: message.senderId || message.from || '',
+      fullName: '',
+      role: '',
+    },
+    attachments: message.attachments || [],
+  };
 }
 
 // ============ STYLED COMPONENTS ============
@@ -239,45 +276,6 @@ const DateDivider = styled(Box)({
   margin: '8px 0',
 });
 
-const MessageRow = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isMine',
-})<{ isMine?: boolean }>(({ isMine }) => ({
-  display: 'flex',
-  justifyContent: isMine ? 'flex-end' : 'flex-start',
-  alignItems: 'flex-end',
-  gap: '8px',
-}));
-
-const MessageBubble = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isMine',
-})<{ isMine?: boolean }>(({ isMine }) => ({
-  maxWidth: '80%',
-  width: '100%',
-  padding: '12px 16px',
-  borderRadius: isMine ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-  backgroundColor: isMine ? colors.primary.blue : '#F3F4F6',
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '14px',
-  color: isMine ? colors.secondary.white : colors.primary.navy,
-  lineHeight: 1.5,
-}));
-
-const MessageMeta = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isMine',
-})<{ isMine?: boolean }>(({ isMine }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
-  marginTop: '4px',
-  justifyContent: isMine ? 'flex-end' : 'flex-start',
-}));
-
-const MessageTime = styled('span')({
-  fontFamily: "'Outfit', sans-serif",
-  fontSize: '11px',
-  color: colors.text.secondary,
-});
-
 const InputArea = styled(Box)({
   display: 'flex',
   alignItems: 'center',
@@ -328,6 +326,7 @@ const TypingIndicator = styled('span')({
 // ============ COMPONENT ============
 export function ChatPage() {
   useDocumentTitle('Chat');
+
   const currentUser = useAppSelector((state) => state.auth.user);
   const currentUserId = currentUser?.id;
 
@@ -338,26 +337,33 @@ export function ChatPage() {
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
   const [workerSearch, setWorkerSearch] = useState('');
+  const [attachmentMenuAnchor, setAttachmentMenuAnchor] = useState<null | HTMLElement>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // API hooks
   const { data: rooms = [], isLoading: isLoadingRooms, refetch: refetchRooms } = useGetMyRoomsQuery();
+
   const { data: messages = [], isLoading: isLoadingMessages } = useGetRoomMessagesQuery(
     { roomId: selectedRoomId! },
     { skip: !selectedRoomId, refetchOnMountOrArgChange: true }
   );
+
+  
   const { data: workers = [] } = useGetAssignedWorkersQuery(undefined, { skip: !newChatDialogOpen });
+
   const [getOrCreateRoom] = useGetOrCreateRoomMutation();
   const [markAsReadApi] = useMarkRoomAsReadMutation();
 
-  // Get selected room info
   const selectedRoom = rooms.find((r: ChatRoom) => r.id === selectedRoomId);
+
   const otherUser = selectedRoom
-    ? (selectedRoom.hrUserId === currentUserId ? selectedRoom.worker : selectedRoom.hrUser)
+    ? selectedRoom.hrUserId === currentUserId
+      ? selectedRoom.worker
+      : selectedRoom.hrUser
     : null;
 
-  // Socket callbacks
   const onNewMessage = useCallback((msg: ChatMessage) => {
     setLocalMessages((prev) => {
       if (prev.some((m) => m.id === msg.id)) return prev;
@@ -365,11 +371,14 @@ export function ChatPage() {
     });
   }, []);
 
-  const onTyping = useCallback((data: { userId: string; isTyping: boolean }) => {
-    if (data.userId !== currentUserId) {
-      setIsOtherTyping(data.isTyping);
-    }
-  }, [currentUserId]);
+  const onTyping = useCallback(
+    (data: { userId: string; isTyping: boolean }) => {
+      if (String(data.userId) !== String(currentUserId)) {
+        setIsOtherTyping(data.isTyping);
+      }
+    },
+    [currentUserId]
+  );
 
   const onNewRoomMessage = useCallback(() => {
     refetchRooms();
@@ -382,23 +391,23 @@ export function ChatPage() {
     onNewRoomMessage,
   });
 
-  // Sync fetched messages into local state
   useEffect(() => {
     if (messages.length > 0) {
       setLocalMessages((prev) => {
-        const fetchedIds = new Set(messages.map((m: ChatMessage) => m.id));
+        const transformedMessages = messages.map(transformMessage);
+        const fetchedIds = new Set(transformedMessages.map((m: ChatMessage) => m.id));
         const socketOnly = prev.filter((m) => !fetchedIds.has(m.id));
-        return [...messages, ...socketOnly];
+        return [...transformedMessages, ...socketOnly];
       });
+    } else {
+      setLocalMessages([]);
     }
   }, [messages]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [localMessages]);
 
-  // Mark as read when selecting a room
   useEffect(() => {
     if (selectedRoomId && isConnected) {
       markAsRead();
@@ -406,7 +415,6 @@ export function ChatPage() {
     }
   }, [selectedRoomId, isConnected, markAsRead, markAsReadApi]);
 
-  // Reset local messages when switching rooms
   useEffect(() => {
     setLocalMessages([]);
     setIsOtherTyping(false);
@@ -426,10 +434,17 @@ export function ChatPage() {
 
   const handleInputChange = (text: string) => {
     setMessage(text);
+
     if (text.length > 0) {
       sendTyping(true);
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => sendTyping(false), 2000);
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTyping(false);
+      }, 2000);
     } else {
       sendTyping(false);
     }
@@ -440,6 +455,7 @@ export function ChatPage() {
       const room = await getOrCreateRoom({ workerId }).unwrap();
       setNewChatDialogOpen(false);
       setWorkerSearch('');
+
       if (room) {
         setSelectedRoomId(room.id);
       }
@@ -448,11 +464,85 @@ export function ChatPage() {
     }
   };
 
-  // Group messages by date
+  const handleAttachmentMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAttachmentMenuAnchor(event.currentTarget);
+  };
+
+  const handleAttachmentMenuClose = () => {
+    setAttachmentMenuAnchor(null);
+  };
+
+  const handleFileSelect = () => {
+    handleAttachmentMenuClose();
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedRoomId) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const uploadResult = await fetch(`${API_BASE_URL}/chat/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: formData,
+      }).then((res) => res.json());
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.message || 'Failed to upload file');
+      }
+
+      const attachment = uploadResult.data;
+
+      let messageType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' = 'DOCUMENT';
+
+      if (file.type.startsWith('image/')) {
+        messageType = 'IMAGE';
+      } else if (file.type.startsWith('video/')) {
+        messageType = 'VIDEO';
+      } else if (file.type.startsWith('audio/')) {
+        messageType = 'AUDIO';
+      }
+
+      const messageResult = await fetch(
+        `${API_BASE_URL}/chat/rooms/${selectedRoomId}/send-with-attachments`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: `Shared ${file.name}`,
+            messageType,
+            attachments: [attachment],
+          }),
+        }
+      ).then((res) => res.json());
+
+      if (!messageResult.success) {
+        throw new Error(messageResult.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('File upload error:', error);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const groupedMessages: { label: string; messages: ChatMessage[] }[] = [];
   let currentLabel = '';
+
   for (const msg of localMessages) {
     const label = formatDateLabel(msg.createdAt);
+
     if (label !== currentLabel) {
       currentLabel = label;
       groupedMessages.push({ label, messages: [msg] });
@@ -460,29 +550,36 @@ export function ChatPage() {
       groupedMessages[groupedMessages.length - 1].messages.push(msg);
     }
   }
+ 
 
-  // Filter rooms by search
   const filteredRooms = rooms.filter((r: ChatRoom) => {
     if (!searchTerm) return true;
-    const name = r.hrUserId === currentUserId ? (r.worker?.fullName || 'Unknown') : (r.hrUser?.fullName || 'Unknown');
+    const name =
+      r.hrUserId === currentUserId
+        ? r.worker?.fullName || 'Unknown'
+        : r.hrUser?.fullName || 'Unknown';
+
     return name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Filter workers by search in dialog
   const filteredWorkers = workers.filter((w) => {
     if (!workerSearch) return true;
-    return w.fullName.toLowerCase().includes(workerSearch.toLowerCase()) ||
-           w.email.toLowerCase().includes(workerSearch.toLowerCase());
+    return (
+      w.fullName.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      w.email.toLowerCase().includes(workerSearch.toLowerCase())
+    );
   });
 
   return (
     <DashboardContainer>
       <PageTitle>Chat</PageTitle>
+
       <ChatContainer>
-        {/* Left sidebar - Inbox */}
+        {/* Left sidebar */}
         <InboxPanel>
           <InboxHeader>
             <h2>Inbox</h2>
+
             <InboxSearchRow>
               <InboxSearch
                 placeholder="Search conversations..."
@@ -496,11 +593,13 @@ export function ChatPage() {
                   ),
                 }}
               />
+
               <NewChatBtn onClick={() => setNewChatDialogOpen(true)} title="New Chat">
                 <Add sx={{ fontSize: 20 }} />
               </NewChatBtn>
             </InboxSearchRow>
           </InboxHeader>
+
           <InboxList>
             {isLoadingRooms ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -529,28 +628,36 @@ export function ChatPage() {
               filteredRooms.map((room: ChatRoom) => {
                 const other = room.hrUserId === currentUserId ? room.worker : room.hrUser;
                 const lastMsg = room.messages?.[0];
+
                 return (
                   <InboxItem
                     key={room.id}
                     active={room.id === selectedRoomId}
                     onClick={() => handleSelectRoom(room.id)}
                   >
-                    <Avatar sx={{ width: 44, height: 44, bgcolor: '#E5E7EB', fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 600 }}>
+                    <Avatar
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        bgcolor: '#E5E7EB',
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
                       {getInitials(other?.fullName || '?')}
                     </Avatar>
+
                     <InboxItemContent>
                       <div className="name">{other?.fullName || 'Unknown'}</div>
                       <div className="preview">
                         {lastMsg ? lastMsg.content : 'No messages yet'}
                       </div>
                     </InboxItemContent>
+
                     <InboxItemMeta>
-                      <span className="time">
-                        {formatRelativeTime(room.lastMessageAt)}
-                      </span>
-                      {room.unreadCount > 0 && (
-                        <UnreadBadge>{room.unreadCount}</UnreadBadge>
-                      )}
+                      <span className="time">{formatRelativeTime(room.lastMessageAt)}</span>
+                      {room.unreadCount > 0 && <UnreadBadge>{room.unreadCount}</UnreadBadge>}
                     </InboxItemMeta>
                   </InboxItem>
                 );
@@ -559,34 +666,72 @@ export function ChatPage() {
           </InboxList>
         </InboxPanel>
 
-        {/* Right - Conversation */}
+        {/* Right side */}
         {!selectedRoomId ? (
           <EmptyState>
             <ChatBubbleOutline sx={{ fontSize: 56, color: '#D1D5DB' }} />
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 600, color: colors.primary.navy }}>
+            <Typography
+              sx={{
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: '16px',
+                fontWeight: 600,
+                color: colors.primary.navy,
+              }}
+            >
               Select a conversation
             </Typography>
-            <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>
+            <Typography
+              sx={{
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: '14px',
+                color: colors.text.secondary,
+              }}
+            >
               Choose a chat from the inbox or start a new conversation
             </Typography>
           </EmptyState>
         ) : (
           <ConversationPanel>
             <ConversationHeader>
-              <Avatar sx={{ width: 36, height: 36, bgcolor: '#E5E7EB', fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600 }}>
+              <Avatar
+                sx={{
+                  width: 36,
+                  height: 36,
+                  bgcolor: '#E5E7EB',
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
                 {otherUser ? getInitials(otherUser.fullName) : '?'}
               </Avatar>
+
               <Box sx={{ flex: 1 }}>
-                <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 600, color: colors.primary.navy }}>
+                <Typography
+                  sx={{
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    color: colors.primary.navy,
+                  }}
+                >
                   {otherUser?.fullName || 'Chat'}
                 </Typography>
                 {isOtherTyping && <TypingIndicator>typing...</TypingIndicator>}
               </Box>
+
               {!isConnected && (
-                <Box sx={{
-                  px: 1.5, py: 0.5, borderRadius: '12px', bgcolor: '#FEF3C7',
-                  fontFamily: "'Outfit', sans-serif", fontSize: '11px', color: '#D97706',
-                }}>
+                <Box
+                  sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: '12px',
+                    bgcolor: '#FEF3C7',
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: '11px',
+                    color: '#D97706',
+                  }}
+                >
                   reconnecting...
                 </Box>
               )}
@@ -602,34 +747,199 @@ export function ChatPage() {
               {groupedMessages.map((group) => (
                 <Box key={group.label}>
                   <DateDivider>{group.label}</DateDivider>
+
                   {group.messages.map((msg) => {
-                    const isMine = msg.senderId === currentUserId;
+                    const isMine = String(msg.senderId) === String(currentUserId);
+                    const senderName =
+                      (msg.sender as any)?.fullName ||
+                      (msg as any)?.senderUser?.fullName ||
+                      'User';
+
                     return (
-                      <MessageRow key={msg.id} isMine={isMine} sx={{ mb: 2 }}>
-                        {!isMine && (
-                          <Avatar sx={{ width: 28, height: 28, bgcolor: '#E5E7EB', fontSize: 11 }}>
-                            {msg.sender || msg.senderUser ? getInitials((msg.sender || msg.senderUser)?.fullName || '') : '?'}
+                      <Box
+                        key={msg.id}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: isMine ? 'flex-end' : 'flex-start',
+                          mb: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            flexDirection: isMine ? 'row-reverse' : 'row',
+                            gap: 1,
+                            maxWidth: '75%',
+                          }}
+                        >
+                          <Avatar
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: isMine ? colors.primary.blue : '#E5E7EB',
+                              fontSize: 11,
+                              color: isMine ? '#fff' : colors.primary.navy,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {isMine
+                              ? getInitials((currentUser as any)?.fullName || 'Me')
+                              : getInitials(senderName)}
                           </Avatar>
-                        )}
-                        <Box>
-                          <MessageBubble isMine={isMine}>{msg.content}</MessageBubble>
-                          <MessageMeta isMine={isMine}>
-                            <MessageTime>{formatTime(msg.createdAt)}</MessageTime>
-                            {isMine && (
-                              msg.status === 'READ'
-                                ? <DoneAll sx={{ fontSize: 14, color: colors.primary.blue }} />
-                                : msg.status === 'DELIVERED'
-                                ? <DoneAll sx={{ fontSize: 14, color: '#9CA3AF' }} />
-                                : <Done sx={{ fontSize: 14, color: '#9CA3AF' }} />
-                            )}
-                          </MessageMeta>
+
+                          <Box>
+                            <Box
+                              sx={{
+                                px: 2,
+                                py: 1.5,
+                                borderRadius: isMine
+                                  ? '12px 12px 4px 12px'
+                                  : '12px 12px 12px 4px',
+                                backgroundColor: isMine ? colors.primary.blue : '#F3F4F6',
+                                color: isMine ? colors.secondary.white : colors.primary.navy,
+                                fontFamily: "'Outfit', sans-serif",
+                                fontSize: '14px',
+                                lineHeight: 1.5,
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {msg.content && (
+                                <Box sx={{ mb: msg.attachments?.length ? 1 : 0 }}>
+                                  {msg.content}
+                                </Box>
+                              )}
+
+                              {msg.attachments && msg.attachments.length > 0 && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {msg.attachments.map((attachment: any) => {
+                                    if (!attachment || !attachment.id) return null;
+
+                                    if (attachment.fileType?.startsWith('image/')) {
+                                      return (
+                                        <Box
+                                          key={attachment.id}
+                                          component="img"
+                                          src={attachment.fileUrl}
+                                          alt={attachment.fileName}
+                                          sx={{
+                                            maxWidth: '220px',
+                                            maxHeight: '220px',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            display: 'block',
+                                          }}
+                                          onClick={() =>
+                                            window.open(attachment.fileUrl, '_blank')
+                                          }
+                                        />
+                                      );
+                                    }
+
+                                    if (attachment.fileType?.startsWith('video/')) {
+                                      return (
+                                        <Box key={attachment.id}>
+                                          <Box
+                                            component="video"
+                                            src={attachment.fileUrl}
+                                            controls
+                                            sx={{
+                                              maxWidth: '220px',
+                                              maxHeight: '220px',
+                                              borderRadius: '8px',
+                                            }}
+                                          />
+                                        </Box>
+                                      );
+                                    }
+
+                                    if (attachment.fileType?.startsWith('audio/')) {
+                                      return (
+                                        <Box key={attachment.id}>
+                                          <Box
+                                            component="audio"
+                                            src={attachment.fileUrl}
+                                            controls
+                                            sx={{ maxWidth: '220px' }}
+                                          />
+                                        </Box>
+                                      );
+                                    }
+
+                                    return (
+                                      <Box
+                                        key={attachment.id}
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 1,
+                                          p: 1,
+                                          bgcolor: isMine
+                                            ? 'rgba(255,255,255,0.12)'
+                                            : 'rgba(0,0,0,0.05)',
+                                          borderRadius: '8px',
+                                          cursor: 'pointer',
+                                        }}
+                                        onClick={() =>
+                                          window.open(attachment.fileUrl, '_blank')
+                                        }
+                                      >
+                                        {attachment.fileType?.includes('pdf') ? (
+                                          <Description sx={{ fontSize: 24 }} />
+                                        ) : (
+                                          <AttachFile sx={{ fontSize: 24 }} />
+                                        )}
+
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                          <Typography
+                                            sx={{
+                                              fontSize: '12px',
+                                              fontWeight: 500,
+                                              whiteSpace: 'nowrap',
+                                              overflow: 'hidden',
+                                              textOverflow: 'ellipsis',
+                                            }}
+                                          >
+                                            {attachment.fileName}
+                                          </Typography>
+                                          <Typography sx={{ fontSize: '10px', opacity: 0.7 }}>
+                                            {attachment.fileSize
+                                              ? `${(attachment.fileSize / 1024).toFixed(1)} KB`
+                                              : ''}
+                                          </Typography>
+                                        </Box>
+                                      </Box>
+                                    );
+                                  })}
+                                </Box>
+                              )}
+                            </Box>
+
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                mt: 0.5,
+                                justifyContent: isMine ? 'flex-end' : 'flex-start',
+                              }}
+                            >
+                              <Typography sx={{ fontSize: '12px', color: colors.text.secondary }}>
+                                {formatTime(msg.createdAt)}
+                              </Typography>
+
+                              {isMine &&
+                                (msg.status === 'READ' ? (
+                                  <DoneAll sx={{ fontSize: 14, color: colors.primary.blue }} />
+                                ) : msg.status === 'DELIVERED' ? (
+                                  <DoneAll sx={{ fontSize: 14, color: '#9CA3AF' }} />
+                                ) : (
+                                  <Done sx={{ fontSize: 14, color: '#9CA3AF' }} />
+                                ))}
+                            </Box>
+                          </Box>
                         </Box>
-                        {isMine && (
-                          <Avatar sx={{ width: 28, height: 28, bgcolor: colors.primary.blue, fontSize: 11, color: '#fff' }}>
-                            {currentUser ? getInitials((currentUser as any).fullName || 'Me') : 'Me'}
-                          </Avatar>
-                        )}
-                      </MessageRow>
+                      </Box>
                     );
                   })}
                 </Box>
@@ -648,32 +958,97 @@ export function ChatPage() {
             </MessagesArea>
 
             <InputArea>
-              <IconButton size="small"><EmojiEmotions sx={{ color: '#9CA3AF' }} /></IconButton>
+              <IconButton size="small">
+                <EmojiEmotions sx={{ color: '#9CA3AF' }} />
+              </IconButton>
+
               <MessageInput
                 placeholder="Type here..."
                 value={message}
                 onChange={(e) => handleInputChange(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
               />
-              <IconButton size="small"><AttachFile sx={{ color: '#9CA3AF' }} /></IconButton>
+
+              <IconButton size="small" onClick={handleAttachmentMenuOpen}>
+                <AttachFile sx={{ color: '#9CA3AF' }} />
+              </IconButton>
+
               <SendButton onClick={handleSend} disabled={!message.trim()}>
                 <Send sx={{ fontSize: 18 }} />
               </SendButton>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+                accept="image/*,video/*,application/pdf,.doc,.docx,audio/*"
+              />
+
+              <Menu
+                anchorEl={attachmentMenuAnchor}
+                open={Boolean(attachmentMenuAnchor)}
+                onClose={handleAttachmentMenuClose}
+                PaperProps={{
+                  sx: { mt: 1, minWidth: 200 },
+                }}
+              >
+                <MenuItem onClick={handleFileSelect}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Image sx={{ color: '#9CA3AF' }} />
+                    <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px' }}>
+                      Photo & Video
+                    </Typography>
+                  </Box>
+                </MenuItem>
+
+                <MenuItem onClick={handleFileSelect}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Description sx={{ color: '#9CA3AF' }} />
+                    <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px' }}>
+                      Document
+                    </Typography>
+                  </Box>
+                </MenuItem>
+
+                <MenuItem onClick={handleFileSelect}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <AudioFile sx={{ color: '#9CA3AF' }} />
+                    <Typography sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px' }}>
+                      Audio
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              </Menu>
             </InputArea>
           </ConversationPanel>
         )}
       </ChatContainer>
 
-      {/* New Chat Dialog */}
       <Dialog
         open={newChatDialogOpen}
-        onClose={() => { setNewChatDialogOpen(false); setWorkerSearch(''); }}
+        onClose={() => {
+          setNewChatDialogOpen(false);
+          setWorkerSearch('');
+        }}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: colors.primary.navy }}>
+        <DialogTitle
+          sx={{
+            fontFamily: "'Outfit', sans-serif",
+            fontWeight: 700,
+            color: colors.primary.navy,
+          }}
+        >
           Start New Chat
         </DialogTitle>
+
         <DialogContent>
           <TextField
             fullWidth
@@ -694,9 +1069,18 @@ export function ChatPage() {
               },
             }}
           />
+
           <List sx={{ maxHeight: '400px', overflow: 'auto' }}>
             {filteredWorkers.length === 0 ? (
-              <Typography sx={{ textAlign: 'center', py: 3, fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>
+              <Typography
+                sx={{
+                  textAlign: 'center',
+                  py: 3,
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: '14px',
+                  color: colors.text.secondary,
+                }}
+              >
                 No workers found
               </Typography>
             ) : (
@@ -712,10 +1096,18 @@ export function ChatPage() {
                   }}
                 >
                   <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: '#E5E7EB', fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 600 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: '#E5E7EB',
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
                       {getInitials(worker.fullName)}
                     </Avatar>
                   </ListItemAvatar>
+
                   <ListItemText
                     primary={worker.fullName}
                     secondary={worker.email}

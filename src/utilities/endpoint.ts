@@ -5,49 +5,51 @@
 
 /// <reference types="../vite-env" />
 
-export const API_BASE = 'https://app.staffsynctech.co.uk';
+export const API_BASE = import.meta.env.DEV 
+  ? 'http://localhost:3001/api/v1' 
+  : 'https://app.staffsynctech.co.uk';
 
 // Dashboard endpoints
 export const DASHBOARD = {
-  ROLE_DASHBOARD: `${API_BASE}/api/v1/dashboard/my-dashboard`,
-  AGENCY_DASHBOARD: `${API_BASE}/api/v1/dashboard`,
-  STATS: `${API_BASE}/api/v1/dashboard/stats`,
-  RECENT_CLIENTS: `${API_BASE}/api/v1/dashboard/recent-clients`,
-  RECENT_WORKERS: `${API_BASE}/api/v1/dashboard/recent-workers`,
-  PENDING_APPROVALS: `${API_BASE}/api/v1/dashboard/pending-approvals`,
-  SHIFTS_OVERVIEW: `${API_BASE}/api/v1/dashboard/shifts-overview`,
+  ROLE_DASHBOARD: `${API_BASE}/dashboard/my-dashboard`,
+  AGENCY_DASHBOARD: `${API_BASE}/dashboard`,
+  STATS: `${API_BASE}/dashboard/stats`,
+  RECENT_CLIENTS: `${API_BASE}/dashboard/recent-clients`,
+  RECENT_WORKERS: `${API_BASE}/dashboard/recent-workers`,
+  PENDING_APPROVALS: `${API_BASE}/dashboard/pending-approvals`,
+  SHIFTS_OVERVIEW: `${API_BASE}/dashboard/shifts-overview`,
   // Admin dashboard endpoints
-  ADMIN_STATS: `${API_BASE}/api/v1/dashboard/admin/stats`,
-  ADMIN_SHIFTS_BY_DAY: `${API_BASE}/api/v1/dashboard/admin/shifts-by-day`,
-  ADMIN_WORKERS_AVAILABILITY: `${API_BASE}/api/v1/dashboard/admin/workers-availability`,
-  ADMIN_RECENT_ACTIVITY: `${API_BASE}/api/v1/dashboard/admin/recent-activity`,
+  ADMIN_STATS: `${API_BASE}/dashboard/admin/stats`,
+  ADMIN_SHIFTS_BY_DAY: `${API_BASE}/dashboard/admin/shifts-by-day`,
+  ADMIN_WORKERS_AVAILABILITY: `${API_BASE}/dashboard/admin/workers-availability`,
+  ADMIN_RECENT_ACTIVITY: `${API_BASE}/dashboard/admin/recent-activity`,
 } as const;
 
 // Authentication endpoints
 export const AUTH = {
-  REGISTER: `${API_BASE}/api/v1/auth/register`,
-  LOGIN: `${API_BASE}/api/v1/auth/login`,
-  STAFF_LOGIN: `${API_BASE}/api/v1/auth/staff/login`,
-  WORKER_LOGIN: `${API_BASE}/api/v1/auth/worker/login`,
-  FORGOT_PASSWORD: `${API_BASE}/api/v1/auth/forgot-password`,
-  RESET_PASSWORD: `${API_BASE}/api/v1/auth/reset-password`,
-  SEND_OTP: `${API_BASE}/api/v1/auth/send-otp`,
-  VERIFY_OTP: `${API_BASE}/api/v1/auth/verify-otp`,
-  WORKER_VERIFY_OTP: `${API_BASE}/api/v1/auth/worker/verify-otp`,
-  STAFF_INVITE_VALIDATE: (token: string) => `${API_BASE}/api/v1/auth/staff-invite/${token}`,
-  STAFF_INVITE_ACCEPT: (token: string) => `${API_BASE}/api/v1/auth/staff-invite/${token}/accept`,
-  VALIDATE_INVITE_CODE: `${API_BASE}/api/v1/auth/validate-invite`,
-  ACCEPT_INVITE_CODE: `${API_BASE}/api/v1/auth/accept-invite`,
-  WORKER_REGISTER: `${API_BASE}/api/v1/auth/worker/register`,
-  WORKER_DOCUMENTS: `${API_BASE}/api/v1/auth/worker/documents`,
-  WORKER_DOCUMENTS_GET: `${API_BASE}/api/v1/auth/worker/documents`,
-  WORKER_DOCUMENT_DELETE: (documentId: string) => `${API_BASE}/api/v1/auth/worker/documents/${documentId}`,
-  WORKER_PROFILE_PIC: `${API_BASE}/api/v1/auth/worker/profile-pic`,
-  WORKER_VERIFY_RTW: `${API_BASE}/api/v1/auth/worker/verify-rtw`,
-  WORKER_COMPLETE_ONBOARDING: `${API_BASE}/api/v1/auth/worker/complete-onboarding`,
-  ME: `${API_BASE}/api/v1/auth/me`,
-  UPDATE_ME: `${API_BASE}/api/v1/auth/me`,
-  CHANGE_PASSWORD: `${API_BASE}/api/v1/auth/change-password`,
+  REGISTER: `${API_BASE}/auth/register`,
+  LOGIN: `${API_BASE}/auth/login`,
+  STAFF_LOGIN: `${API_BASE}/auth/staff/login`,
+  WORKER_LOGIN: `${API_BASE}/auth/worker/login`,
+  FORGOT_PASSWORD: `${API_BASE}/auth/forgot-password`,
+  RESET_PASSWORD: `${API_BASE}/auth/reset-password`,
+  SEND_OTP: `${API_BASE}/auth/send-otp`,
+  VERIFY_OTP: `${API_BASE}/auth/verify-otp`,
+  WORKER_VERIFY_OTP: `${API_BASE}/auth/worker/verify-otp`,
+  STAFF_INVITE_VALIDATE: (token: string) => `${API_BASE}/auth/staff-invite/${token}`,
+  STAFF_INVITE_ACCEPT: (token: string) => `${API_BASE}/auth/staff-invite/${token}/accept`,
+  VALIDATE_INVITE_CODE: `${API_BASE}/auth/validate-invite`,
+  ACCEPT_INVITE_CODE: `${API_BASE}/auth/accept-invite`,
+  WORKER_REGISTER: `${API_BASE}/auth/worker/register`,
+  WORKER_DOCUMENTS: `${API_BASE}/auth/worker/documents`,
+  WORKER_DOCUMENTS_GET: `${API_BASE}/auth/worker/documents`,
+  WORKER_DOCUMENT_DELETE: (documentId: string) => `${API_BASE}/auth/worker/documents/${documentId}`,
+  WORKER_PROFILE_PIC: `${API_BASE}/auth/worker/profile-pic`,
+  WORKER_VERIFY_RTW: `${API_BASE}/auth/worker/verify-rtw`,
+  WORKER_COMPLETE_ONBOARDING: `${API_BASE}/auth/worker/complete-onboarding`,
+  ME: `${API_BASE}/auth/me`,
+  UPDATE_ME: `${API_BASE}/auth/me`,
+  CHANGE_PASSWORD: `${API_BASE}/auth/change-password`,
   LOGOUT: `${API_BASE}/api/v1/auth/logout`,
 } as const;
 
@@ -392,10 +394,10 @@ export const INVITE_REQUESTS = {
 
 // Chat endpoints
 export const CHAT = {
-  ROOMS: `${API_BASE}/api/v1/chat/rooms`,
-  GET_OR_CREATE_ROOM: `${API_BASE}/api/v1/chat/rooms`,
-  ROOM_MESSAGES: (roomId: string) => `${API_BASE}/api/v1/chat/rooms/${roomId}/messages`,
-  MARK_ROOM_READ: (roomId: string) => `${API_BASE}/api/v1/chat/rooms/${roomId}/read`,
-  UNREAD_COUNT: `${API_BASE}/api/v1/chat/unread-count`,
-  ASSIGNED_WORKERS: `${API_BASE}/api/v1/chat/workers`,
+  ROOMS: `${API_BASE}/chat/rooms`,
+  GET_OR_CREATE_ROOM: `${API_BASE}/chat/rooms`,
+  ROOM_MESSAGES: (roomId: string) => `${API_BASE}/chat/rooms/${roomId}/messages`,
+  MARK_ROOM_READ: (roomId: string) => `${API_BASE}/chat/rooms/${roomId}/read`,
+  UNREAD_COUNT: `${API_BASE}/chat/unread-count`,
+  ASSIGNED_WORKERS: `${API_BASE}/chat/workers`,
 } as const;

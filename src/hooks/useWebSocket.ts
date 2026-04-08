@@ -1,9 +1,13 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppSelector } from '../store';
+import { API_BASE_URL } from '../services/endpoints';
 import type { ChatMessage } from '../store/api/chatApi';
 
-const API_BASE = 'https://backend-rp5c.onrender.com';
+// Socket server URL (strip /api/v1 path and use http:// for local dev)
+const API_BASE = import.meta.env.DEV 
+  ? 'http://localhost:3001'
+  : API_BASE_URL.replace('/api/v1', '');
 
 interface UseWebSocketOptions {
   roomId?: string | null;
@@ -71,8 +75,32 @@ export function useWebSocket({
 
     socket.emit('chat:join', { roomId });
 
-    const handleMessage = (message: ChatMessage) => {
-      onNewMessage?.(message);
+    const handleMessage = (message: any) => {
+      console.log('WebSocket received message:', message);
+      if (message.attachments && message.attachments.length > 0) {
+        console.log('Message has attachments:', message.attachments.length, message.attachments);
+      }
+      console.log('Message roomId:', message.chatRoomId, 'Current roomId:', roomId);
+      // Transform backend message format to frontend ChatMessage interface
+      const transformedMessage: ChatMessage = {
+        id: message.id || crypto.randomUUID(),
+        chatRoomId: message.chatRoomId || '',
+        senderId: message.senderId || '',
+        senderType: message.senderType || 'user' as const,
+        content: message.content || '',
+        messageType: message.messageType || 'TEXT' as any,
+        status: message.status || 'SENT' as const,
+        createdAt: message.createdAt || new Date().toISOString(),
+        readAt: message.readAt || null,
+        senderUser: message.sender || {
+          id: message.senderId || '',
+          fullName: '', // Backend doesn't send sender name in socket message
+          role: ''
+        },
+        attachments: message.attachments || []
+      };
+      console.log('Transformed message:', transformedMessage);
+      onNewMessage?.(transformedMessage);
     };
 
     const handleTyping = (data: { userId: string; isTyping: boolean }) => {
@@ -95,9 +123,13 @@ export function useWebSocket({
     };
   }, [roomId, isConnected, onNewMessage, onTyping, onMessagesRead]);
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback((content: string, attachments?: any[]) => {
     if (!socketRef.current || !roomId) return;
-    socketRef.current.emit('chat:message', { roomId, content });
+    socketRef.current.emit('chat:message', { 
+      roomId: roomId,
+      content: content,
+      attachments: attachments || []
+    });
   }, [roomId]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
