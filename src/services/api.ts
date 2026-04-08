@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { store } from '../store';
 import { clearAuth } from '../store/slices/authPersistSlice';
 
-const API_BASE = 'https://backend-rp5c.onrender.com';
+const API_BASE = 'https://app.staffsynctech.co.uk';
 
 // Create axios instance
 export const api = axios.create({
