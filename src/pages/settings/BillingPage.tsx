@@ -272,8 +272,10 @@ export function BillingPage() {
       toast.success('Payment completed successfully!');
       // Clear URL parameters but preserve the billing page path
       window.history.replaceState({}, '', '/#/settings/billing');
-      // Refresh subscription data
-      window.location.reload();
+      // Refresh subscription data after a short delay to allow toast to show
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } else if (success === 'canceled') {
       toast.info('Payment was canceled');
       // Clear the URL parameters but preserve the billing page path
