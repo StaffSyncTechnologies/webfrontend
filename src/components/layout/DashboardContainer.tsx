@@ -417,7 +417,7 @@ export function DashboardContainer({
       {waveBackground}
       <SidebarContentWrapper>
         <Logo>
-          <LogoBrand />
+          <LogoBrand to="/dashboard" />
           {isMobile && (
             <IconButton 
               onClick={handleDrawerToggle} 

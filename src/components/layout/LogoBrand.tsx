@@ -33,16 +33,17 @@ const LogoText = styled('span')<{ textColor?: string }>(({ textColor }) => ({
 
 interface LogoBrandProps {
   textColor?: string;
+  to?: string;
 }
 
-const LogoBrand = ({ textColor }: LogoBrandProps) => {
+const LogoBrand = ({ textColor, to = '/' }: LogoBrandProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (window.location.pathname === '/') {
+    if (window.location.pathname === to) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      navigate('/');
+      navigate(to);
     }
   };
 
