@@ -546,6 +546,54 @@ export function BillingPage() {
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '18px', fontWeight: 600, color: colors.primary.navy, marginBottom: '20px' }}>
               Subscription details ({plansData?.plans?.find((p: any) => p.id === selectedPlan)?.name || selectedPlan} Plan)
             </Box>
+            
+            {/* Billing Cycle Toggle */}
+            <Box sx={{ mb: 3 }}>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy, mb: 2 }}>
+                Billing Cycle
+              </Box>
+              <Box sx={{ display: 'flex', gap: '8px' }}>
+                <Box
+                  component="button"
+                  onClick={() => setBillingCycle('monthly')}
+                  sx={{
+                    flex: 1,
+                    padding: '8px 16px',
+                    border: billingCycle === 'monthly' ? '2px solid ' + colors.primary.blue : '1px solid #E5E7EB',
+                    borderRadius: '6px',
+                    backgroundColor: billingCycle === 'monthly' ? colors.primary.blue : 'transparent',
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: billingCycle === 'monthly' ? 'white' : colors.primary.navy,
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: billingCycle === 'monthly' ? colors.primary.blue : '#F9FAFB' },
+                  }}
+                >
+                  Monthly
+                </Box>
+                <Box
+                  component="button"
+                  onClick={() => setBillingCycle('yearly')}
+                  sx={{
+                    flex: 1,
+                    padding: '8px 16px',
+                    border: billingCycle === 'yearly' ? '2px solid ' + colors.primary.blue : '1px solid #E5E7EB',
+                    borderRadius: '6px',
+                    backgroundColor: billingCycle === 'yearly' ? colors.primary.blue : 'transparent',
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: billingCycle === 'yearly' ? 'white' : colors.primary.navy,
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: billingCycle === 'yearly' ? colors.primary.blue : '#F9FAFB' },
+                  }}
+                >
+                  Yearly
+                </Box>
+              </Box>
+            </Box>
+            
             {(() => {
               const pricePerWorker = billingCycle === 'yearly' 
                 ? plansData?.plans?.find((p: any) => p.id === selectedPlan)?.yearlyPricePerWorker 
