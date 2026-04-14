@@ -384,117 +384,113 @@ export function BillingPage() {
         <SectionTitle>Available Plans</SectionTitle>
 
         {/* Billing Cycle Toggle */}
-        <BillingToggle>
-          <ToggleOption active={billingCycle === 'monthly'} onClick={() => setBillingCycle('monthly')}>
-            Monthly
-          </ToggleOption>
-          <ToggleOption active={billingCycle === 'yearly'} onClick={() => setBillingCycle('yearly')}>
-            Yearly <SaveBadge>Save 17%</SaveBadge>
-          </ToggleOption>
-        </BillingToggle>
+        {(() => {
+          const paidPlans = (plansData?.plans || []).filter(
+            (p: any) => p.monthlyPricePerWorker && p.yearlyPricePerWorker && !p.isCustomPricing
+          );
+          const avgSave = paidPlans.length > 0
+            ? Math.round(
+                paidPlans.reduce((sum: number, p: any) => 
+                  sum + ((p.monthlyPricePerWorker - p.yearlyPricePerWorker) / p.monthlyPricePerWorker) * 100, 0
+                ) / paidPlans.length
+              )
+            : 0;
+          return (
+            <BillingToggle>
+              <ToggleOption active={billingCycle === 'monthly'} onClick={() => setBillingCycle('monthly')}>
+                Monthly
+              </ToggleOption>
+              <ToggleOption active={billingCycle === 'yearly'} onClick={() => setBillingCycle('yearly')}>
+                Yearly {avgSave > 0 && <SaveBadge>Save {avgSave}%</SaveBadge>}
+              </ToggleOption>
+            </BillingToggle>
+          );
+        })()}
 
         <PlansGrid>
-          {/* Free Trial Card */}
-          <PlanCard>
-            <PlanCardHeader>
-              <PlanCardIcon color="#10B981">
-                <Star />
-              </PlanCardIcon>
-              <PlanCardName>Free Trial</PlanCardName>
-              <PlanCardPrice>
-                £0 <span>/month</span>
-              </PlanCardPrice>
-              <PlanCardDescription>
-                {plansData?.freeTrialDays || 180} days free access to all features
-              </PlanCardDescription>
-            </PlanCardHeader>
-            <FeaturesList>
-              {(plansData?.plans?.find((p: any) => p.id === 'FREE')?.features || [
-                'Unlimited workers', 'Unlimited clients', 'Full scheduling features', 'Time tracking', 'Basic reports'
-              ]).slice(0, 5).map((f: string, i: number) => (
-                <FeatureItem key={i}><CheckCircle /> {f}</FeatureItem>
-              ))}
-            </FeaturesList>
-            <Button variant="outline" fullWidth disabled>
-              {subscription?.isTrialing ? 'Current Plan' : 'Trial Ended'}
-            </Button>
-          </PlanCard>
+          {(plansData?.plans || []).map((plan: any) => {
+            const isCurrent = subscription?.planTier === plan.id;
+            const isFree = plan.id === 'FREE';
+            const isEnterprise = plan.isCustomPricing;
+            const isRecommended = plan.id === 'PROFESSIONAL';
 
-          {/* Standard Plan Card */}
-          {(() => {
-            const stdPlan = plansData?.plans?.find((p: any) => p.id === 'STANDARD');
-            const price = billingCycle === 'yearly'
-              ? (stdPlan?.yearlyPricePerWorker ? `£${(stdPlan.yearlyPricePerWorker / 100 / 12).toFixed(0)}` : '£417')
-              : (stdPlan?.monthlyPricePerWorker ? `£${(stdPlan.monthlyPricePerWorker / 100).toFixed(0)}` : '£500');
-            const isCurrent = subscription?.planTier === 'STANDARD';
+            const iconColors: Record<string, string> = {
+              FREE: '#10B981',
+              STARTER: '#F59E0B',
+              PROFESSIONAL: colors.primary.blue,
+              BUSINESS: '#8B5CF6',
+              ENTERPRISE: '#7C3AED',
+            };
+            const iconMap: Record<string, any> = {
+              FREE: <Star />,
+              STARTER: <CheckCircle />,
+              PROFESSIONAL: <CheckCircle />,
+              BUSINESS: <Business />,
+              ENTERPRISE: <Business />,
+            };
+
+            const price = isFree
+              ? '£0'
+              : isEnterprise
+                ? 'Custom'
+                : billingCycle === 'yearly' && plan.yearlyPricePerWorker
+                  ? `£${(plan.yearlyPricePerWorker / 100).toFixed(2)}`
+                  : plan.monthlyPricePerWorker
+                    ? `£${(plan.monthlyPricePerWorker / 100).toFixed(2)}`
+                    : 'Custom';
+
+            const priceLabel = isFree
+              ? '/month'
+              : isEnterprise
+                ? ' pricing'
+                : '/worker/month';
+
+            const description = isFree
+              ? `${plansData?.freeTrialDays || 180} days free access to all features`
+              : isEnterprise
+                ? `${plan.minWorkers}+ workers — custom solution`
+                : `${plan.minWorkers}–${plan.maxWorkers} workers`;
+
             return (
-              <PlanCard recommended>
-                <RecommendedBadge>Recommended</RecommendedBadge>
+              <PlanCard key={plan.id} recommended={isRecommended}>
+                {isRecommended && <RecommendedBadge>Recommended</RecommendedBadge>}
                 <PlanCardHeader>
-                  <PlanCardIcon color={colors.primary.blue}>
-                    <CheckCircle />
+                  <PlanCardIcon color={iconColors[plan.id] || colors.primary.blue}>
+                    {iconMap[plan.id] || <CheckCircle />}
                   </PlanCardIcon>
-                  <PlanCardName>{stdPlan?.name || 'Standard'}</PlanCardName>
+                  <PlanCardName>{plan.name}</PlanCardName>
                   <PlanCardPrice>
-                    {price} <span>/worker/month</span>
+                    {price} <span>{priceLabel}</span>
                   </PlanCardPrice>
-                  <PlanCardDescription>
-                    {stdPlan ? `${stdPlan.minWorkers}–${stdPlan.maxWorkers} workers` : 'Everything you need to manage your workforce'}
-                  </PlanCardDescription>
+                  <PlanCardDescription>{description}</PlanCardDescription>
                 </PlanCardHeader>
                 <FeaturesList>
-                  {(stdPlan?.features || [
-                    'Unlimited workers', 'Unlimited clients', 'Advanced scheduling',
-                    'Payroll integration', 'Advanced reports & analytics', 'Priority support'
-                  ]).slice(0, 6).map((f: string, i: number) => (
+                  {(plan.features || []).slice(0, 6).map((f: string, i: number) => (
                     <FeatureItem key={i}><CheckCircle /> {f}</FeatureItem>
                   ))}
                 </FeaturesList>
-                <Button 
-                  variant="primary" 
-                  fullWidth 
-                  onClick={() => handleUpgrade('STANDARD')}
-                  disabled={checkoutLoading || updateLoading || isCurrent}
-                  loading={checkoutLoading || updateLoading}
-                >
-                  {isCurrent ? 'Current Plan' : 'Upgrade Now'}
-                </Button>
+                {isFree ? (
+                  <Button variant="outline" fullWidth disabled>
+                    {subscription?.isTrialing ? 'Current Plan' : isCurrent ? 'Current Plan' : 'Trial Ended'}
+                  </Button>
+                ) : isEnterprise ? (
+                  <Button variant="outline" fullWidth onClick={() => window.location.href = 'mailto:sales@staffsynctech.co.uk'} disabled={isCurrent}>
+                    {isCurrent ? 'Current Plan' : 'Contact Sales'}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={() => handleUpgrade(plan.id)}
+                    disabled={checkoutLoading || updateLoading || isCurrent}
+                    loading={checkoutLoading || updateLoading}
+                  >
+                    {isCurrent ? 'Current Plan' : 'Upgrade Now'}
+                  </Button>
+                )}
               </PlanCard>
             );
-          })()}
-
-          {/* Enterprise Plan Card */}
-          {(() => {
-            const entPlan = plansData?.plans?.find((p: any) => p.id === 'ENTERPRISE');
-            const isCurrent = subscription?.planTier === 'ENTERPRISE';
-            return (
-              <PlanCard>
-                <PlanCardHeader>
-                  <PlanCardIcon color="#7C3AED">
-                    <Business />
-                  </PlanCardIcon>
-                  <PlanCardName>{entPlan?.name || 'Enterprise'}</PlanCardName>
-                  <PlanCardPrice>
-                    Custom <span>pricing</span>
-                  </PlanCardPrice>
-                  <PlanCardDescription>
-                    {entPlan ? `${entPlan.minWorkers}+ workers — custom solution` : 'For large organizations with custom needs'}
-                  </PlanCardDescription>
-                </PlanCardHeader>
-                <FeaturesList>
-                  {(entPlan?.features || [
-                    'Everything in Standard', 'Dedicated account manager', 'Custom integrations',
-                    'SLA guarantee', 'On-premise deployment option', '24/7 phone support'
-                  ]).slice(0, 6).map((f: string, i: number) => (
-                    <FeatureItem key={i}><CheckCircle /> {f}</FeatureItem>
-                  ))}
-                </FeaturesList>
-                <Button variant="outline" fullWidth onClick={() => window.location.href = 'mailto:sales@staffsynctech.co.uk'} disabled={isCurrent}>
-                  {isCurrent ? 'Current Plan' : 'Contact Sales'}
-                </Button>
-              </PlanCard>
-            );
-          })()}
+          })}
         </PlansGrid>
       </PlansSection>
 

@@ -1319,21 +1319,20 @@ export function SettingsPage() {
     );
   };
 
-  const handleSubscribe = async (plan: string) => {
-    const planTier = plan.toUpperCase();
-    
+  const handleSubscribe = async (planTier: string) => {
     // If user already has an active paid subscription, use the update endpoint
     if (subscriptionData?.planTier && subscriptionData.planTier !== 'FREE' && subscriptionData.status === 'ACTIVE') {
       try {
         await updateSubscription({ planTier, billingCycle: 'yearly' }).unwrap();
-        toast.success(`Successfully upgraded to ${plan}!`);
+        const planName = plansData?.plans?.find((p: any) => p.id === planTier)?.name || planTier;
+        toast.success(`Successfully upgraded to ${planName}!`);
         setSubscriptionView('subscribed');
       } catch (error: any) {
         toast.error(error?.data?.message || 'Failed to upgrade subscription');
       }
     } else {
       // For new subscriptions, go through checkout flow
-      setSelectedPlan(plan);
+      setSelectedPlan(planTier);
       setSubscriptionView('checkout');
     }
   };
@@ -1342,8 +1341,7 @@ export function SettingsPage() {
     if (!selectedPlan) return;
     
     try {
-      const planTier = selectedPlan.toUpperCase();
-      const result = await createCheckout({ planTier, billingCycle: 'yearly' }).unwrap();
+      const result = await createCheckout({ planTier: selectedPlan, billingCycle: 'yearly' }).unwrap();
       
       // Redirect to Stripe checkout
       if (result.url) {
@@ -1379,15 +1377,11 @@ export function SettingsPage() {
     
     // Get plans from API
     const plans = plansData?.plans || [];
-    const freePlan = plans.find((p: any) => p.id === 'FREE');
-    const starterPlan = plans.find((p: any) => p.id === 'STARTER');
-    const professionalPlan = plans.find((p: any) => p.id === 'PROFESSIONAL');
-    const businessPlan = plans.find((p: any) => p.id === 'BUSINESS');
-    const enterprisePlan = plans.find((p: any) => p.id === 'ENTERPRISE');
     const freeTrialDays = plansData?.freeTrialDays || 180;
 
     const formatPrice = (plan: any) => {
       if (!plan || plan.isCustomPricing) return 'Custom';
+      if (plan.monthlyPricePerWorker === 0) return '£0';
       return `£${plan.monthlyPricePerWorker / 100}`;
     };
 
@@ -1451,154 +1445,69 @@ export function SettingsPage() {
         )}
 
         <PlansGrid>
-          {/* Free Trial Card */}
-          <PlanCard>
-            <PlanName>
-              FREE TRIAL {currentPlan === 'FREE' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}
-            </PlanName>
-            <PlanPrice><span className="amount">£0</span><span className="period">/month</span></PlanPrice>
-            <BilledText>Free trial for {freeTrialDays} days</BilledText>
-            <FeatureList>
-              {freePlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
-                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
-              )) || (
-                <>
-                  <FeatureItem><CheckCircle /> Free trial</FeatureItem>
-                  <FeatureItem><CheckCircle /> {freeTrialDays} days access</FeatureItem>
-                  <FeatureItem><CheckCircle /> Up to 10 workers</FeatureItem>
-                  <FeatureItem><CheckCircle /> Full scheduling features</FeatureItem>
-                  <FeatureItem><CheckCircle /> Email support</FeatureItem>
-                </>
-              )}
-            </FeatureList>
-            <SubscribeBtn variant="disabled" disabled>
-              {currentPlan === 'FREE' ? 'Current Plan' : 'Trial Ended'}
-            </SubscribeBtn>
-          </PlanCard>
+          {plans.map((plan: any) => {
+            const isCurrent = currentPlan === plan.id;
+            const isFree = plan.id === 'FREE';
+            const isEnterprise = plan.isCustomPricing;
+            const isRecommended = plan.id === 'PROFESSIONAL';
 
-          {/* Starter Plan */}
-          <PlanCard>
-            <PlanName>STARTER {currentPlan === 'STARTER' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
-            <PlanPrice>
-              <span className="amount">{formatPrice(starterPlan)}</span>
-              <span className="period">/worker/month</span>
-            </PlanPrice>
-            <BilledText>
-              Up to {starterPlan?.maxWorkers || 10} workers
-            </BilledText>
-            <FeatureList>
-              {starterPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
-                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
-              )) || (
-                <>
-                  <FeatureItem><CheckCircle /> Basic scheduling</FeatureItem>
-                  <FeatureItem><CheckCircle /> Mobile app access</FeatureItem>
-                  <FeatureItem><CheckCircle /> Email support</FeatureItem>
-                  <FeatureItem><CheckCircle /> Up to 10 workers</FeatureItem>
-                </>
-              )}
-            </FeatureList>
-            <SubscribeBtn 
-              variant={currentPlan === 'STARTER' ? 'disabled' : 'primary'} 
-              onClick={() => currentPlan !== 'STARTER' && handleSubscribe('Starter')}
-              disabled={currentPlan === 'STARTER' || checkoutLoading}
-            >
-              {currentPlan === 'STARTER' ? 'Current Plan' : 'Upgrade to Starter'}
-            </SubscribeBtn>
-          </PlanCard>
+            const priceText = isFree
+              ? '£0'
+              : isEnterprise
+                ? 'Custom'
+                : formatPrice(plan);
 
-          {/* Professional Plan */}
-          <PlanCard sx={{ border: '2px solid ' + colors.primary.blue }}>
-            <PlanName>PROFESSIONAL 👑 {currentPlan === 'PROFESSIONAL' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
-            <PlanPrice>
-              <span className="amount">{formatPrice(professionalPlan)}</span>
-              <span className="period">/worker/month</span>
-            </PlanPrice>
-            <BilledText>
-              {professionalPlan?.minWorkers || 11}-{professionalPlan?.maxWorkers || 50} workers
-            </BilledText>
-            <FeatureList>
-              {professionalPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
-                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
-              )) || (
-                <>
-                  <FeatureItem><CheckCircle /> Everything in Starter</FeatureItem>
-                  <FeatureItem><CheckCircle /> Advanced reporting</FeatureItem>
-                  <FeatureItem><CheckCircle /> Invoicing & payroll</FeatureItem>
-                  <FeatureItem><CheckCircle /> Priority support</FeatureItem>
-                  <FeatureItem><CheckCircle /> API access</FeatureItem>
-                </>
-              )}
-            </FeatureList>
-            <SubscribeBtn 
-              variant={currentPlan === 'PROFESSIONAL' ? 'disabled' : 'primary'} 
-              onClick={() => currentPlan !== 'PROFESSIONAL' && handleSubscribe('Professional')}
-              disabled={currentPlan === 'PROFESSIONAL' || checkoutLoading}
-            >
-              {currentPlan === 'PROFESSIONAL' ? 'Current Plan' : 'Upgrade to Professional'}
-            </SubscribeBtn>
-          </PlanCard>
-        </PlansGrid>
+            const periodText = isFree
+              ? '/month'
+              : isEnterprise
+                ? ' pricing'
+                : '/worker/month';
 
-        {/* Second row: Business + Enterprise */}
-        <PlansGrid sx={{ marginTop: '24px', gridTemplateColumns: 'repeat(2, 1fr) !important' }}>
-          {/* Business Plan */}
-          <PlanCard>
-            <PlanName>BUSINESS {currentPlan === 'BUSINESS' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
-            <PlanPrice>
-              <span className="amount">{formatPrice(businessPlan)}</span>
-              <span className="period">/worker/month</span>
-            </PlanPrice>
-            <BilledText>
-              {businessPlan?.minWorkers || 51}-{businessPlan?.maxWorkers || 200} workers
-            </BilledText>
-            <FeatureList>
-              {businessPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
-                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
-              )) || (
-                <>
-                  <FeatureItem><CheckCircle /> Everything in Professional</FeatureItem>
-                  <FeatureItem><CheckCircle /> Compliance management</FeatureItem>
-                  <FeatureItem><CheckCircle /> Custom integrations</FeatureItem>
-                  <FeatureItem><CheckCircle /> Dedicated account manager</FeatureItem>
-                </>
-              )}
-            </FeatureList>
-            <SubscribeBtn 
-              variant={currentPlan === 'BUSINESS' ? 'disabled' : 'primary'} 
-              onClick={() => currentPlan !== 'BUSINESS' && handleSubscribe('Business')}
-              disabled={currentPlan === 'BUSINESS' || checkoutLoading}
-            >
-              {currentPlan === 'BUSINESS' ? 'Current Plan' : 'Upgrade to Business'}
-            </SubscribeBtn>
-          </PlanCard>
+            const description = isFree
+              ? `Free trial for ${freeTrialDays} days`
+              : isEnterprise
+                ? `${plan.minWorkers}+ workers — Contact sales`
+                : `${plan.minWorkers}–${plan.maxWorkers} workers`;
 
-          {/* Enterprise Plan */}
-          <PlanCard>
-            <PlanName>ENTERPRISE {currentPlan === 'ENTERPRISE' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
-            <PlanPrice><span className="amount">Custom</span><span className="period"> pricing</span></PlanPrice>
-            <BilledText>200+ workers — Contact sales</BilledText>
-            <FeatureList>
-              {enterprisePlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
-                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
-              )) || (
-                <>
-                  <FeatureItem><CheckCircle /> Everything in Business</FeatureItem>
-                  <FeatureItem><CheckCircle /> White-label branding</FeatureItem>
-                  <FeatureItem><CheckCircle /> Custom SLA</FeatureItem>
-                  <FeatureItem><CheckCircle /> On-site training</FeatureItem>
-                  <FeatureItem><CheckCircle /> 24/7 phone support</FeatureItem>
-                </>
-              )}
-            </FeatureList>
-            <SubscribeBtn 
-              variant={currentPlan === 'ENTERPRISE' ? 'disabled' : 'outline'} 
-              onClick={() => currentPlan !== 'ENTERPRISE' && (window.location.href = 'mailto:sales@staffsynctech.co.uk')}
-              disabled={currentPlan === 'ENTERPRISE'}
-            >
-              {currentPlan === 'ENTERPRISE' ? 'Current Plan' : 'Contact Sales'}
-            </SubscribeBtn>
-          </PlanCard>
+            return (
+              <PlanCard key={plan.id} sx={isRecommended ? { border: '2px solid ' + colors.primary.blue } : {}}>
+                <PlanName>
+                  {plan.name?.toUpperCase()} {isRecommended && '👑'} {isCurrent && <CurrentBadge>CURRENT PLAN</CurrentBadge>}
+                </PlanName>
+                <PlanPrice>
+                  <span className="amount">{priceText}</span>
+                  <span className="period">{periodText}</span>
+                </PlanPrice>
+                <BilledText>{description}</BilledText>
+                <FeatureList>
+                  {(plan.features || []).slice(0, 5).map((feature: string, idx: number) => (
+                    <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
+                  ))}
+                </FeatureList>
+                {isFree ? (
+                  <SubscribeBtn variant="disabled" disabled>
+                    {isCurrent ? 'Current Plan' : 'Trial Ended'}
+                  </SubscribeBtn>
+                ) : isEnterprise ? (
+                  <SubscribeBtn 
+                    variant={isCurrent ? 'disabled' : 'outline'} 
+                    onClick={() => !isCurrent && (window.location.href = 'mailto:sales@staffsynctech.co.uk')}
+                    disabled={isCurrent}
+                  >
+                    {isCurrent ? 'Current Plan' : 'Contact Sales'}
+                  </SubscribeBtn>
+                ) : (
+                  <SubscribeBtn 
+                    variant={isCurrent ? 'disabled' : 'primary'} 
+                    onClick={() => !isCurrent && handleSubscribe(plan.id)}
+                    disabled={isCurrent || checkoutLoading || updatingSubscription}
+                  >
+                    {isCurrent ? 'Current Plan' : `Upgrade to ${plan.name}`}
+                  </SubscribeBtn>
+                )}
+              </PlanCard>
+            );
+          })}
         </PlansGrid>
       </Box>
     );
@@ -1607,17 +1516,17 @@ export function SettingsPage() {
   const renderCheckoutView = () => {
     // Get pricing from API
     const plans = plansData?.plans || [];
-    const standardPlan = plans.find((p: any) => p.id === 'STANDARD');
-    const planPrice = selectedPlan === 'Standard' 
-      ? (standardPlan?.monthlyPrice || 500) 
-      : 0; // Enterprise = custom pricing
+    const selectedPlanData = plans.find((p: any) => p.id === selectedPlan);
+    const planPricePence = selectedPlanData?.monthlyPricePerWorker || 0;
+    const planPrice = planPricePence / 100;
+    const planDisplayName = selectedPlanData?.name || selectedPlan || 'Plan';
     const vatAmount = (planPrice * 0.2).toFixed(2);
     const totalAmount = (planPrice * 1.2).toFixed(2);
 
     return (
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } }}>
         <SectionCard>
-          <SectionTitle>Subscription details ({selectedPlan} Plan)</SectionTitle>
+          <SectionTitle>Subscription details ({planDisplayName} Plan)</SectionTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>Monthly subscription x 12</Box>
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>£{planPrice}.00</Box>
