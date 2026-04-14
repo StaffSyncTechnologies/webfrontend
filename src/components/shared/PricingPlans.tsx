@@ -173,11 +173,11 @@ const fallbackPlans = [
     monthlyPricePerWorker: 0,
     yearlyPricePerWorker: 0,
     minWorkers: 1,
-    maxWorkers: 10,
-    features: ['180-day free trial', 'Up to 10 workers', 'Full scheduling features', 'Time tracking & timesheets', 'Invoicing & payroll', 'Reports & analytics', 'Email support'],
+    maxWorkers: -1,
+    features: ['180-day free trial', 'Unlimited workers', 'Full scheduling features', 'Time tracking & timesheets', 'Invoicing & payroll', 'Reports & analytics', 'Email support'],
     isCustomPricing: false,
     trialDays: 180,
-    workerLimit: 10,
+    workerLimit: -1,
     clientLimit: 'Unlimited',
   },
   {
@@ -185,6 +185,8 @@ const fallbackPlans = [
     name: 'Starter',
     monthlyPricePerWorker: 5.00,
     yearlyPricePerWorker: 4.00,
+    monthlyPrice: 500,
+    yearlyPrice: 400,
     minWorkers: 1,
     maxWorkers: 10,
     features: ['Basic scheduling & time tracking', 'Mobile app access', 'Email support', 'Up to 10 workers'],
@@ -198,6 +200,8 @@ const fallbackPlans = [
     name: 'Professional',
     monthlyPricePerWorker: 4.00,
     yearlyPricePerWorker: 3.50,
+    monthlyPrice: 400,
+    yearlyPrice: 350,
     minWorkers: 11,
     maxWorkers: 50,
     features: ['Everything in Starter', 'Advanced reporting & analytics', 'Invoicing & payroll', 'Priority support', 'API access', '11-50 workers'],
@@ -211,6 +215,8 @@ const fallbackPlans = [
     name: 'Business',
     monthlyPricePerWorker: 3.00,
     yearlyPricePerWorker: 2.50,
+    monthlyPrice: 300,
+    yearlyPrice: 250,
     minWorkers: 51,
     maxWorkers: 200,
     features: ['Everything in Professional', 'Compliance management', 'Custom integrations', 'Dedicated account manager', 'Phone support', '51-200 workers'],
@@ -224,6 +230,8 @@ const fallbackPlans = [
     name: 'Enterprise',
     monthlyPricePerWorker: null,
     yearlyPricePerWorker: null,
+    monthlyPrice: null,
+    yearlyPrice: null,
     minWorkers: 201,
     maxWorkers: -1, // unlimited
     features: ['Everything in Business', 'White-label branding', 'Custom SLA', 'On-site training', 'Volume discounts', '200+ workers - Contact sales'],
@@ -240,7 +248,7 @@ function mapPlanToDisplay(plan: Plan) {
   const isProfessional = plan.id === 'PROFESSIONAL';
   
   // Calculate example pricing for 10 workers (or show per-worker price)
-  const exampleWorkers = isFree ? 10 : plan.id === 'STARTER' ? 10 : plan.id === 'PROFESSIONAL' ? 25 : plan.id === 'BUSINESS' ? 100 : 0;
+  const exampleWorkers = isFree ? 0 : plan.id === 'STARTER' ? 10 : plan.id === 'PROFESSIONAL' ? 25 : plan.id === 'BUSINESS' ? 100 : 0;
   const monthlyTotal = plan.monthlyPricePerWorker ? (plan.monthlyPricePerWorker * exampleWorkers).toFixed(2) : 0;
   const yearlyTotal = plan.yearlyPricePerWorker ? (plan.yearlyPricePerWorker * exampleWorkers).toFixed(2) : 0;
   const yearlySavings = plan.monthlyPricePerWorker && plan.yearlyPricePerWorker 
@@ -249,13 +257,13 @@ function mapPlanToDisplay(plan: Plan) {
 
   return {
     id: plan.id,
-    name: isProfessional ? `${plan.name} 👑` : plan.name,
+    name: isProfessional ? `${plan.name} ?` : plan.name,
     price: isEnterprise ? 'Custom' : isFree ? '£0' : `£${(plan.monthlyPricePerWorker / 100).toFixed(2)}`,
-    period: isEnterprise ? '' : isFree ? '/month' : '/worker/month',
+    period: isEnterprise ? '' : isFree ? '' : '/worker/month',
     billing: isEnterprise 
       ? 'Contact us for pricing.' 
       : isFree 
-        ? '180-day free trial, then upgrade to continue.'
+        ? '180-day free trial with unlimited workers. No credit card required.'
         : `£${(plan.yearlyPricePerWorker / 100).toFixed(2)}/worker/month billed annually. Save £${yearlySavings}/year with ${exampleWorkers} workers.`,
     features: plan.features,
     buttonText: isFree ? 'Start Free Trial' : isEnterprise ? 'Contact Sales' : 'Get Started',

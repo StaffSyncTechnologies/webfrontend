@@ -20,6 +20,8 @@ export interface Plan {
   name: string;
   monthlyPricePerWorker: number;
   yearlyPricePerWorker: number;
+  monthlyPrice?: number;
+  yearlyPrice?: number;
   minWorkers: number;
   maxWorkers: number | string;
   workerLimit: number | string;
@@ -34,6 +36,33 @@ export interface PlansResponse {
   freeTrialDays: number;
   currency: string;
   pricingModel: string;
+}
+
+export interface SubscriptionHistoryItem {
+  id: string;
+  planType: string;
+  amount: string;
+  billingCycle: string;
+  date: string;
+  transactionId: string;
+  status: string;
+}
+
+export interface SubscriptionHistoryResponse {
+  history: SubscriptionHistoryItem[];
+  currentPlan: {
+    planTier: string;
+    status: string;
+    startDate: string;
+    nextBillingDate: string;
+    cost: string;
+  } | null;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export const subscriptionApi = createApi({
@@ -74,7 +103,7 @@ export const subscriptionApi = createApi({
     // Create checkout session
     createCheckout: builder.mutation<
       { sessionId: string; url: string }, 
-      { planTier: string; billingCycle: string; workerCount: number }
+      { planTier: string; billingCycle: string; workerCount?: number }
     >({
       query: (body) => ({
         url: `${API_BASE}/api/v1/subscriptions/checkout`,
@@ -94,6 +123,16 @@ export const subscriptionApi = createApi({
       invalidatesTags: ['Subscription'],
     }),
 
+    // Update subscription (upgrade/downgrade)
+    updateSubscription: builder.mutation<any, { planTier?: string; billingCycle?: string; workerCount?: number }>({
+      query: (body) => ({
+        url: `${API_BASE}/api/v1/subscriptions`,
+        method: 'PUT',
+        data: body,
+      }),
+      invalidatesTags: ['Subscription'],
+    }),
+
     // Resume subscription
     resumeSubscription: builder.mutation<any, void>({
       query: () => ({
@@ -101,6 +140,16 @@ export const subscriptionApi = createApi({
         method: 'POST',
       }),
       invalidatesTags: ['Subscription'],
+    }),
+
+    // Get subscription history
+    getSubscriptionHistory: builder.query<SubscriptionHistoryResponse, { page?: number; limit?: number }>({
+      query: ({ page = 1, limit = 10 } = {}) => ({
+        url: `${API_BASE}/api/v1/subscriptions/history?page=${page}&limit=${limit}`,
+        method: 'GET',
+      }),
+      transformResponse: (response: { success: boolean; data: SubscriptionHistoryResponse }) => response.data,
+      providesTags: ['Subscription'],
     }),
   }),
 });
@@ -111,5 +160,7 @@ export const {
   useGetSubscriptionQuery,
   useCreateCheckoutMutation,
   useCancelSubscriptionMutation,
+  useUpdateSubscriptionMutation,
   useResumeSubscriptionMutation,
+  useGetSubscriptionHistoryQuery,
 } = subscriptionApi;

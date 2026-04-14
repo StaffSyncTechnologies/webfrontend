@@ -52,6 +52,8 @@ import {
   useGetPlansQuery, 
   useCreateCheckoutMutation,
   useCancelSubscriptionMutation,
+  useGetSubscriptionHistoryQuery,
+  useUpdateSubscriptionMutation,
 } from '../../store/slices/subscriptionSlice';
 import { useAppSelector } from '../../store';
 import { formatDistanceToNow } from 'date-fns';
@@ -647,6 +649,9 @@ export function SettingsPage() {
   const { data: plansData } = useGetPlansQuery();
   const [createCheckout, { isLoading: checkoutLoading }] = useCreateCheckoutMutation();
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation();
+  const [updateSubscription, { isLoading: updatingSubscription }] = useUpdateSubscriptionMutation();
+  const [historyPage, setHistoryPage] = useState(1);
+  const { data: historyData, isLoading: historyLoading } = useGetSubscriptionHistoryQuery({ page: historyPage, limit: 10 });
   
   const [subscriptionView, setSubscriptionView] = useState<'plans' | 'checkout' | 'subscribed'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -1314,16 +1319,30 @@ export function SettingsPage() {
     );
   };
 
-  const handleSubscribe = (plan: string) => {
-    setSelectedPlan(plan);
-    setSubscriptionView('checkout');
+  const handleSubscribe = async (plan: string) => {
+    const planTier = plan.toUpperCase();
+    
+    // If user already has an active paid subscription, use the update endpoint
+    if (subscriptionData?.planTier && subscriptionData.planTier !== 'FREE' && subscriptionData.status === 'ACTIVE') {
+      try {
+        await updateSubscription({ planTier, billingCycle: 'yearly' }).unwrap();
+        toast.success(`Successfully upgraded to ${plan}!`);
+        setSubscriptionView('subscribed');
+      } catch (error: any) {
+        toast.error(error?.data?.message || 'Failed to upgrade subscription');
+      }
+    } else {
+      // For new subscriptions, go through checkout flow
+      setSelectedPlan(plan);
+      setSubscriptionView('checkout');
+    }
   };
 
   const handleCheckoutContinue = async () => {
     if (!selectedPlan) return;
     
     try {
-      const planTier = selectedPlan === 'Standard' ? 'STANDARD' : 'ENTERPRISE';
+      const planTier = selectedPlan.toUpperCase();
       const result = await createCheckout({ planTier, billingCycle: 'yearly' }).unwrap();
       
       // Redirect to Stripe checkout
@@ -1351,13 +1370,7 @@ export function SettingsPage() {
     }
   };
 
-  const subscriptionHistory = [
-    { id: '1', planType: 'Pro', amount: '£99.00', billingCycle: 'Annually', date: '01/02/2026', transactionId: 'TXN123456789', status: 'Active' },
-    { id: '2', planType: 'Pro', amount: '£99.00', billingCycle: 'Annually', date: '01/02/2026', transactionId: 'TXN123456789', status: 'Renewed' },
-    { id: '3', planType: 'Pro', amount: '£99.00', billingCycle: 'Annually', date: '01/02/2026', transactionId: 'TXN123456789', status: 'Cancelled' },
-    { id: '4', planType: 'Pro', amount: '£99.00', billingCycle: 'Annually', date: '01/02/2026', transactionId: 'TXN123456789', status: 'Renewed' },
-    { id: '5', planType: 'Starter', amount: '£0.00', billingCycle: 'Annually', date: '01/02/2026', transactionId: 'TXN123456789', status: 'Renewed' },
-  ];
+  const subscriptionHistory = historyData?.history || [];
 
   const renderPlansView = () => {
     const currentPlan = subscriptionData?.planTier || 'FREE';
@@ -1367,9 +1380,16 @@ export function SettingsPage() {
     // Get plans from API
     const plans = plansData?.plans || [];
     const freePlan = plans.find((p: any) => p.id === 'FREE');
-    const standardPlan = plans.find((p: any) => p.id === 'STANDARD');
+    const starterPlan = plans.find((p: any) => p.id === 'STARTER');
+    const professionalPlan = plans.find((p: any) => p.id === 'PROFESSIONAL');
+    const businessPlan = plans.find((p: any) => p.id === 'BUSINESS');
     const enterprisePlan = plans.find((p: any) => p.id === 'ENTERPRISE');
     const freeTrialDays = plansData?.freeTrialDays || 180;
+
+    const formatPrice = (plan: any) => {
+      if (!plan || plan.isCustomPricing) return 'Custom';
+      return `£${plan.monthlyPricePerWorker / 100}`;
+    };
 
     return (
       <Box>
@@ -1380,7 +1400,7 @@ export function SettingsPage() {
           </Box>
         ) : (
           <Box sx={{ 
-            backgroundColor: isTrialing ? '#FEF3C7' : '#D1FAE5', 
+            backgroundColor: isTrialing ? '#FEF3C7' : subscriptionData?.isExpired ? '#FEE2E2' : '#D1FAE5', 
             padding: '16px 20px', 
             borderRadius: '8px', 
             marginBottom: '24px',
@@ -1389,35 +1409,52 @@ export function SettingsPage() {
             alignItems: 'center'
           }}>
             <Box>
-              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: isTrialing ? '#92400E' : '#065F46' }}>
-                {isTrialing ? '🎉 Free Trial Active' : `Current Plan: ${currentPlan}`}
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: isTrialing ? '#92400E' : subscriptionData?.isExpired ? '#991B1B' : '#065F46' }}>
+                {subscriptionData?.isExpired ? 'Subscription Expired' : isTrialing ? '🎉 Free Trial Active' : `Current Plan: ${subscriptionData?.planName || currentPlan}`}
               </Box>
-              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', color: isTrialing ? '#B45309' : '#047857', marginTop: '2px' }}>
-                {daysRemaining !== null && daysRemaining !== undefined 
-                  ? `${daysRemaining} days remaining` 
-                  : 'Unlimited access'}
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', color: isTrialing ? '#B45309' : subscriptionData?.isExpired ? '#B91C1C' : '#047857', marginTop: '2px' }}>
+                {subscriptionData?.isExpired 
+                  ? 'Please upgrade to continue using all features'
+                  : daysRemaining !== null && daysRemaining !== undefined 
+                    ? `${daysRemaining} days remaining` 
+                    : subscriptionData?.currentPeriodEnd 
+                      ? `Next billing: ${new Date(subscriptionData.currentPeriodEnd).toLocaleDateString('en-GB')}`
+                      : 'Unlimited access'}
               </Box>
             </Box>
-            {isTrialing && daysRemaining !== null && daysRemaining !== undefined && daysRemaining <= 30 && (
-              <Box sx={{ 
-                fontFamily: "'Outfit', sans-serif", 
-                fontSize: '12px', 
-                fontWeight: 600, 
-                color: '#DC2626',
-                backgroundColor: '#FEE2E2',
-                padding: '6px 12px',
-                borderRadius: '4px'
-              }}>
-                Upgrade soon to avoid interruption
-              </Box>
-            )}
+            <Box sx={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {currentPlan !== 'FREE' && subscriptionData?.status === 'ACTIVE' && (
+                <Box
+                  component="button"
+                  onClick={() => setCancelModalOpen(true)}
+                  disabled={cancellingSubscription}
+                  sx={{
+                    fontFamily: "'Outfit', sans-serif", fontSize: '12px', fontWeight: 600,
+                    color: '#DC2626', backgroundColor: '#FEE2E2', padding: '6px 12px',
+                    borderRadius: '4px', border: '1px solid #FECACA', cursor: 'pointer',
+                    '&:hover': { backgroundColor: '#FCA5A5' },
+                  }}
+                >
+                  Cancel Plan
+                </Box>
+              )}
+              {isTrialing && daysRemaining !== null && daysRemaining !== undefined && daysRemaining <= 30 && (
+                <Box sx={{ 
+                  fontFamily: "'Outfit', sans-serif", fontSize: '12px', fontWeight: 600, 
+                  color: '#DC2626', backgroundColor: '#FEE2E2', padding: '6px 12px', borderRadius: '4px'
+                }}>
+                  Upgrade soon to avoid interruption
+                </Box>
+              )}
+            </Box>
           </Box>
         )}
 
         <PlansGrid>
+          {/* Free Trial Card */}
           <PlanCard>
             <PlanName>
-              STARTER {currentPlan === 'FREE' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}
+              FREE TRIAL {currentPlan === 'FREE' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}
             </PlanName>
             <PlanPrice><span className="amount">£0</span><span className="period">/month</span></PlanPrice>
             <BilledText>Free trial for {freeTrialDays} days</BilledText>
@@ -1428,68 +1465,135 @@ export function SettingsPage() {
                 <>
                   <FeatureItem><CheckCircle /> Free trial</FeatureItem>
                   <FeatureItem><CheckCircle /> {freeTrialDays} days access</FeatureItem>
-                  <FeatureItem><CheckCircle /> Unlimited workers</FeatureItem>
+                  <FeatureItem><CheckCircle /> Up to 10 workers</FeatureItem>
                   <FeatureItem><CheckCircle /> Full scheduling features</FeatureItem>
                   <FeatureItem><CheckCircle /> Email support</FeatureItem>
                 </>
               )}
             </FeatureList>
             <SubscribeBtn variant="disabled" disabled>
-              {currentPlan === 'FREE' ? 'Current Plan' : 'Free Trial'}
+              {currentPlan === 'FREE' ? 'Current Plan' : 'Trial Ended'}
             </SubscribeBtn>
           </PlanCard>
 
-          <PlanCard sx={{ border: '2px solid ' + colors.primary.blue }}>
-            <PlanName>STANDARD 👑 {currentPlan === 'STANDARD' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
+          {/* Starter Plan */}
+          <PlanCard>
+            <PlanName>STARTER {currentPlan === 'STARTER' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
             <PlanPrice>
-              <span className="amount">£{standardPlan?.monthlyPrice || 500}</span>
-              <span className="period">/month</span>
+              <span className="amount">{formatPrice(starterPlan)}</span>
+              <span className="period">/worker/month</span>
             </PlanPrice>
             <BilledText>
-              Billed annually (£{standardPlan?.yearlyPrice?.toLocaleString() || '5,000'}/year)
+              Up to {starterPlan?.maxWorkers || 10} workers
             </BilledText>
             <FeatureList>
-              {standardPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
+              {starterPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
                 <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
               )) || (
                 <>
-                  <FeatureItem><CheckCircle /> Unlimited workers</FeatureItem>
-                  <FeatureItem><CheckCircle /> Unlimited clients</FeatureItem>
-                  <FeatureItem><CheckCircle /> Compliance management</FeatureItem>
+                  <FeatureItem><CheckCircle /> Basic scheduling</FeatureItem>
+                  <FeatureItem><CheckCircle /> Mobile app access</FeatureItem>
+                  <FeatureItem><CheckCircle /> Email support</FeatureItem>
+                  <FeatureItem><CheckCircle /> Up to 10 workers</FeatureItem>
+                </>
+              )}
+            </FeatureList>
+            <SubscribeBtn 
+              variant={currentPlan === 'STARTER' ? 'disabled' : 'primary'} 
+              onClick={() => currentPlan !== 'STARTER' && handleSubscribe('Starter')}
+              disabled={currentPlan === 'STARTER' || checkoutLoading}
+            >
+              {currentPlan === 'STARTER' ? 'Current Plan' : 'Upgrade to Starter'}
+            </SubscribeBtn>
+          </PlanCard>
+
+          {/* Professional Plan */}
+          <PlanCard sx={{ border: '2px solid ' + colors.primary.blue }}>
+            <PlanName>PROFESSIONAL 👑 {currentPlan === 'PROFESSIONAL' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
+            <PlanPrice>
+              <span className="amount">{formatPrice(professionalPlan)}</span>
+              <span className="period">/worker/month</span>
+            </PlanPrice>
+            <BilledText>
+              {professionalPlan?.minWorkers || 11}-{professionalPlan?.maxWorkers || 50} workers
+            </BilledText>
+            <FeatureList>
+              {professionalPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
+                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
+              )) || (
+                <>
+                  <FeatureItem><CheckCircle /> Everything in Starter</FeatureItem>
+                  <FeatureItem><CheckCircle /> Advanced reporting</FeatureItem>
+                  <FeatureItem><CheckCircle /> Invoicing & payroll</FeatureItem>
                   <FeatureItem><CheckCircle /> Priority support</FeatureItem>
                   <FeatureItem><CheckCircle /> API access</FeatureItem>
                 </>
               )}
             </FeatureList>
             <SubscribeBtn 
-              variant={currentPlan === 'STANDARD' ? 'disabled' : 'primary'} 
-              onClick={() => currentPlan !== 'STANDARD' && handleSubscribe('Standard')}
-              disabled={currentPlan === 'STANDARD'}
+              variant={currentPlan === 'PROFESSIONAL' ? 'disabled' : 'primary'} 
+              onClick={() => currentPlan !== 'PROFESSIONAL' && handleSubscribe('Professional')}
+              disabled={currentPlan === 'PROFESSIONAL' || checkoutLoading}
             >
-              {currentPlan === 'STANDARD' ? 'Current Plan' : 'Upgrade to Standard'}
+              {currentPlan === 'PROFESSIONAL' ? 'Current Plan' : 'Upgrade to Professional'}
+            </SubscribeBtn>
+          </PlanCard>
+        </PlansGrid>
+
+        {/* Second row: Business + Enterprise */}
+        <PlansGrid sx={{ marginTop: '24px', gridTemplateColumns: 'repeat(2, 1fr) !important' }}>
+          {/* Business Plan */}
+          <PlanCard>
+            <PlanName>BUSINESS {currentPlan === 'BUSINESS' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
+            <PlanPrice>
+              <span className="amount">{formatPrice(businessPlan)}</span>
+              <span className="period">/worker/month</span>
+            </PlanPrice>
+            <BilledText>
+              {businessPlan?.minWorkers || 51}-{businessPlan?.maxWorkers || 200} workers
+            </BilledText>
+            <FeatureList>
+              {businessPlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
+                <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
+              )) || (
+                <>
+                  <FeatureItem><CheckCircle /> Everything in Professional</FeatureItem>
+                  <FeatureItem><CheckCircle /> Compliance management</FeatureItem>
+                  <FeatureItem><CheckCircle /> Custom integrations</FeatureItem>
+                  <FeatureItem><CheckCircle /> Dedicated account manager</FeatureItem>
+                </>
+              )}
+            </FeatureList>
+            <SubscribeBtn 
+              variant={currentPlan === 'BUSINESS' ? 'disabled' : 'primary'} 
+              onClick={() => currentPlan !== 'BUSINESS' && handleSubscribe('Business')}
+              disabled={currentPlan === 'BUSINESS' || checkoutLoading}
+            >
+              {currentPlan === 'BUSINESS' ? 'Current Plan' : 'Upgrade to Business'}
             </SubscribeBtn>
           </PlanCard>
 
+          {/* Enterprise Plan */}
           <PlanCard>
             <PlanName>ENTERPRISE {currentPlan === 'ENTERPRISE' && <CurrentBadge>CURRENT PLAN</CurrentBadge>}</PlanName>
-            <PlanPrice><span className="amount">Custom</span><span className="period">/month</span></PlanPrice>
-            <BilledText>Contact for pricing</BilledText>
+            <PlanPrice><span className="amount">Custom</span><span className="period"> pricing</span></PlanPrice>
+            <BilledText>200+ workers — Contact sales</BilledText>
             <FeatureList>
               {enterprisePlan?.features?.slice(0, 5).map((feature: string, idx: number) => (
                 <FeatureItem key={idx}><CheckCircle /> {feature}</FeatureItem>
               )) || (
                 <>
-                  <FeatureItem><CheckCircle /> Everything in Standard</FeatureItem>
+                  <FeatureItem><CheckCircle /> Everything in Business</FeatureItem>
                   <FeatureItem><CheckCircle /> White-label branding</FeatureItem>
-                  <FeatureItem><CheckCircle /> Custom integrations</FeatureItem>
-                  <FeatureItem><CheckCircle /> Dedicated account manager</FeatureItem>
+                  <FeatureItem><CheckCircle /> Custom SLA</FeatureItem>
+                  <FeatureItem><CheckCircle /> On-site training</FeatureItem>
                   <FeatureItem><CheckCircle /> 24/7 phone support</FeatureItem>
                 </>
               )}
             </FeatureList>
             <SubscribeBtn 
-              variant={currentPlan === 'ENTERPRISE' ? 'disabled' : 'primary'} 
-              onClick={() => currentPlan !== 'ENTERPRISE' && handleSubscribe('Enterprise')}
+              variant={currentPlan === 'ENTERPRISE' ? 'disabled' : 'outline'} 
+              onClick={() => currentPlan !== 'ENTERPRISE' && (window.location.href = 'mailto:sales@staffsynctech.co.uk')}
               disabled={currentPlan === 'ENTERPRISE'}
             >
               {currentPlan === 'ENTERPRISE' ? 'Current Plan' : 'Contact Sales'}
@@ -1573,11 +1677,14 @@ export function SettingsPage() {
   };
 
   const renderSubscribedView = () => {
-    const planName = subscriptionData?.planTier === 'STANDARD' ? 'Pro' : subscriptionData?.planTier === 'ENTERPRISE' ? 'Enterprise' : 'Free';
+    const currentPlanData = historyData?.currentPlan;
+    const planName = subscriptionData?.planName || (subscriptionData?.planTier === 'STANDARD' ? 'Standard' : subscriptionData?.planTier === 'ENTERPRISE' ? 'Enterprise' : 'Free Trial');
     const statusColor = subscriptionData?.status === 'ACTIVE' ? colors.status.success : subscriptionData?.status === 'CANCELED' ? colors.status.error : '#D97706';
-    const startDate = subscriptionData?.trialEnd ? new Date(subscriptionData.trialEnd).toLocaleDateString('en-GB') : '-';
-    const nextBillingDate = subscriptionData?.currentPeriodEnd ? new Date(subscriptionData.currentPeriodEnd).toLocaleDateString('en-GB') : '-';
-    const planCost = subscriptionData?.planTier === 'STANDARD' ? '£99.00' : subscriptionData?.planTier === 'ENTERPRISE' ? 'Custom' : '£0.00';
+    const startDate = currentPlanData?.startDate ? new Date(currentPlanData.startDate).toLocaleDateString('en-GB') : subscriptionData?.trialEnd ? new Date(subscriptionData.trialEnd).toLocaleDateString('en-GB') : '-';
+    const nextBillingDate = currentPlanData?.nextBillingDate ? new Date(currentPlanData.nextBillingDate).toLocaleDateString('en-GB') : subscriptionData?.currentPeriodEnd ? new Date(subscriptionData.currentPeriodEnd).toLocaleDateString('en-GB') : '-';
+    const planCost = currentPlanData?.cost || (subscriptionData?.planTier === 'FREE' ? '£0.00' : '-');
+    const totalHistory = historyData?.pagination?.total || 0;
+    const totalPages = historyData?.pagination?.totalPages || 1;
 
     return (
     <Box>
@@ -1605,6 +1712,38 @@ export function SettingsPage() {
         </Box>
       </Box>
 
+      {/* Upgrade / Cancel Buttons */}
+      <Box sx={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <Box
+          component="button"
+          onClick={() => setSubscriptionView('plans')}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px',
+            border: 'none', backgroundColor: colors.primary.blue, fontFamily: "'Outfit', sans-serif",
+            fontSize: '14px', fontWeight: 600, color: colors.secondary.white, cursor: 'pointer',
+            '&:hover': { opacity: 0.9 },
+          }}
+        >
+          <Upload sx={{ fontSize: 18 }} /> Upgrade Plan
+        </Box>
+        {subscriptionData?.planTier !== 'FREE' && subscriptionData?.status === 'ACTIVE' && (
+          <Box
+            component="button"
+            onClick={() => setCancelModalOpen(true)}
+            disabled={cancellingSubscription}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px',
+              border: '1px solid #DC2626', backgroundColor: 'transparent', fontFamily: "'Outfit', sans-serif",
+              fontSize: '14px', fontWeight: 600, color: '#DC2626', cursor: cancellingSubscription ? 'not-allowed' : 'pointer',
+              opacity: cancellingSubscription ? 0.6 : 1,
+              '&:hover': { backgroundColor: '#FEE2E2' },
+            }}
+          >
+            <Cancel sx={{ fontSize: 18 }} /> Cancel Plan
+          </Box>
+        )}
+      </Box>
+
       {/* Subscription History Table */}
       <TableCard>
         <CardHeader><h3>Subscription History</h3></CardHeader>
@@ -1623,20 +1762,23 @@ export function SettingsPage() {
             <FilterButton><FilterList sx={{ fontSize: 18 }} /> Filter</FilterButton>
           </FilterLeft>
           <FilterRight>
-            <DropdownButton>Role <KeyboardArrowDown sx={{ fontSize: 18 }} /></DropdownButton>
-            <DropdownButton>All Status <KeyboardArrowDown sx={{ fontSize: 18 }} /></DropdownButton>
             <ExportButton>Export as XLS <FileDownload sx={{ fontSize: 18 }} /></ExportButton>
           </FilterRight>
         </FilterRow>
 
         <Box sx={{ overflowX: 'auto' }}>
+          {historyLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+              <CircularProgress />
+            </Box>
+          ) : (
           <Table>
             <thead>
               <tr>
                 <Th style={{ width: '40px' }}><Checkbox size="small" /></Th>
                 <Th>Plan Type</Th>
                 <Th>Amount</Th>
-                <Th>Billing Cyle</Th>
+                <Th>Billing Cycle</Th>
                 <Th>Date</Th>
                 <Th>Transaction ID</Th>
                 <Th>Status</Th>
@@ -1644,14 +1786,20 @@ export function SettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {subscriptionHistory.map((item) => (
+              {subscriptionHistory.length === 0 ? (
+                <tr>
+                  <Td colSpan={8} style={{ textAlign: 'center', color: colors.text.secondary }}>
+                    No subscription history yet
+                  </Td>
+                </tr>
+              ) : subscriptionHistory.map((item) => (
                 <tr key={item.id}>
                   <Td><Checkbox size="small" /></Td>
                   <Td>{item.planType}</Td>
                   <Td>{item.amount}</Td>
                   <Td>{item.billingCycle}</Td>
-                  <Td>{item.date}</Td>
-                  <Td>{item.transactionId}</Td>
+                  <Td>{item.date ? new Date(item.date).toLocaleDateString('en-GB') : '-'}</Td>
+                  <Td style={{ fontSize: '12px' }}>{item.transactionId?.slice(0, 12) || '-'}</Td>
                   <Td>
                     <StatusBadge status={item.status}>{item.status}</StatusBadge>
                   </Td>
@@ -1664,6 +1812,7 @@ export function SettingsPage() {
               ))}
             </tbody>
           </Table>
+          )}
         </Box>
 
         <MuiMenu
@@ -1686,17 +1835,21 @@ export function SettingsPage() {
         <PaginationRow>
           <Box display="flex" alignItems="center" gap="8px">
             <PaginationText>Rows per page</PaginationText>
-            <Select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} size="small" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}>
-              <MenuItem value={8}>08</MenuItem>
+            <Select value={10} size="small" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}>
               <MenuItem value={10}>10</MenuItem>
               <MenuItem value={25}>25</MenuItem>
             </Select>
           </Box>
-          <PaginationText>Showing 10 out of 100 items</PaginationText>
+          <PaginationText>
+            {totalHistory > 0 
+              ? `Showing ${Math.min(subscriptionHistory.length, 10)} out of ${totalHistory} items`
+              : 'No items'
+            }
+          </PaginationText>
           <PaginationControls>
-            <PageButton disabled><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
-            <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>1</PageButton>
-            <PageButton><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
+            <PageButton disabled={historyPage <= 1} onClick={() => setHistoryPage(p => Math.max(1, p - 1))}><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
+            <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>{historyPage}</PageButton>
+            <PageButton disabled={historyPage >= totalPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
           </PaginationControls>
         </PaginationRow>
       </TableCard>
