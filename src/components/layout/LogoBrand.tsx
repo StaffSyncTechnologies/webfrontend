@@ -40,11 +40,9 @@ const LogoBrand = ({ textColor, to = '/' }: LogoBrandProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (window.location.pathname === to) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      navigate(to);
-    }
+    console.log('LogoBrand clicked, navigating to:', to);
+    console.log('Current pathname:', window.location.pathname);
+    navigate(to);
   };
 
   return (

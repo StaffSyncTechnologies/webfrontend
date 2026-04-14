@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, styled, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, Star, Timer, Warning, Business, Close } from '@mui/icons-material';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer, PageTitle } from '../../components/layout';
@@ -258,8 +259,29 @@ const LoadingContainer = styled(Box)({
 export function BillingPage() {
   useDocumentTitle('Billing & Plans');
   const toast = useToast();
+  const [searchParams] = useSearchParams();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  // Handle checkout success/failure from URL parameters
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const sessionId = searchParams.get('session_id');
+    
+    if (success === 'demo' && sessionId === 'demo') {
+      toast.success('Demo checkout completed successfully! (This is a simulation - no actual payment was processed)');
+      // Clear the URL parameters
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (success === 'true' && sessionId) {
+      toast.success('Payment completed successfully!');
+      // Refresh subscription data
+      window.location.reload();
+    } else if (success === 'canceled') {
+      toast.info('Payment was canceled');
+      // Clear the URL parameters
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [searchParams, toast]);
 
   const { data: subscription, isLoading: subLoading } = useGetSubscriptionSummaryQuery();
   const { data: plansData, isLoading: plansLoading } = useGetPlansQuery();
@@ -446,10 +468,10 @@ export function BillingPage() {
                 : '/worker/month';
 
             const description = isFree
-              ? `${plansData?.freeTrialDays || 180} days free access to all features`
+              ? `${plansData?.freeTrialDays || 180} days free access to all features - Unlimited workers`
               : isEnterprise
-                ? `${plan.minWorkers}+ workers — custom solution`
-                : `${plan.minWorkers}–${plan.maxWorkers} workers`;
+                ? `${plan.minWorkers}+ workers - custom solution`
+                : `${plan.minWorkers} - ${plan.maxWorkers} workers`;
 
             return (
               <PlanCard key={plan.id} recommended={isRecommended}>

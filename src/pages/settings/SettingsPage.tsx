@@ -1464,10 +1464,10 @@ export function SettingsPage() {
                 : '/worker/month';
 
             const description = isFree
-              ? `Free trial for ${freeTrialDays} days`
+              ? `Free trial for ${freeTrialDays} days - Unlimited workers`
               : isEnterprise
-                ? `${plan.minWorkers}+ workers — Contact sales`
-                : `${plan.minWorkers}–${plan.maxWorkers} workers`;
+                ? `${plan.minWorkers}+ workers - Contact sales`
+                : `${plan.minWorkers} - ${plan.maxWorkers} workers`;
 
             return (
               <PlanCard key={plan.id} sx={isRecommended ? { border: '2px solid ' + colors.primary.blue } : {}}>
