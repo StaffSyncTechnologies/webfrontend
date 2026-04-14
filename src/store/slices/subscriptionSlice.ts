@@ -48,6 +48,15 @@ export interface SubscriptionHistoryItem {
   status: string;
 }
 
+export interface SubscriptionLimits {
+  workerLimit: number;
+  clientLimit: number;
+  currentWorkers: number;
+  currentClients: number;
+  canAddWorker: boolean;
+  canAddClient: boolean;
+}
+
 export interface SubscriptionHistoryResponse {
   history: SubscriptionHistoryItem[];
   currentPlan: {
@@ -97,6 +106,16 @@ export const subscriptionApi = createApi({
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: any }) => response.data,
+      providesTags: ['Subscription'],
+    }),
+
+    // Get subscription limits
+    getSubscriptionLimits: builder.query<SubscriptionLimits, void>({
+      query: () => ({
+        url: `${API_BASE}/api/v1/subscriptions/limits`,
+        method: 'GET',
+      }),
+      transformResponse: (response: { success: boolean; data: SubscriptionLimits }) => response.data,
       providesTags: ['Subscription'],
     }),
 
@@ -158,6 +177,7 @@ export const {
   useGetSubscriptionSummaryQuery,
   useGetPlansQuery,
   useGetSubscriptionQuery,
+  useGetSubscriptionLimitsQuery,
   useCreateCheckoutMutation,
   useCancelSubscriptionMutation,
   useUpdateSubscriptionMutation,

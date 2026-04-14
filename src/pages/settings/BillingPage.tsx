@@ -9,6 +9,7 @@ import { colors } from '../../utilities/colors';
 import { 
   useGetSubscriptionSummaryQuery, 
   useGetPlansQuery,
+  useGetSubscriptionLimitsQuery,
   useCreateCheckoutMutation,
   useCancelSubscriptionMutation,
   useUpdateSubscriptionMutation,
@@ -285,6 +286,7 @@ export function BillingPage() {
 
   const { data: subscription, isLoading: subLoading } = useGetSubscriptionSummaryQuery();
   const { data: plansData, isLoading: plansLoading } = useGetPlansQuery();
+  const { data: limits } = useGetSubscriptionLimitsQuery();
   const [createCheckout, { isLoading: checkoutLoading }] = useCreateCheckoutMutation();
   const [cancelSubscription, { isLoading: cancelLoading }] = useCancelSubscriptionMutation();
   const [updateSubscription, { isLoading: updateLoading }] = useUpdateSubscriptionMutation();
@@ -434,7 +436,12 @@ export function BillingPage() {
             const isCurrent = subscription?.planTier === plan.id;
             const isFree = plan.id === 'FREE';
             const isEnterprise = plan.isCustomPricing;
-            const isRecommended = plan.id === 'PROFESSIONAL';
+            
+            // Calculate recommended plan based on current worker count
+            const currentWorkers = limits?.currentWorkers || 0;
+            const isRecommended = !isCurrent && !isFree && !isEnterprise && 
+              ((plan.id === 'PROFESSIONAL' && currentWorkers > 10 && currentWorkers <= 50) ||
+               (plan.id === 'BUSINESS' && currentWorkers > 50 && currentWorkers <= 200));
 
             const iconColors: Record<string, string> = {
               FREE: '#10B981',
