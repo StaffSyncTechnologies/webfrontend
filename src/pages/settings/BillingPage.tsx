@@ -270,18 +270,18 @@ export function BillingPage() {
     
     if (success === 'demo' && sessionId === 'demo') {
       toast.success('Demo checkout completed successfully! (This is a simulation - no actual payment was processed)');
-      // Clear the URL parameters
-      window.history.replaceState({}, '', window.location.pathname);
+      // Clear the URL parameters but preserve the billing page path
+      window.history.replaceState({}, '', '/#/settings/billing');
     } else if (success === 'true' && sessionId) {
       toast.success('Payment completed successfully!');
-      // Clear URL parameters first
-      window.history.replaceState({}, '', window.location.pathname);
+      // Clear URL parameters but preserve the billing page path
+      window.history.replaceState({}, '', '/#/settings/billing');
       // Refresh subscription data
       window.location.reload();
     } else if (success === 'canceled') {
       toast.info('Payment was canceled');
-      // Clear the URL parameters
-      window.history.replaceState({}, '', window.location.pathname);
+      // Clear the URL parameters but preserve the billing page path
+      window.history.replaceState({}, '', '/#/settings/billing');
     }
   }, [searchParams, toast]);
 
