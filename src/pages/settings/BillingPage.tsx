@@ -268,11 +268,7 @@ export function BillingPage() {
     const success = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
     
-    if (success === 'demo' && sessionId === 'demo') {
-      toast.success('Demo checkout completed successfully! (This is a simulation - no actual payment was processed)');
-      // Clear the URL parameters but preserve the billing page path
-      window.history.replaceState({}, '', '/#/settings/billing');
-    } else if (success === 'true' && sessionId) {
+    if (success === 'true' && sessionId) {
       toast.success('Payment completed successfully!');
       // Clear URL parameters but preserve the billing page path
       window.history.replaceState({}, '', '/#/settings/billing');
