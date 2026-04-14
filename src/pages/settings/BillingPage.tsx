@@ -312,7 +312,11 @@ export function BillingPage() {
         window.location.reload();
       } else {
         // For new subscriptions, use checkout
-        const result = await createCheckout({ planTier: selectedPlan, billingCycle }).unwrap();
+        const result = await createCheckout({ 
+          planTier: selectedPlan, 
+          billingCycle, 
+          workerCount: limits?.currentWorkers || 1 
+        }).unwrap();
         if (result.url) {
           window.location.href = result.url;
         }
@@ -543,15 +547,17 @@ export function BillingPage() {
               Subscription details ({plansData?.plans?.find((p: any) => p.id === selectedPlan)?.name || selectedPlan} Plan)
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
-              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>Monthly subscription x 12</Box>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>
+                £{((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100).toFixed(2)} per worker x {limits?.currentWorkers || 1} workers
+              </Box>
               <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>
-                £{((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100).toFixed(2)}
+                £{(((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100) * (limits?.currentWorkers || 1)).toFixed(2)}
               </Box>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
               <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>Total (per month)</Box>
               <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 700, color: colors.primary.navy }}>
-                £{((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100).toFixed(2)}
+                £{(((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100) * (limits?.currentWorkers || 1)).toFixed(2)}
               </Box>
             </Box>
             <Box sx={{ mt: 2, p: 2, backgroundColor: '#F0F9FF', borderRadius: '6px', border: '1px solid #BAE6FD' }}>

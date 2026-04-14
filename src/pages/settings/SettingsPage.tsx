@@ -50,6 +50,7 @@ import { useGetNotificationsQuery, useMarkAllAsReadMutation } from '../../store/
 import { 
   useGetSubscriptionSummaryQuery, 
   useGetPlansQuery, 
+  useGetSubscriptionLimitsQuery,
   useCreateCheckoutMutation,
   useCancelSubscriptionMutation,
   useGetSubscriptionHistoryQuery,
@@ -647,6 +648,7 @@ export function SettingsPage() {
   // Subscription state and hooks
   const { data: subscriptionData, isLoading: subscriptionLoading } = useGetSubscriptionSummaryQuery();
   const { data: plansData } = useGetPlansQuery();
+  const { data: limits } = useGetSubscriptionLimitsQuery();
   const [createCheckout, { isLoading: checkoutLoading }] = useCreateCheckoutMutation();
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation();
   const [updateSubscription, { isLoading: updatingSubscription }] = useUpdateSubscriptionMutation();
@@ -655,6 +657,7 @@ export function SettingsPage() {
   
   const [subscriptionView, setSubscriptionView] = useState<'plans' | 'checkout' | 'subscribed'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [subscriptionMenuAnchor, setSubscriptionMenuAnchor] = useState<null | HTMLElement>(null);
@@ -1323,7 +1326,7 @@ export function SettingsPage() {
     // If user already has an active paid subscription, use the update endpoint
     if (subscriptionData?.planTier && subscriptionData.planTier !== 'FREE' && subscriptionData.status === 'ACTIVE') {
       try {
-        await updateSubscription({ planTier, billingCycle: 'yearly' }).unwrap();
+        await updateSubscription({ planTier, billingCycle }).unwrap();
         const planName = plansData?.plans?.find((p: any) => p.id === planTier)?.name || planTier;
         toast.success(`Successfully upgraded to ${planName}!`);
         setSubscriptionView('subscribed');
@@ -1341,7 +1344,11 @@ export function SettingsPage() {
     if (!selectedPlan) return;
     
     try {
-      const result = await createCheckout({ planTier: selectedPlan, billingCycle: 'yearly' }).unwrap();
+      const result = await createCheckout({ 
+        planTier: selectedPlan, 
+        billingCycle, 
+        workerCount: limits?.currentWorkers || 1 
+      }).unwrap();
       
       // Redirect to Stripe checkout
       if (result.url) {
@@ -1525,13 +1532,66 @@ export function SettingsPage() {
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } }}>
         <SectionCard>
           <SectionTitle>Subscription details ({planDisplayName} Plan)</SectionTitle>
+          
+          {/* Billing Cycle Toggle */}
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy, mb: 2 }}>
+              Billing Cycle
+            </Box>
+            <Box sx={{ display: 'flex', gap: '8px' }}>
+              <Box
+                component="button"
+                onClick={() => setBillingCycle('monthly')}
+                sx={{
+                  flex: 1,
+                  padding: '8px 16px',
+                  border: billingCycle === 'monthly' ? '2px solid ' + colors.primary.blue : '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  backgroundColor: billingCycle === 'monthly' ? colors.primary.blue : 'transparent',
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: billingCycle === 'monthly' ? 'white' : colors.primary.navy,
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: billingCycle === 'monthly' ? colors.primary.blue : '#F9FAFB' },
+                }}
+              >
+                Monthly
+              </Box>
+              <Box
+                component="button"
+                onClick={() => setBillingCycle('yearly')}
+                sx={{
+                  flex: 1,
+                  padding: '8px 16px',
+                  border: billingCycle === 'yearly' ? '2px solid ' + colors.primary.blue : '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  backgroundColor: billingCycle === 'yearly' ? colors.primary.blue : 'transparent',
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: billingCycle === 'yearly' ? 'white' : colors.primary.navy,
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: billingCycle === 'yearly' ? colors.primary.blue : '#F9FAFB' },
+                }}
+              >
+                Yearly
+              </Box>
+            </Box>
+          </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
-            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>Monthly subscription x 12</Box>
-            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>£{planPrice}.00</Box>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>
+              £{planPrice}.00 per worker x {limits?.currentWorkers || 1} workers
+            </Box>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>
+              £{(planPrice * (limits?.currentWorkers || 1)).toFixed(2)}
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>Total (per month)</Box>
-            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 700, color: colors.primary.navy }}>£{planPrice}.00</Box>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 700, color: colors.primary.navy }}>
+              £{(planPrice * (limits?.currentWorkers || 1)).toFixed(2)}
+            </Box>
           </Box>
           <Box sx={{ mt: 2, p: 2, backgroundColor: '#F0F9FF', borderRadius: '6px', border: '1px solid #BAE6FD' }}>
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '12px', color: '#0369A1' }}>
