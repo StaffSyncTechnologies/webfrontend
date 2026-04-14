@@ -1520,8 +1520,6 @@ export function SettingsPage() {
     const planPricePence = selectedPlanData?.monthlyPricePerWorker || 0;
     const planPrice = planPricePence / 100;
     const planDisplayName = selectedPlanData?.name || selectedPlan || 'Plan';
-    const vatAmount = (planPrice * 0.2).toFixed(2);
-    const totalAmount = (planPrice * 1.2).toFixed(2);
 
     return (
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } }}>
@@ -1531,13 +1529,14 @@ export function SettingsPage() {
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>Monthly subscription x 12</Box>
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>£{planPrice}.00</Box>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
-            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>VAT (20%)</Box>
-            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>£{vatAmount}</Box>
-          </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
             <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>Total (per month)</Box>
-            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 700, color: colors.primary.navy }}>£{totalAmount}</Box>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 700, color: colors.primary.navy }}>£{planPrice}.00</Box>
+          </Box>
+          <Box sx={{ mt: 2, p: 2, backgroundColor: '#F0F9FF', borderRadius: '6px', border: '1px solid #BAE6FD' }}>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '12px', color: '#0369A1' }}>
+              <strong>VAT Notice:</strong> Prices displayed exclude VAT. VAT will be calculated and added by Stripe during checkout based on your location.
+            </Box>
           </Box>
           <Box 
             component="button" 

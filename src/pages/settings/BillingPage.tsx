@@ -263,6 +263,8 @@ export function BillingPage() {
   const [searchParams] = useSearchParams();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   // Handle checkout success/failure from URL parameters
   useEffect(() => {
@@ -291,18 +293,26 @@ export function BillingPage() {
   const [cancelSubscription, { isLoading: cancelLoading }] = useCancelSubscriptionMutation();
   const [updateSubscription, { isLoading: updateLoading }] = useUpdateSubscriptionMutation();
 
-  const handleUpgrade = async (planTier: string) => {
+  const handleUpgrade = (planTier: string) => {
+    setSelectedPlan(planTier);
+    setShowCheckout(true);
+  };
+
+  const handleCheckoutContinue = async () => {
+    if (!selectedPlan) return;
+    
     try {
       // Check if user has existing subscription
       if (subscription?.planTier && subscription.planTier !== 'FREE') {
         // For existing subscriptions, use update endpoint
-        const result = await updateSubscription({ planTier, billingCycle }).unwrap();
+        const result = await updateSubscription({ planTier: selectedPlan, billingCycle }).unwrap();
         toast.success('Subscription upgraded successfully!');
+        setShowCheckout(false);
         // Refresh subscription data
         window.location.reload();
       } else {
         // For new subscriptions, use checkout
-        const result = await createCheckout({ planTier, billingCycle }).unwrap();
+        const result = await createCheckout({ planTier: selectedPlan, billingCycle }).unwrap();
         if (result.url) {
           window.location.href = result.url;
         }
@@ -404,6 +414,7 @@ export function BillingPage() {
       </CurrentPlanCard>
 
       {/* Available Plans */}
+      {!showCheckout && (
       <PlansSection>
         <SectionTitle>Available Plans</SectionTitle>
 
@@ -522,6 +533,71 @@ export function BillingPage() {
           })}
         </PlansGrid>
       </PlansSection>
+      )}
+
+      {/* Checkout View */}
+      {showCheckout && selectedPlan && (
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } }}>
+          <Box sx={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '18px', fontWeight: 600, color: colors.primary.navy, marginBottom: '20px' }}>
+              Subscription details ({plansData?.plans?.find((p: any) => p.id === selectedPlan)?.name || selectedPlan} Plan)
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>Monthly subscription x 12</Box>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>
+                £{((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100).toFixed(2)}
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy }}>Total (per month)</Box>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '16px', fontWeight: 700, color: colors.primary.navy }}>
+                £{((plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0) / 100).toFixed(2)}
+              </Box>
+            </Box>
+            <Box sx={{ mt: 2, p: 2, backgroundColor: '#F0F9FF', borderRadius: '6px', border: '1px solid #BAE6FD' }}>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '12px', color: '#0369A1' }}>
+                <strong>VAT Notice:</strong> Prices displayed exclude VAT. VAT will be calculated and added by Stripe during checkout based on your location.
+              </Box>
+            </Box>
+            <Box 
+              component="button" 
+              onClick={() => setShowCheckout(false)}
+              sx={{ 
+                marginTop: '16px', padding: '8px 16px', border: '1px solid #E5E7EB', borderRadius: '6px',
+                backgroundColor: 'transparent', fontFamily: "'Outfit', sans-serif", fontSize: '13px',
+                color: colors.text.secondary, cursor: 'pointer', '&:hover': { backgroundColor: '#F9FAFB' }
+              }}
+            >
+              Back to plans
+            </Box>
+          </Box>
+
+          <Box sx={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '18px', fontWeight: 600, color: colors.primary.navy, marginBottom: '20px' }}>
+              Payment Information
+            </Box>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600, color: colors.primary.navy, marginBottom: '16px' }}>Pay With</Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', border: '2px solid ' + colors.primary.blue, borderRadius: '8px', marginBottom: '24px' }}>
+              <Box sx={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid ' + colors.primary.blue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: colors.primary.blue }} />
+              </Box>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.primary.navy }}>Stripe (Secure Payment)</Box>
+            </Box>
+            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '12px', color: colors.text.secondary, marginBottom: '16px' }}>
+              You will be redirected to Stripe to complete your payment securely.
+            </Box>
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={handleCheckoutContinue}
+              disabled={checkoutLoading}
+              loading={checkoutLoading}
+            >
+              Continue to Payment
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       {/* Cancel Subscription Dialog */}
       <Dialog 
@@ -568,7 +644,7 @@ export function BillingPage() {
           <Box sx={{ mb: 3 }}>
             <strong>Need help?</strong>
             <br />
-            Contact our support team at support@staffsync.com for assistance with alternative plans or temporary suspensions.
+            Contact our support team at info@staffsynctech.co.uk for assistance with alternative plans or temporary suspensions.
           </Box>
         </DialogContent>
 
