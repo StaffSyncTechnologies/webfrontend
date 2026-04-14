@@ -1580,9 +1580,10 @@ export function SettingsPage() {
             </Box>
           </Box>
           {(() => {
+              const monthlyPricePerWorker = selectedPlanData?.monthlyPricePerWorker || 0;
               const pricePerWorker = billingCycle === 'yearly' 
-                ? selectedPlanData?.yearlyPricePerWorker 
-                : selectedPlanData?.monthlyPricePerWorker;
+                ? monthlyPricePerWorker * 12  // Calculate yearly as monthly × 12
+                : monthlyPricePerWorker;
               const totalPrice = ((pricePerWorker || 0) / 100) * (limits?.currentWorkers || 1);
               return (
                 <>

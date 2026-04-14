@@ -595,9 +595,10 @@ export function BillingPage() {
             </Box>
             
             {(() => {
+              const monthlyPricePerWorker = plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker || 0;
               const pricePerWorker = billingCycle === 'yearly' 
-                ? plansData?.plans?.find((p: any) => p.id === selectedPlan)?.yearlyPricePerWorker 
-                : plansData?.plans?.find((p: any) => p.id === selectedPlan)?.monthlyPricePerWorker;
+                ? monthlyPricePerWorker * 12  // Calculate yearly as monthly × 12
+                : monthlyPricePerWorker;
               const totalPrice = ((pricePerWorker || 0) / 100) * (limits?.currentWorkers || 1);
               return (
                 <>
