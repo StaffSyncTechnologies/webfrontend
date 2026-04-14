@@ -274,6 +274,8 @@ export function BillingPage() {
       window.history.replaceState({}, '', window.location.pathname);
     } else if (success === 'true' && sessionId) {
       toast.success('Payment completed successfully!');
+      // Clear URL parameters first
+      window.history.replaceState({}, '', window.location.pathname);
       // Refresh subscription data
       window.location.reload();
     } else if (success === 'canceled') {
