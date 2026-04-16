@@ -21,6 +21,12 @@ const baseQuery = fetchBaseQuery({
       headers.set('Authorization', `Bearer ${token}`);
     }
     
+    // Add API key
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (apiKey) {
+      headers.set('X-API-Key', apiKey);
+    }
+    
     // Don't set Content-Type for FormData (file uploads) - let the browser set it with boundary
     if (!headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');

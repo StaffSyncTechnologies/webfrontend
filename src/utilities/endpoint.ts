@@ -6,6 +6,7 @@
 /// <reference types="../vite-env" />
 
 export const API_BASE = 'https://dev.staffsynctech.co.uk/api/v1';
+export const API_BASE_ROOT = 'https://dev.staffsynctech.co.uk';
 
 // Dashboard endpoints
 export const DASHBOARD = {

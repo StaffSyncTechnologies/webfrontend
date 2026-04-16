@@ -1,7 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
-
-const API_BASE = 'https://backend-rp5c.onrender.com/api/v1';
+import { API_BASE_URL as API_BASE } from '../../services/api';
 
 export interface ComplianceStats {
   total: number;

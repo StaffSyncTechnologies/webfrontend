@@ -1,7 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
-
-const API_BASE = 'https://backend-rp5c.onrender.com';
+import { API_BASE } from '../../services/api';
 
 export interface SubscriptionSummary {
   planTier: string;

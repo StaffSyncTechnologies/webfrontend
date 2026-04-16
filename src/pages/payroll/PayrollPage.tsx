@@ -551,7 +551,7 @@ export function PayrollPage() {
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(BANK_ACCOUNT.PAYMENT_SHEET, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, 'X-API-Key': import.meta.env.VITE_API_KEY || '' },
       });
       if (!response.ok) throw new Error('Failed to download');
       const blob = await response.blob();

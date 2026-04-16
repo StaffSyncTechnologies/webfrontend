@@ -37,6 +37,7 @@ import { useDocumentTitle, useToast } from '../../hooks';
 import { DashboardContainer } from '../../components/layout';
 import { ChangePasswordModal, AddRoleModal, AddLocationModal, SubscriptionSuccessModal, CancelSubscriptionModal, DeleteAccountModal } from '../../components/modals';
 import { colors } from '../../utilities/colors';
+import { API_BASE_ROOT } from '../../utilities/endpoint';
 import {
   useGetOrganizationQuery,
   useUpdateOrganizationMutation,
@@ -808,7 +809,7 @@ export function SettingsPage() {
               {uploadingLogo ? (
                 <CircularProgress size={32} />
               ) : organization?.logoUrl ? (
-                <img src={organization.logoUrl!.startsWith('http') ? organization.logoUrl! : `https://backend-rp5c.onrender.com${organization.logoUrl}`} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '8px' }} />
+                <img src={organization.logoUrl!.startsWith('http') ? organization.logoUrl! : `${API_BASE_ROOT}${organization.logoUrl}`} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '8px' }} />
               ) : (
                 <Box sx={{ textAlign: 'center' }}>
                   <CloudUpload sx={{ fontSize: 32, color: '#9CA3AF', marginBottom: '4px' }} />
@@ -848,7 +849,7 @@ export function SettingsPage() {
               {uploadingCover ? (
                 <CircularProgress size={32} />
               ) : (organization as any)?.coverImageUrl ? (
-                <img src={(organization as any).coverImageUrl.startsWith('http') ? (organization as any).coverImageUrl : `https://backend-rp5c.onrender.com${(organization as any).coverImageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={(organization as any).coverImageUrl.startsWith('http') ? (organization as any).coverImageUrl : `${API_BASE_ROOT}${(organization as any).coverImageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Box sx={{ textAlign: 'center' }}>
                   <CloudUpload sx={{ fontSize: 32, color: '#9CA3AF', marginBottom: '4px' }} />

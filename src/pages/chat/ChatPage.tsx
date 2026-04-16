@@ -489,6 +489,7 @@ export function ChatPage() {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          'X-API-Key': import.meta.env.VITE_API_KEY || '',
         },
         body: formData,
       }).then((res) => res.json());
@@ -516,6 +517,7 @@ export function ChatPage() {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('authToken')}`,
             'Content-Type': 'application/json',
+            'X-API-Key': import.meta.env.VITE_API_KEY || '',
           },
           body: JSON.stringify({
             content: `Shared ${file.name}`,

@@ -1,6 +1,8 @@
 // Frontend Geocoding Service
 // Use this in your web app to geocode addresses before sending to backend
 
+import { API_BASE_URL } from '../services/api';
+
 export class FrontendGeocodingService {
   private static readonly NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/search';
   private static readonly USER_AGENT = 'StaffSync/1.0 (staffsync@example.com)';
@@ -83,11 +85,12 @@ export const updateShiftWithCoordinates = async (shiftId: string, siteLocation: 
   }
   
   // Send to backend with coordinates
-  const response = await fetch(`https://backend-rp5c.onrender.com/api/v1/shifts/${shiftId}`, {
+  const response = await fetch(`${API_BASE_URL}/shifts/${shiftId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'X-API-Key': import.meta.env.VITE_API_KEY || ''
     },
     body: JSON.stringify({
       siteLocation,

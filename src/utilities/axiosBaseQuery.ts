@@ -28,6 +28,12 @@ export const axiosBaseQuery = ({
     try {
       const headers: Record<string, string> = {};
       
+      // Add API key header
+      const apiKey = import.meta.env.VITE_API_KEY;
+      if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+      }
+
       // Add default headers
       if (prepareHeaders) {
         const preparedHeaders = prepareHeaders(headers);

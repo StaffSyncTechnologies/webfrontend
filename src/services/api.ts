@@ -2,7 +2,8 @@ import axios, { AxiosError } from 'axios';
 import { store } from '../store';
 import { clearAuth } from '../store/slices/authPersistSlice';
 
-const API_BASE = 'https://dev.staffsynctech.co.uk';
+export const API_BASE = 'https://dev.staffsynctech.co.uk';
+export const API_BASE_URL = `${API_BASE}/api/v1`;
 
 // Create axios instance
 export const api = axios.create({
