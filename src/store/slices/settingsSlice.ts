@@ -63,13 +63,13 @@ export interface StaffUserListResponse {
 
 export const settingsApi = createApi({
   reducerPath: 'settingsApi',
-  baseQuery: axiosBaseQuery(),
+  baseQuery: axiosBaseQuery({ baseUrl: API_BASE }),
   tagTypes: ['Organization', 'Locations', 'StaffUsers'],
   endpoints: (builder) => ({
     // Organization
     getOrganization: builder.query<Organization, void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/organizations/current`,
+        url: '/organizations/current',
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: Organization }) => response.data,
@@ -78,7 +78,7 @@ export const settingsApi = createApi({
 
     updateOrganization: builder.mutation<Organization, Partial<Organization>>({
       query: (data) => ({
-        url: `${API_BASE}/api/v1/organizations/current`,
+        url: '/organizations/current',
         method: 'PUT',
         data,
       }),
@@ -88,7 +88,7 @@ export const settingsApi = createApi({
 
     updateBranding: builder.mutation<Organization, { logoUrl?: string; primaryColor?: string; secondaryColor?: string }>({
       query: (data) => ({
-        url: `${API_BASE}/api/v1/organizations/current/branding`,
+        url: '/organizations/current/branding',
         method: 'PUT',
         data,
       }),
@@ -98,7 +98,7 @@ export const settingsApi = createApi({
 
     uploadLogo: builder.mutation<{ logoUrl: string; filename: string; originalName: string; size: number }, FormData>({
       query: (formData) => ({
-        url: `${API_BASE}/api/v1/organizations/current/logo`,
+        url: '/organizations/current/logo',
         method: 'POST',
         data: formData,
       }),
@@ -108,7 +108,7 @@ export const settingsApi = createApi({
 
     uploadCoverImage: builder.mutation<{ coverImageUrl: string; filename: string; originalName: string; size: number }, FormData>({
       query: (formData) => ({
-        url: `${API_BASE}/api/v1/organizations/current/cover`,
+        url: '/organizations/current/cover',
         method: 'POST',
         data: formData,
       }),
@@ -119,7 +119,7 @@ export const settingsApi = createApi({
     // Locations
     getLocations: builder.query<Location[], void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/locations`,
+        url: '/locations',
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: Location[] }) => response.data,
@@ -128,7 +128,7 @@ export const settingsApi = createApi({
 
     createLocation: builder.mutation<Location, Partial<Location>>({
       query: (data) => ({
-        url: `${API_BASE}/api/v1/locations`,
+        url: '/locations',
         method: 'POST',
         data,
       }),
@@ -138,7 +138,7 @@ export const settingsApi = createApi({
 
     updateLocation: builder.mutation<void, { id: string; data: Partial<Location> }>({
       query: ({ id, data }) => ({
-        url: `${API_BASE}/api/v1/locations/${id}`,
+        url: `/locations/${id}`,
         method: 'PUT',
         data,
       }),
@@ -147,7 +147,7 @@ export const settingsApi = createApi({
 
     deleteLocation: builder.mutation<void, string>({
       query: (id) => ({
-        url: `${API_BASE}/api/v1/locations/${id}`,
+        url: `/locations/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Locations'],
@@ -156,7 +156,7 @@ export const settingsApi = createApi({
     // Staff Users
     getStaffUsers: builder.query<StaffUserListResponse, { page?: number; limit?: number; search?: string; role?: string; status?: string }>({
       query: (params) => ({
-        url: `${API_BASE}/api/v1/hr/managers`,
+        url: '/hr/managers',
         method: 'GET',
         params,
       }),
@@ -166,7 +166,7 @@ export const settingsApi = createApi({
 
     inviteStaffUser: builder.mutation<StaffUser, { email: string; fullName: string; role: string; phone?: string }>({
       query: (data) => ({
-        url: `${API_BASE}/api/v1/users`,
+        url: '/users',
         method: 'POST',
         data: { ...data, sendInvite: true },
       }),
@@ -176,7 +176,7 @@ export const settingsApi = createApi({
 
     updateStaffUser: builder.mutation<StaffUser, { id: string; data: Partial<StaffUser> }>({
       query: ({ id, data }) => ({
-        url: `${API_BASE}/api/v1/users/${id}`,
+        url: `/users/${id}`,
         method: 'PUT',
         data,
       }),
@@ -186,15 +186,15 @@ export const settingsApi = createApi({
 
     suspendUser: builder.mutation<void, string>({
       query: (id) => ({
-        url: `${API_BASE}/api/v1/users/${id}/suspend`,
-        method: 'PUT',
+        url: `/users/${id}/suspend`,
+        method: 'POST',
       }),
       invalidatesTags: ['StaffUsers'],
     }),
 
     reactivateUser: builder.mutation<void, string>({
       query: (id) => ({
-        url: `${API_BASE}/api/v1/users/${id}/reactivate`,
+        url: `/users/${id}/reactivate`,
         method: 'PUT',
       }),
       invalidatesTags: ['StaffUsers'],
@@ -203,7 +203,7 @@ export const settingsApi = createApi({
     // Change Password
     changePassword: builder.mutation<void, { currentPassword: string; newPassword: string }>({
       query: (data) => ({
-        url: `${API_BASE}/api/v1/auth/change-password`,
+        url: '/auth/change-password',
         method: 'POST',
         data,
       }),
@@ -212,7 +212,7 @@ export const settingsApi = createApi({
     // Delete Organization
     deleteOrganization: builder.mutation<void, { password: string; reason?: string }>({
       query: (data) => ({
-        url: `${API_BASE}/api/v1/organizations/current`,
+        url: '/organizations/current',
         method: 'DELETE',
         data,
       }),

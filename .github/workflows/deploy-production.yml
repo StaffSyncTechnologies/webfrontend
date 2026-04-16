@@ -1,0 +1,145 @@
+name: Deploy Production Web App
+
+on:
+  push:
+    branches: [main, production]
+    paths: ['frontend/web/**']
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend/web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run type-check || true
+
+      - name: Run linting
+        run: npm run lint || true
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://api.staffsynctech.co.uk/api/v1
+          VITE_API_KEY: ${{ secrets.PROD_API_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+    defaults:
+      run:
+        working-directory: ./frontend/web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://api.staffsynctech.co.uk/api/v1
+          VITE_API_KEY: ${{ secrets.PROD_API_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
+      - name: Deploy to production server
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          echo "Starting deployment to production server..."
+          
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$PROD_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$PROD_HOST" >> ~/.ssh/known_hosts
+          
+          # Create web directory if it doesn't exist
+          ssh $PROD_USER@$PROD_HOST "mkdir -p /var/www/staffsync-prod/web"
+          
+          # Copy build files to server
+          scp -r dist/* $PROD_USER@$PROD_HOST:/var/www/staffsync-prod/web/
+          
+          # Update nginx configuration
+          scp ../backend/nginx/staffsync.prod.conf $PROD_USER@$PROD_HOST:/tmp/
+          ssh $PROD_USER@$PROD_HOST << 'EOF'
+            # Update nginx config
+            cp /tmp/staffsync.prod.conf /etc/nginx/sites-available/
+            ln -sf /etc/nginx/sites-available/staffsync.prod.conf /etc/nginx/sites-enabled/
+            
+            # Test and reload nginx
+            nginx -t
+            systemctl reload nginx
+            
+            # Clean up
+            rm /tmp/staffsync.prod.conf
+          EOF
+          
+          echo "Production deployment completed successfully!"
+          echo "Web app is available at: https://www.staffsynctech.co.uk"
+
+  deploy-vercel:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./frontend/web
+          vercel-env: VITE_API_BASE_URL,VITE_API_KEY,VITE_STRIPE_PUBLISHABLE_KEY
+
+  notify:
+    needs: [test, deploy, deploy-vercel]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "Production deployment completed successfully!"
+            echo "Web app: https://www.staffsynctech.co.uk"
+            echo "API: https://api.staffsynctech.co.uk/api/v1"
+          elif [ "${{ needs.deploy-vercel.result }}" == "success" ]; then
+            echo "Vercel deployment completed successfully!"
+          else
+            echo "Production deployment failed or was skipped"
+          fi

@@ -1,0 +1,125 @@
+name: Deploy Development Web App
+
+on:
+  push:
+    branches: [dev, develop]
+    paths: ['frontend/web/**']
+  workflow_dispatch:
+  pull_request:
+    branches: [dev, develop]
+    paths: ['frontend/web/**']
+    types: [closed]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend/web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run type-check || true
+
+      - name: Run linting
+        run: npm run lint || true
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://dev.staffsynctech.co.uk/api/v1
+          VITE_API_KEY: ${{ secrets.DEV_API_KEY }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: ./frontend/web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://dev.staffsynctech.co.uk/api/v1
+          VITE_API_KEY: ${{ secrets.DEV_API_KEY }}
+
+      - name: Deploy to development server
+        env:
+          DEV_HOST: ${{ secrets.DEV_HOST }}
+          DEV_USER: ${{ secrets.DEV_USER }}
+          DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}
+        run: |
+          echo "Starting deployment to development server..."
+          
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$DEV_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$DEV_HOST" >> ~/.ssh/known_hosts
+          
+          # Create web directory if it doesn't exist
+          ssh $DEV_USER@$DEV_HOST "mkdir -p /var/www/staffsync/web"
+          
+          # Copy build files to server
+          scp -r dist/* $DEV_USER@$DEV_HOST:/var/www/staffsync/web/
+          
+          # Update nginx configuration (in case it's changed)
+          scp ../backend/nginx/staffsync.dev.web.conf $DEV_USER@$DEV_HOST:/tmp/
+          ssh $DEV_USER@$DEV_HOST << 'EOF'
+            # Update nginx config
+            cp /tmp/staffsync.dev.web.conf /etc/nginx/sites-available/
+            ln -sf /etc/nginx/sites-available/staffsync.dev.web.conf /etc/nginx/sites-enabled/
+            
+            # Test and reload nginx
+            nginx -t
+            systemctl reload nginx
+            
+            # Clean up
+            rm /tmp/staffsync.dev.web.conf
+          EOF
+          
+          echo "Deployment completed successfully!"
+          echo "Web app is available at: http://web.staffsynctech.co.uk"
+
+  notify:
+    needs: [test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "Deployment to development server completed successfully!"
+            echo "Web app: http://web.staffsynctech.co.uk"
+            echo "API: https://dev.staffsynctech.co.uk/api/v1"
+          else
+            echo "Deployment failed or was skipped"
+          fi
