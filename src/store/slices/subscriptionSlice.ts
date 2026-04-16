@@ -75,7 +75,7 @@ export interface SubscriptionHistoryResponse {
 
 export const subscriptionApi = createApi({
   reducerPath: 'subscriptionApi',
-  baseQuery: axiosBaseQuery(),
+  baseQuery: axiosBaseQuery({ baseUrl: API_BASE }),
   tagTypes: ['Subscription', 'Plans'],
   endpoints: (builder) => ({
     // Get subscription summary for dashboard
