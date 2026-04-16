@@ -2,13 +2,14 @@ import axios, { AxiosError } from 'axios';
 import { store } from '../store';
 import { clearAuth } from '../store/slices/authPersistSlice';
 
-const API_BASE = 'https://app.staffsynctech.co.uk';
+const API_BASE = 'https://dev.staffsynctech.co.uk';
 
 // Create axios instance
 export const api = axios.create({
   baseURL: `${API_BASE}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
+    'X-API-Key': import.meta.env.VITE_API_KEY || '',
   },
 });
 
