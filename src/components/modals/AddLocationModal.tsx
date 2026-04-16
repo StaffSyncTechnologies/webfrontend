@@ -219,8 +219,8 @@ export function AddLocationModal({ open, onClose, editLocation }: AddLocationMod
         await createLocation({
           name: form.name,
           address,
-          latitude: 0,
-          longitude: 0,
+          latitude: 51.5074, // London coordinates as default
+          longitude: -0.1278,
           geofenceRadius: 300,
           isPrimary: form.isPrimary,
           isActive: true,
