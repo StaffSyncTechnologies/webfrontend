@@ -19,6 +19,7 @@ import {
   Refresh,
   Upload,
   Cancel,
+  Delete,
 } from '@mui/icons-material';
 import {
   Box,
@@ -45,6 +46,9 @@ import {
   useUploadLogoMutation,
   useUploadCoverImageMutation,
   useGetLocationsQuery,
+  useCreateLocationMutation,
+  useUpdateLocationMutation,
+  useDeleteLocationMutation,
   useGetStaffUsersQuery,
 } from '../../store/slices/settingsSlice';
 import { useGetNotificationsQuery, useMarkAllAsReadMutation } from '../../store/slices/notificationSlice';
@@ -585,6 +589,7 @@ export function SettingsPage() {
   const [updateBranding] = useUpdateBrandingMutation();
   const [uploadLogo, { isLoading: uploadingLogo }] = useUploadLogoMutation();
   const [uploadCoverImage, { isLoading: uploadingCover }] = useUploadCoverImageMutation();
+  const [deleteLocation, { isLoading: deletingLocation }] = useDeleteLocationMutation();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -692,6 +697,18 @@ export function SettingsPage() {
     } catch (err: any) {
       console.error('Save settings error:', err);
       toast.error(err?.data?.message || err?.message || 'Failed to save settings');
+    }
+  };
+
+  const handleDeleteLocation = async (locationId: string, locationName: string) => {
+    if (window.confirm(`Are you sure you want to delete "${locationName}"? This action cannot be undone.`)) {
+      try {
+        await deleteLocation(locationId).unwrap();
+        toast.success('Location deleted successfully');
+      } catch (err: any) {
+        console.error('Delete location error:', err);
+        toast.error(err?.data?.message || 'Failed to delete location');
+      }
     }
   };
 
@@ -1007,6 +1024,14 @@ export function SettingsPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {loc.isPrimary && <PrimaryBadge>Primary</PrimaryBadge>}
                   <IconButton size="small" onClick={() => { setEditingLocation(loc); setLocationOpen(true); }}><Edit sx={{ fontSize: 16 }} /></IconButton>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => handleDeleteLocation(loc.id, loc.name)}
+                    disabled={deletingLocation}
+                    sx={{ color: '#DC2626' }}
+                  >
+                    <Delete sx={{ fontSize: 16 }} />
+                  </IconButton>
                 </Box>
               </LocationItem>
             ))}
