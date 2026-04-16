@@ -81,7 +81,7 @@ export const subscriptionApi = createApi({
     // Get subscription summary for dashboard
     getSubscriptionSummary: builder.query<SubscriptionSummary, void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/subscriptions/summary`,
+        url: '/subscriptions/summary',
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: SubscriptionSummary }) => response.data,
@@ -91,7 +91,7 @@ export const subscriptionApi = createApi({
     // Get available plans
     getPlans: builder.query<PlansResponse, void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/subscriptions/plans`,
+        url: '/subscriptions/plans',
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: PlansResponse }) => response.data,
@@ -101,7 +101,7 @@ export const subscriptionApi = createApi({
     // Get full subscription details
     getSubscription: builder.query<any, void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/subscriptions`,
+        url: '/subscriptions',
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: any }) => response.data,
@@ -111,7 +111,7 @@ export const subscriptionApi = createApi({
     // Get subscription limits
     getSubscriptionLimits: builder.query<SubscriptionLimits, void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/subscriptions/limits`,
+        url: '/subscriptions/limits',
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: SubscriptionLimits }) => response.data,
@@ -124,7 +124,7 @@ export const subscriptionApi = createApi({
       { planTier: string; billingCycle: string; workerCount?: number }
     >({
       query: (body) => ({
-        url: `${API_BASE}/api/v1/subscriptions/checkout`,
+        url: '/subscriptions/checkout',
         method: 'POST',
         data: body,
       }),
@@ -134,7 +134,7 @@ export const subscriptionApi = createApi({
     // Cancel subscription
     cancelSubscription: builder.mutation<any, { immediately?: boolean }>({
       query: (body) => ({
-        url: `${API_BASE}/api/v1/subscriptions/cancel`,
+        url: '/subscriptions/cancel',
         method: 'POST',
         data: body,
       }),
@@ -144,7 +144,7 @@ export const subscriptionApi = createApi({
     // Update subscription (upgrade/downgrade)
     updateSubscription: builder.mutation<any, { planTier?: string; billingCycle?: string; workerCount?: number }>({
       query: (body) => ({
-        url: `${API_BASE}/api/v1/subscriptions`,
+        url: '/subscriptions',
         method: 'PUT',
         data: body,
       }),
@@ -154,7 +154,7 @@ export const subscriptionApi = createApi({
     // Resume subscription
     resumeSubscription: builder.mutation<any, void>({
       query: () => ({
-        url: `${API_BASE}/api/v1/subscriptions/resume`,
+        url: '/subscriptions/resume',
         method: 'POST',
       }),
       invalidatesTags: ['Subscription'],
@@ -163,7 +163,7 @@ export const subscriptionApi = createApi({
     // Get subscription history
     getSubscriptionHistory: builder.query<SubscriptionHistoryResponse, { page?: number; limit?: number }>({
       query: ({ page = 1, limit = 10 } = {}) => ({
-        url: `${API_BASE}/api/v1/subscriptions/history?page=${page}&limit=${limit}`,
+        url: `/subscriptions/history?page=${page}&limit=${limit}`,
         method: 'GET',
       }),
       transformResponse: (response: { success: boolean; data: SubscriptionHistoryResponse }) => response.data,

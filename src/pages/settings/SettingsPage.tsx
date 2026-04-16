@@ -718,27 +718,50 @@ export function SettingsPage() {
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    console.log('Logo upload - file selected:', file);
+    
+    if (!file) {
+      console.log('Logo upload - no file selected');
+      return;
+    }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    console.log('Logo upload - file type:', file.type, 'allowed types:', allowedTypes);
+    
     if (!allowedTypes.includes(file.type)) {
+      console.log('Logo upload - invalid file type rejected');
       toast.error('Invalid file type. Only JPEG and PNG are allowed.');
       return;
     }
 
     // Validate file size (2MB max)
+    const fileSizeMB = file.size / (1024 * 1024);
+    console.log('Logo upload - file size:', fileSizeMB.toFixed(2), 'MB');
+    
     if (file.size > 2 * 1024 * 1024) {
+      console.log('Logo upload - file too large rejected');
       toast.error('File too large. Maximum size is 2MB.');
       return;
     }
 
     try {
+      console.log('Logo upload - starting upload process');
       const formData = new FormData();
       formData.append('file', file);
-      await uploadLogo(formData).unwrap();
+      console.log('Logo upload - FormData created, sending to API...');
+      
+      const result = await uploadLogo(formData).unwrap();
+      console.log('Logo upload - API response:', result);
+      
       toast.success('Logo uploaded successfully');
     } catch (err: any) {
+      console.log('Logo upload - upload error:', err);
+      console.log('Logo upload - error details:', {
+        status: err?.status,
+        data: err?.data,
+        message: err?.message
+      });
       toast.error(err?.data?.message || 'Failed to upload logo');
     }
 
