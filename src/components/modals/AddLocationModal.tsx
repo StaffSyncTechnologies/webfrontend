@@ -5,6 +5,7 @@ import { colors } from '../../utilities/colors';
 import { useCreateLocationMutation, useUpdateLocationMutation } from '../../store/slices/settingsSlice';
 import type { Location as LocationType } from '../../store/slices/settingsSlice';
 import { useToast } from '../../hooks';
+import { geocodeAddress } from '../../services/geocoding';
 
 // ============ STYLED COMPONENTS ============
 const ModalOverlay = styled(Box)({
@@ -216,11 +217,24 @@ export function AddLocationModal({ open, onClose, editLocation }: AddLocationMod
         }).unwrap();
         toast.success('Location updated successfully');
       } else {
+        // Get coordinates from address using geocoding
+        let latitude = 51.5074; // Default London coordinates
+        let longitude = -0.1278;
+        
+        try {
+          const geocoded = await geocodeAddress(address);
+          latitude = geocoded.latitude;
+          longitude = geocoded.longitude;
+        } catch (geocodeError) {
+          console.warn('Geocoding failed, using default coordinates:', geocodeError);
+          toast.warning('Could not get coordinates from address, using default location');
+        }
+
         await createLocation({
           name: form.name,
           address,
-          latitude: 51.5074, // London coordinates as default
-          longitude: -0.1278,
+          latitude,
+          longitude,
           geofenceRadius: 300,
           isPrimary: form.isPrimary,
           isActive: true,
