@@ -5,9 +5,7 @@
 
 /// <reference types="../vite-env" />
 
-export const API_BASE = import.meta.env.DEV 
-  ? 'https://app.staffsynctech.co.uk/api/v1' 
-  : 'https://app.staffsynctech.co.uk/api/v1';
+export const API_BASE = 'https://dev.staffsynctech.co.uk/api/v1';
 
 // Dashboard endpoints
 export const DASHBOARD = {
