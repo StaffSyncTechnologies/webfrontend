@@ -54,6 +54,7 @@ const PENSION = {
 } as const;
 
 const STUDENT_LOAN = {
+  NONE:     { threshold: 0, rate: 0 },
   PLAN1:    { threshold: 24_990, rate: 0.09 },
   PLAN2:    { threshold: 27_295, rate: 0.09 },
   PLAN4:    { threshold: 31_395, rate: 0.09 },

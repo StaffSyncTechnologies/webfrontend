@@ -201,7 +201,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
   onSave,
   initialOptions = {},
   initialSalary = 30000,
-  payPeriodType = 'MONTHLY',
+  payPeriodType: initialPayPeriodType = 'MONTHLY',
 }) => {
   const [salary, setSalary] = useState(String(initialSalary));
   const [taxCodeInput, setTaxCodeInput] = useState(initialOptions.taxCode ?? '1257L');
@@ -219,7 +219,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
   const [resultTab, setResultTab] = useState(0);
   const [showPensionInfo, setShowPensionInfo] = useState(false);
   const [showCumulativeInfo, setShowCumulativeInfo] = useState(false);
-  const [payPeriodType, setPayPeriodType] = useState<'WEEKLY' | 'MONTHLY'>(payPeriodType);
+  const [payPeriodType, setPayPeriodType] = useState<'WEEKLY' | 'MONTHLY'>(initialPayPeriodType);
 
   // ── Real-time calculation (no API call needed) ──────────────────────────────
   const result = useMemo<PayslipResult | null>(() => {

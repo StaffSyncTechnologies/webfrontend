@@ -169,8 +169,18 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
         </Box>
 
         {/* Info banner */}
-        <Alert severity="info" icon={<InfoOutlined fontSize="small" />}>
-          <Typography variant="caption">
+        <Alert 
+          severity="info" 
+          icon={<InfoOutlined fontSize="small" />}
+          sx={{ 
+            fontFamily: "'Outfit', sans-serif",
+            '& .MuiAlert-message': {
+              fontFamily: "'Outfit', sans-serif"
+            }
+          }}
+        >
+          <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+            Accepted formats: PDF only. Maximum file size: 10 MB.
           </Typography>
         </Alert>
 
@@ -192,15 +202,12 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
             }}
             helperText={period ? `Period: ${period.label}` : ''}
           />
+          {period && (
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+              {toISODate(period.start)} - {toISODate(period.end)}
+            </Typography>
+          )}
         </Box>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    {toISODate(period.start)} – {toISODate(period.end)}
-                  </Typography>
-                )}
-              </Box>
-            )}
-          </CardContent>
-        </Card>
 
         {/* File drop zone */}
         <Card variant="outlined">
