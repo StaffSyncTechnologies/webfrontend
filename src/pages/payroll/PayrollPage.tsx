@@ -49,6 +49,8 @@ import {
   useGetPaymentSheetSummaryQuery,
 } from '../../store/slices/bankAccountSlice';
 import { BANK_ACCOUNT } from '../../utilities/endpoint';
+import { PayslipManager } from '../../components/payslip/PayslipManager';
+import { Button, Typography, Tabs, Tab, Box as MuiBox } from '@mui/material';
 
 // ============ STYLED COMPONENTS ============
 const HeaderRow = styled(Box)({
@@ -223,6 +225,12 @@ const WorkerCell = styled(Box)({
   fontSize: '14px',
   fontWeight: 500,
   color: colors.primary.navy,
+  cursor: 'pointer',
+  textDecoration: 'none',
+  '&:hover': {
+    color: '#3B82F6',
+    textDecoration: 'underline',
+  },
 });
 
 const StatusBadge = styled('span', {
@@ -451,6 +459,8 @@ export function PayrollPage() {
   const [approvedAmount, setApprovedAmount] = useState(0);
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
 
   // API Hooks
   const { data: payslipData, isLoading, refetch } = useGetPayslipListQuery({
@@ -639,6 +649,73 @@ export function PayrollPage() {
         />
       </GridCols4>
 
+      {/* Payslip Management Section */}
+      <TableCard sx={{ mt: 3 }}>
+        <CardHeader>
+          <h3>Payslip Management</h3>
+        </CardHeader>
+        
+        <Box sx={{ px: 3, pt: 2 }}>
+          <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tab label="Bulk Operations" />
+            <Tab label="Individual Worker" />
+          </Tabs>
+        </Box>
+
+        <Box sx={{ p: 3 }}>
+          {activeTab === 0 && (
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Generate, approve, and manage payslips for all workers. Use the bulk operations above or the payment history table below.
+              </Typography>
+              <MuiBox sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Button variant="contained" color="primary" onClick={handleGenerate} disabled={generating} startIcon={<Refresh />}>
+                  {generating ? 'Generating...' : 'Generate All Payslips'}
+                </Button>
+                <Button variant="contained" color="success" onClick={() => setPaymentSheetOpen(true)} startIcon={<AccountBalance />}>
+                  Download Payment Sheet
+                </Button>
+                <Button variant="contained" color="warning" onClick={() => {
+                  const draftIds = payslips.filter(p => p.status === 'DRAFT').map(p => p.id);
+                  setSelectedIds(draftIds);
+                  setApproveOpen(true);
+                }} disabled={counts.draft === 0} startIcon={<Add />}>
+                  Approve All ({counts.draft})
+                </Button>
+              </MuiBox>
+            </Box>
+          )}
+
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Select a worker to manage their individual payslips, calculate custom payslips, or upload PDF payslips.
+              </Typography>
+              {selectedWorkerId ? (
+                <Box>
+                  <Button variant="outlined" onClick={() => setSelectedWorkerId(null)} sx={{ mb: 2 }}>
+                    <Close sx={{ mr: 1 }} /> Clear Selection
+                  </Button>
+                  <PayslipManager 
+                    workerId={selectedWorkerId} 
+                    workerName={payslips.find(p => p.workerId === selectedWorkerId)?.workerName}
+                  />
+                </Box>
+              ) : (
+                <Box sx={{ p: 4, textAlign: 'center', border: '2px dashed #E5E7EB', borderRadius: 2 }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                    Select a worker from the payment history table below
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Click on a worker's name in the table to access their payslip management tools
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+      </TableCard>
+
       <TableCard>
         <CardHeader><h3>Payment History</h3></CardHeader>
 
@@ -726,7 +803,10 @@ export function PayrollPage() {
                       />
                     </Td>
                     <Td>
-                      <WorkerCell>
+                      <WorkerCell onClick={() => {
+                        setSelectedWorkerId(row.workerId);
+                        setActiveTab(1); // Switch to Individual Worker tab
+                      }}>
                         <Avatar sx={{ width: 32, height: 32, bgcolor: '#E5E7EB', fontSize: 13 }}>
                           {row.worker.fullName.charAt(0)}
                         </Avatar>

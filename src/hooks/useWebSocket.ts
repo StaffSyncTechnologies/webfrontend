@@ -116,12 +116,13 @@ export function useWebSocket({
     socket.on('chat:messages_read', handleRead);
 
     return () => {
+      console.log('Cleaning up room listeners for:', roomId);
       socket.emit('chat:leave', { roomId });
       socket.off('chat:message', handleMessage);
       socket.off('chat:typing', handleTyping);
       socket.off('chat:messages_read', handleRead);
     };
-  }, [roomId, isConnected, onNewMessage, onTyping, onMessagesRead]);
+  }, [roomId, isConnected]); // Remove callback dependencies to prevent re-renders
 
   const sendMessage = useCallback((content: string, attachments?: any[]) => {
     if (!socketRef.current || !roomId) return;

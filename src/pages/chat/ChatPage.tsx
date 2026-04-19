@@ -382,7 +382,7 @@ export function ChatPage() {
 
   const onNewRoomMessage = useCallback(() => {
     refetchRooms();
-  }, [refetchRooms]);
+  }, []); // Remove refetchRooms dependency to prevent re-renders
 
   const { sendMessage: socketSend, sendTyping, markAsRead, isConnected } = useWebSocket({
     roomId: selectedRoomId,
@@ -390,6 +390,14 @@ export function ChatPage() {
     onTyping,
     onNewRoomMessage,
   });
+
+  // Cleanup effect when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log('ChatPage unmounting, cleaning up...');
+      // Any additional cleanup can be done here
+    };
+  }, []);
 
   useEffect(() => {
     if (messages.length > 0) {
