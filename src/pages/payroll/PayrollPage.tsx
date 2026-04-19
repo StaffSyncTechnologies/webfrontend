@@ -1005,7 +1005,7 @@ export function PayrollPage() {
             {selectedWorkerId ? (
               <Box>
                 {/* Debug info */}
-                <Typography variant="body2" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif', color: '#666' }}>
+                <Typography variant="body2" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif", color: '#666' }}>
                   Debug: Worker ID = {selectedWorkerId}, Found Name = {payslips.find(p => p.workerId === selectedWorkerId)?.workerName || 'Not found'}
                 </Typography>
                 
