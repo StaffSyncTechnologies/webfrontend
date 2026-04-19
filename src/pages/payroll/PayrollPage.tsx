@@ -461,6 +461,7 @@ export function PayrollPage() {
   const [downloading, setDownloading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+  const [payslipManagerOpen, setPayslipManagerOpen] = useState(false);
 
   // API Hooks
   const { data: payslipData, isLoading, refetch } = useGetPayslipListQuery({
@@ -666,51 +667,27 @@ export function PayrollPage() {
           {activeTab === 0 && (
             <Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Generate, approve, and manage payslips for all workers. Use the bulk operations above or the payment history table below.
+                Use the bulk operation buttons in the header above to generate payslips, download payment sheets, or approve multiple payslips at once.
               </Typography>
-              <MuiBox sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Button variant="contained" color="primary" onClick={handleGenerate} disabled={generating} startIcon={<Refresh />}>
-                  {generating ? 'Generating...' : 'Generate All Payslips'}
-                </Button>
-                <Button variant="contained" color="success" onClick={() => setPaymentSheetOpen(true)} startIcon={<AccountBalance />}>
-                  Download Payment Sheet
-                </Button>
-                <Button variant="contained" color="warning" onClick={() => {
-                  const draftIds = payslips.filter(p => p.status === 'DRAFT').map(p => p.id);
-                  setSelectedIds(draftIds);
-                  setApproveOpen(true);
-                }} disabled={counts.draft === 0} startIcon={<Add />}>
-                  Approve All ({counts.draft})
-                </Button>
-              </MuiBox>
+              <Typography variant="body2" color="text.secondary">
+                Individual payslip actions (view details, approve, mark as paid) are available in the Action column of the payment history table below.
+              </Typography>
             </Box>
           )}
 
           {activeTab === 1 && (
             <Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Select a worker to manage their individual payslips, calculate custom payslips, or upload PDF payslips.
+                Click on any worker's name in the payment history table below to open their payslip management tools in a modal.
               </Typography>
-              {selectedWorkerId ? (
-                <Box>
-                  <Button variant="outlined" onClick={() => setSelectedWorkerId(null)} sx={{ mb: 2 }}>
-                    <Close sx={{ mr: 1 }} /> Clear Selection
-                  </Button>
-                  <PayslipManager 
-                    workerId={selectedWorkerId} 
-                    workerName={payslips.find(p => p.workerId === selectedWorkerId)?.workerName}
-                  />
-                </Box>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center', border: '2px dashed #E5E7EB', borderRadius: 2 }}>
-                  <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                    Select a worker from the payment history table below
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Click on a worker's name in the table to access their payslip management tools
-                  </Typography>
-                </Box>
-              )}
+              <Box sx={{ p: 4, textAlign: 'center', border: '2px dashed #E5E7EB', borderRadius: 2 }}>
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                  Select a worker from the payment history table
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Click on a worker's name in the table to access their payslip management tools
+                </Typography>
+              </Box>
             </Box>
           )}
         </Box>
@@ -805,7 +782,7 @@ export function PayrollPage() {
                     <Td>
                       <WorkerCell onClick={() => {
                         setSelectedWorkerId(row.workerId);
-                        setActiveTab(1); // Switch to Individual Worker tab
+                        setPayslipManagerOpen(true); // Open modal
                       }}>
                         <Avatar sx={{ width: 32, height: 32, bgcolor: '#E5E7EB', fontSize: 13 }}>
                           {row.worker.fullName.charAt(0)}
@@ -1000,6 +977,36 @@ export function PayrollPage() {
               <Box sx={{ textAlign: 'center', py: 2, fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>
                 No approved payslips found. Generate and approve payslips first.
               </Box>
+            )}
+          </ModalCard>
+        </ModalOverlay>
+      </Modal>
+
+      {/* Payslip Manager Modal */}
+      <Modal open={payslipManagerOpen} onClose={() => setPayslipManagerOpen(false)}>
+        <ModalOverlay onClick={() => setPayslipManagerOpen(false)}>
+          <ModalCard sx={{ width: '90vw', maxWidth: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
+            <ModalClose onClick={() => setPayslipManagerOpen(false)}>
+              <Close />
+            </ModalClose>
+            <ModalTitle>
+              <AccountBalanceWallet sx={{ mr: 2, verticalAlign: 'middle' }} />
+              Payslip Management
+              {selectedWorkerId && (
+                <Typography variant="body2" sx={{ mt: 1, color: colors.text.secondary }}>
+                  {payslips.find(p => p.workerId === selectedWorkerId)?.workerName}
+                </Typography>
+              )}
+            </ModalTitle>
+            <ModalSubtitle>
+              Manage individual worker payslips, calculate custom payslips, or upload PDF payslips.
+            </ModalSubtitle>
+            
+            {selectedWorkerId && (
+              <PayslipManager 
+                workerId={selectedWorkerId} 
+                workerName={payslips.find(p => p.workerId === selectedWorkerId)?.workerName}
+              />
             )}
           </ModalCard>
         </ModalOverlay>
