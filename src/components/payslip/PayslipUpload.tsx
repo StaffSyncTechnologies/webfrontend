@@ -143,7 +143,19 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
       setFile(null);
       onSuccess?.(json.data.payslipId, label);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      const errorMessage = err instanceof Error ? err.message : 'Upload failed';
+      
+      // Provide specific guidance for 403 errors and debugging info
+      if (errorMessage.includes('403') || errorMessage.includes('FORBIDDEN') || errorMessage.includes('Not authorized')) {
+        setError(`Permission denied (403): Your role may not be properly recognized. Please check the browser console and server logs for debugging information. Error: ${errorMessage}`);
+        console.error('Upload 403 Error Details:', {
+          error: err,
+          message: errorMessage,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setUploading(false);
     }
