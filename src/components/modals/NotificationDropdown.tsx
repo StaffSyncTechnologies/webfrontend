@@ -8,8 +8,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 // ============ TYPES ============
-type NotificationType = 'SHIFT_ALERT' | 'SHIFT_ASSIGNED' | 'SHIFT_CANCELLED' | 'PAYROLL' | 'PAYSLIP_READY' | 'HOLIDAY' | 'HOLIDAY_APPROVED' | 'HOLIDAY_REJECTED' | 'SYSTEM' | 'TIMESHEET' | 'ATTENDANCE' | string;
-type FilterType = 'all' | 'unread' | 'shift' | 'payroll' | 'holiday' | 'chat' | 'system';
+type NotificationType = 'SHIFT_ALERT' | 'SHIFT_ASSIGNED' | 'SHIFT_CANCELLED' | 'PAYROLL' | 'PAYSLIP_READY' | 'HOLIDAY' | 'HOLIDAY_APPROVED' | 'HOLIDAY_REJECTED' | 'SYSTEM' | 'TIMESHEET' | 'ATTENDANCE' | 'SUBSCRIPTION_TRIAL_STARTED' | 'SUBSCRIPTION_TRIAL_ENDING_SOON' | 'SUBSCRIPTION_TRIAL_EXPIRED' | 'SUBSCRIPTION_ACTIVATED' | 'SUBSCRIPTION_CANCELED' | 'SUBSCRIPTION_PAYMENT_FAILED' | string;
+type FilterType = 'all' | 'unread' | 'shift' | 'payroll' | 'holiday' | 'chat' | 'system' | 'subscription';
 
 // ============ STYLED COMPONENTS ============
 const DropdownOverlay = styled(Box)({
@@ -216,26 +216,30 @@ const filterLabels: Record<FilterType, string> = {
   holiday: 'Holiday',
   chat: 'Chat',
   system: 'System',
+  subscription: 'Subscription',
 };
 
 // ============ HELPER FUNCTIONS ============
 const getIconVariant = (type: string): 'error' | 'success' | 'warning' => {
   const upperType = type.toUpperCase();
-  if (upperType.includes('SHIFT') || upperType.includes('ALERT') || upperType.includes('CANCELLED')) {
+  if (upperType.includes('SHIFT') || upperType.includes('ALERT') || upperType.includes('CANCELLED') || upperType.includes('PAYMENT_FAILED')) {
     return 'error';
   }
-  if (upperType.includes('PAYROLL') || upperType.includes('PAYSLIP') || upperType.includes('APPROVED')) {
+  if (upperType.includes('PAYROLL') || upperType.includes('PAYSLIP') || upperType.includes('APPROVED') || upperType.includes('SUBSCRIPTION_ACTIVATED')) {
     return 'success';
+  }
+  if (upperType.includes('SUBSCRIPTION') || upperType.includes('TRIAL')) {
+    return upperType.includes('EXPIRED') || upperType.includes('FAILED') ? 'error' : 'warning';
   }
   return 'warning';
 };
 
 const getIcon = (type: string) => {
   const upperType = type.toUpperCase();
-  if (upperType.includes('SHIFT') || upperType.includes('ALERT') || upperType.includes('CANCELLED')) {
+  if (upperType.includes('SHIFT') || upperType.includes('ALERT') || upperType.includes('CANCELLED') || upperType.includes('PAYMENT_FAILED')) {
     return <Warning />;
   }
-  if (upperType.includes('PAYROLL') || upperType.includes('PAYSLIP') || upperType.includes('APPROVED')) {
+  if (upperType.includes('PAYROLL') || upperType.includes('PAYSLIP') || upperType.includes('APPROVED') || upperType.includes('SUBSCRIPTION_ACTIVATED')) {
     return <CheckCircle />;
   }
   if (upperType.includes('HOLIDAY')) {
@@ -243,6 +247,9 @@ const getIcon = (type: string) => {
   }
   if (upperType.includes('CHAT') || upperType.includes('MESSAGE')) {
     return <Chat />;
+  }
+  if (upperType.includes('SUBSCRIPTION') || upperType.includes('TRIAL')) {
+    return upperType.includes('EXPIRED') || upperType.includes('FAILED') ? <Warning /> : <Info />;
   }
   return <Info />;
 };
@@ -260,6 +267,9 @@ const getNotificationCategory = (type: string): string => {
   }
   if (upperType.includes('CHAT') || upperType.includes('MESSAGE')) {
     return 'chat';
+  }
+  if (upperType.includes('SUBSCRIPTION') || upperType.includes('TRIAL')) {
+    return 'subscription';
   }
   return 'system';
 };
@@ -323,6 +333,8 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
       navigate(notification.referenceId ? `/payroll/${notification.referenceId}` : '/payroll');
     } else if (t.includes('HOLIDAY') || t.includes('LEAVE')) {
       navigate(notification.referenceId ? `/holiday/${notification.referenceId}` : '/holiday');
+    } else if (t.includes('SUBSCRIPTION') || t.includes('TRIAL')) {
+      navigate('/settings/billing');
     } else {
       navigate('/notifications');
     }

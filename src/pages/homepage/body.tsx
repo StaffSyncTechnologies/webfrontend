@@ -2,6 +2,7 @@ import { Box, styled } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { PlayArrow } from '@mui/icons-material';
 import { Button } from '../../components/controls';
+import { AppDownloadSection, MobileAppFab } from '../../components/AppDownload';
 import { colors } from '../../utilities/colors';
 import { keyframes } from '@mui/system';
 
@@ -316,13 +317,13 @@ const Body = () => {
         <HeroContent>
           <BadgesRow>
             <ComplianceBadge>
-              <span>✓ HMRC Ready</span>
+              <span>HMRC Ready</span>
             </ComplianceBadge>
             <ComplianceBadge>
-              <span>🇬🇧 UK Focused</span>
+              <span>UK Focused</span>
             </ComplianceBadge>
             <ComplianceBadge>
-              <span>🔒 GDPR Compliant</span>
+              <span>GDPR Compliant</span>
             </ComplianceBadge>
           </BadgesRow>
 
@@ -332,14 +333,14 @@ const Body = () => {
           </Title>
 
           <Subtitle>
-            Create shifts, assign workers, track attendance and stay compliant — all in one platform.
+            Create shifts, assign workers, track attendance and stay compliant all in one platform.
           </Subtitle>
 
           <CTAButtons>
             <Button 
               variant="primary" 
               onClick={() => navigate('/get-started')}
-              endIcon={<span>→</span>}
+              endIcon={<span></span>}
             >
               Start 180-Day Free Plan
             </Button>
@@ -352,6 +353,36 @@ const Body = () => {
               </WatchDemoButton>
             </DemoButtonWrapper>
           </CTAButtons>
+          
+          {/* Learn More About App Button */}
+          <Box sx={{ mt: 3, width: '100%', maxWidth: '400px' }}>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                // Open app download modal
+                const event = new CustomEvent('openAppDownload');
+                window.dispatchEvent(event);
+              }}
+              sx={{
+                width: '100%',
+                borderColor: 'rgba(255, 255, 255, 0.3)',
+                color: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                '&:hover': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                },
+                fontSize: '14px',
+                fontWeight: 500,
+                py: 1.5,
+              }}
+            >
+              Learn More About the Mobile App
+            </Button>
+          </Box>
         </HeroContent>
         <TrustedBySection>
           <TrustedByTitle>TRUSTED BY</TrustedByTitle>
@@ -384,6 +415,12 @@ const Body = () => {
           </LogosContainer>
         </TrustedBySection>
       </HeroSection>
+      
+      {/* App Download Section */}
+      <AppDownloadSection />
+      
+      {/* Floating Action Button */}
+      <MobileAppFab />
     </main>
   );
 };

@@ -316,10 +316,10 @@ const ProductPreview = () => {
                 <span className="scan-hint">Scan to download</span>
               </StoreInfo>
             </DownloadCard>
-            <DownloadCard href="https://play.google.com" target="_blank" rel="noopener noreferrer">
+            <DownloadCard href="https://play.google.com/store/apps/details?id=com.staffsync.worker" target="_blank" rel="noopener noreferrer">
               <QrCodeWrapper>
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${encodeURIComponent('https://play.google.com')}&bgcolor=ffffff&color=000000`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${encodeURIComponent('https://play.google.com/store/apps/details?id=com.staffsync.worker')}&bgcolor=ffffff&color=000000`}
                   alt="Google Play QR Code"
                 />
               </QrCodeWrapper>
