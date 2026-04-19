@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { WORKERS, PAYSLIPS, HOLIDAYS, WORKER_MEMBERSHIP } from '../../utilities/endpoint';
+import { WORKERS, PAYSLIPS, HOLIDAYS, WORKER_MEMBERSHIP, ATTENDANCE } from '../../utilities/endpoint';
 import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
 import type { Worker, Skill, WorkerDocument, WorkerAvailability } from '../../types/api';
 
@@ -296,6 +296,53 @@ export const workerApi = createApi({
       }),
       invalidatesTags: ['Worker'],
     }),
+    // Worker Timesheet (admin view)
+    getWorkerTimesheet: builder.query<{
+      weekStart: string;
+      weekEnd: string;
+      summary: {
+        totalHours: number;
+        totalEarnings: number;
+        shiftsWorked: number;
+        shiftsScheduled: number;
+        approved: number;
+        pending: number;
+        flagged: number;
+      };
+      monthly: {
+        monthName: string;
+        totalHours: number;
+        totalEarnings: number;
+        shiftsWorked: number;
+      };
+      days: Array<{
+        dayName: string;
+        date: string;
+        isToday: boolean;
+        totalHours: number;
+        totalEarnings: number;
+        entries: Array<{
+          shiftId: string;
+          shiftTitle: string;
+          location: string | null;
+          client: string | null;
+          scheduledStart: string;
+          scheduledEnd: string;
+          hourlyRate: number | null;
+          clockInAt: string | null;
+          clockOutAt: string | null;
+          hoursWorked: number | null;
+          status: string;
+          flagReason: string | null;
+        }>;
+      }>;
+    }, { workerId: string; weekStart?: string }>({
+      query: ({ workerId, weekStart }) => ({
+        url: ATTENDANCE.WORKER_TIMESHEET(workerId),
+        params: weekStart ? { weekStart } : undefined,
+      }),
+      providesTags: ['WorkerProfile'],
+    }),
   }),
 });
 
@@ -337,4 +384,5 @@ export const {
   useReactivateWorkerMutation,
   useInviteWorkerByEmailMutation,
   useRemoveWorkerMembershipMutation,
+  useGetWorkerTimesheetQuery,
 } = workerApi;

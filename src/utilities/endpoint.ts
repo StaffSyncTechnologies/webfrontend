@@ -139,6 +139,7 @@ export const ATTENDANCE = {
   MY_HISTORY: `${API_BASE}/attendance/my-history`,
   FLAGGED: `${API_BASE}/attendance/flagged`,
   DAILY_TIMESHEET: `${API_BASE}/attendance/timesheet/daily`,
+  WORKER_TIMESHEET: (workerId: string) => `${API_BASE}/attendance/worker/${workerId}/timesheet`,
   SHIFT_ATTENDANCE: (shiftId: string) => `${API_BASE}/attendance/shift/${shiftId}`,
   CLOCK_IN: (shiftId: string) => `${API_BASE}/attendance/${shiftId}/clock-in`,
   CLOCK_OUT: (shiftId: string) => `${API_BASE}/attendance/${shiftId}/clock-out`,

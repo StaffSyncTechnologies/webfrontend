@@ -49,6 +49,7 @@ import {
   useGetWorkerSkillsQuery,
   useGetWorkerDocumentsQuery,
   useCreateWorkerBlockMutation,
+  useGetWorkerTimesheetQuery,
 } from '../../store/slices/workerSlice';
 
 // ============ STYLED COMPONENTS ============
@@ -496,7 +497,7 @@ const DoneButton = styled('button')({
   '&:hover': { backgroundColor: '#1a2d4a' },
 });
 
-type TabKey = 'skills' | 'shifts' | 'payslips' | 'holidays';
+type TabKey = 'skills' | 'shifts' | 'payslips' | 'holidays' | 'timesheet';
 
 // ============ COMPONENT ============
 export function WorkerDetails() {
@@ -509,6 +510,15 @@ export function WorkerDetails() {
   const [currentPage, setCurrentPage] = useState(1);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const weekStartParam = useMemo(() => {
+    const now = new Date();
+    const d = new Date(now);
+    d.setDate(d.getDate() - d.getDay() + weekOffset * 7);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().split('T')[0];
+  }, [weekOffset]);
 
   // RTK Query hooks
   const { data: workerData, isLoading: workerLoading } = useGetWorkerByIdQuery(workerId!, { skip: !workerId });
@@ -527,6 +537,14 @@ export function WorkerDetails() {
   );
   const { data: skillsData } = useGetWorkerSkillsQuery(workerId!, { skip: !workerId });
   const { data: documentsData } = useGetWorkerDocumentsQuery(workerId!, { skip: !workerId });
+  const { data: timesheetRaw, isLoading: timesheetLoading } = useGetWorkerTimesheetQuery(
+    { workerId: workerId!, weekStart: weekStartParam },
+    { skip: !workerId || activeTab !== 'timesheet' }
+  );
+  const timesheet = useMemo(() => {
+    const t = (timesheetRaw as any)?.data || timesheetRaw;
+    return t ?? null;
+  }, [timesheetRaw]);
   const [createBlock] = useCreateWorkerBlockMutation();
 
   // Extract worker info
@@ -782,6 +800,185 @@ export function WorkerDetails() {
     </>
   );
 
+  const renderTimesheet = () => {
+    const fmtDate = (iso: string) => {
+      const d = new Date(iso);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${d.getDate()} ${months[d.getMonth()]}`;
+    };
+    const fmtTime = (iso: string) => {
+      const d = new Date(iso);
+      let h = d.getHours(); const m = d.getMinutes().toString().padStart(2, '0');
+      const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+      return `${h}:${m}${ap}`;
+    };
+    const getWeekLabel = () => {
+      if (!timesheet) return 'This Week';
+      const now = new Date();
+      const cur = new Date(now); cur.setDate(cur.getDate() - cur.getDay()); cur.setHours(0,0,0,0);
+      const ws = new Date(timesheet.weekStart);
+      if (ws.toDateString() === cur.toDateString()) return 'This Week';
+      const last = new Date(cur); last.setDate(last.getDate() - 7);
+      if (ws.toDateString() === last.toDateString()) return 'Last Week';
+      const next = new Date(cur); next.setDate(next.getDate() + 7);
+      if (ws.toDateString() === next.toDateString()) return 'Next Week';
+      return fmtDate(timesheet.weekStart);
+    };
+    const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
+      APPROVED: { bg: '#D1FAE5', color: '#059669' },
+      PENDING:  { bg: '#FEF3C7', color: '#D97706' },
+      FLAGGED:  { bg: '#FEE2E2', color: '#DC2626' },
+      UPCOMING: { bg: '#DBEAFE', color: '#2563EB' },
+      MISSED:   { bg: '#FEE2E2', color: '#DC2626' },
+    };
+
+    return (
+      <Box sx={{ p: '24px' }}>
+        {/* Week Navigator */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <button
+              onClick={() => setWeekOffset(o => o - 1)}
+              style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            ><ChevronLeft sx={{ fontSize: 18, color: '#6B7280' }} /></button>
+            <Box sx={{ textAlign: 'center', minWidth: 200 }}>
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, color: colors.primary.navy }}>
+                {getWeekLabel()}
+              </Box>
+              {timesheet && (
+                <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: colors.text.secondary }}>
+                  Sun {fmtDate(timesheet.weekStart)} – Sat {fmtDate(timesheet.weekEnd)}
+                </Box>
+              )}
+            </Box>
+            <button
+              onClick={() => setWeekOffset(o => o + 1)}
+              style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            ><ChevronRight sx={{ fontSize: 18, color: '#6B7280' }} /></button>
+          </Box>
+          <button
+            onClick={() => setWeekOffset(0)}
+            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: weekOffset === 0 ? colors.primary.navy : '#fff', color: weekOffset === 0 ? '#fff' : colors.text.secondary, fontFamily: "'Outfit', sans-serif", fontSize: 13, cursor: 'pointer' }}
+          >Today</button>
+        </Box>
+
+        {timesheetLoading ? (
+          <Box sx={{ textAlign: 'center', py: 6, color: '#9CA3AF', fontFamily: "'Outfit', sans-serif" }}>Loading timesheet...</Box>
+        ) : !timesheet ? (
+          <Box sx={{ textAlign: 'center', py: 6, color: '#9CA3AF', fontFamily: "'Outfit', sans-serif" }}>No timesheet data</Box>
+        ) : (
+          <>
+            {/* Summary + Monthly grid */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3, '@media (max-width:700px)': { gridTemplateColumns: '1fr' } }}>
+              {/* Weekly Summary */}
+              <Box sx={{ borderRadius: '12px', background: colors.primary.navy, p: 3, color: '#fff' }}>
+                <Box sx={{ fontSize: 11, fontFamily: "'Outfit', sans-serif", fontWeight: 500, letterSpacing: 1, opacity: 0.6, textTransform: 'uppercase', mb: 1.5 }}>Weekly — {getWeekLabel()}</Box>
+                <Box sx={{ display: 'flex', gap: 0, mb: 2 }}>
+                  {[{label:'Hours', val:`${timesheet.summary.totalHours.toFixed(1)}h`},{label:'Est. Pay', val:`£${timesheet.summary.totalEarnings.toFixed(0)}`},{label:'Shifts', val:`${timesheet.summary.shiftsWorked}/${timesheet.summary.shiftsScheduled}`}].map((s, i) => (
+                    <Box key={i} sx={{ flex: 1, textAlign: 'center', borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
+                      <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 22, fontWeight: 700 }}>{s.val}</Box>
+                      <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, opacity: 0.7, mt: 0.25 }}>{s.label}</Box>
+                    </Box>
+                  ))}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {timesheet.summary.approved > 0 && <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 11, fontFamily: "'Outfit', sans-serif", opacity: 0.8 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#34D399' }} />{timesheet.summary.approved} approved</Box>}
+                  {timesheet.summary.pending > 0 && <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 11, fontFamily: "'Outfit', sans-serif", opacity: 0.8 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#FCD34D' }} />{timesheet.summary.pending} pending</Box>}
+                  {timesheet.summary.flagged > 0 && <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 11, fontFamily: "'Outfit', sans-serif", opacity: 0.8 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#F87171' }} />{timesheet.summary.flagged} flagged</Box>}
+                </Box>
+              </Box>
+
+              {/* Monthly Summary */}
+              <Box sx={{ borderRadius: '12px', border: '1px solid #E5E7EB', p: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 600, color: colors.primary.navy }}>{timesheet.monthly.monthName}</Box>
+                  <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: colors.text.secondary }}>{timesheet.monthly.shiftsWorked} shifts</Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ flex: 1, background: '#F9FAFB', borderRadius: 2, p: 1.5 }}>
+                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 20, fontWeight: 700, color: colors.primary.navy }}>{timesheet.monthly.totalHours.toFixed(1)}<Box component="span" sx={{ fontSize: 13, fontWeight: 400, ml: 0.5, color: colors.text.secondary }}>hrs</Box></Box>
+                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, color: colors.text.secondary, mt: 0.25 }}>This Month</Box>
+                    <Box sx={{ mt: 1, height: 5, borderRadius: 3, background: '#E5E7EB', overflow: 'hidden' }}>
+                      <Box sx={{ height: '100%', borderRadius: 3, background: colors.primary.navy, width: `${Math.min((timesheet.monthly.totalHours / 160) * 100, 100)}%` }} />
+                    </Box>
+                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: colors.text.secondary, mt: 0.5 }}>{Math.round((timesheet.monthly.totalHours / 160) * 100)}% of 160h</Box>
+                  </Box>
+                  <Box sx={{ flex: 1, background: '#F9FAFB', borderRadius: 2, p: 1.5 }}>
+                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 20, fontWeight: 700, color: '#059669' }}>£{timesheet.monthly.totalEarnings.toFixed(0)}</Box>
+                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, color: colors.text.secondary, mt: 0.25 }}>Est. Earnings</Box>
+                    <Box sx={{ mt: 1, height: 5, borderRadius: 3, background: '#E5E7EB', overflow: 'hidden' }}>
+                      <Box sx={{ height: '100%', borderRadius: 3, background: '#10B981', width: timesheet.monthly.totalEarnings > 0 ? `${Math.min((timesheet.summary.totalEarnings / timesheet.monthly.totalEarnings) * 100, 100)}%` : '0%' }} />
+                    </Box>
+                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 10, color: colors.text.secondary, mt: 0.5 }}>Week's share</Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Day-by-day breakdown */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {timesheet.days.map((day: any) => (
+                <Box key={day.date}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 36, height: 36, borderRadius: '8px', background: day.isToday ? colors.primary.navy : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, fontWeight: 700, color: day.isToday ? '#fff' : '#6B7280' }}>{day.dayName}</Box>
+                      </Box>
+                      <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 13, color: day.isToday ? colors.primary.navy : colors.text.secondary, fontWeight: day.isToday ? 600 : 400 }}>
+                        {fmtDate(day.date)}
+                      </Box>
+                      {day.isToday && <Box sx={{ fontSize: 10, fontFamily: "'Outfit', sans-serif", fontWeight: 700, color: colors.primary.navy, background: '#EFF6FF', px: 1, py: 0.25, borderRadius: 4 }}>TODAY</Box>}
+                    </Box>
+                    {day.totalHours > 0 && <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 13, color: colors.text.secondary, fontWeight: 500 }}>{day.totalHours.toFixed(1)}h</Box>}
+                  </Box>
+
+                  {day.entries.length === 0 ? (
+                    <Box sx={{ background: '#F9FAFB', borderRadius: '8px', py: 1.5, textAlign: 'center', fontFamily: "'Outfit', sans-serif", fontSize: 12, color: '#9CA3AF' }}>No shifts</Box>
+                  ) : (
+                    day.entries.map((entry: any) => {
+                      const sc = STATUS_COLOR[entry.status] || { bg: '#F3F4F6', color: '#6B7280' };
+                      return (
+                        <Box key={entry.shiftId} sx={{ border: '1px solid #E5E7EB', borderRadius: '8px', p: 2, mb: 1, background: '#fff' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                            <Box>
+                              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 600, color: colors.primary.navy }}>{entry.shiftTitle}</Box>
+                              {entry.client && <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: colors.text.secondary }}>{entry.client}</Box>}
+                            </Box>
+                            <Box sx={{ px: 1.5, py: 0.5, borderRadius: 12, fontSize: 11, fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: sc.bg, color: sc.color }}>
+                              {entry.status.charAt(0) + entry.status.slice(1).toLowerCase()}
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mt: 0.5 }}>
+                            <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: colors.text.secondary }}>
+                              🕐 {fmtTime(entry.scheduledStart)} – {fmtTime(entry.scheduledEnd)}
+                            </Box>
+                            {entry.clockInAt && (
+                              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: colors.primary.navy }}>
+                                ✅ {fmtTime(entry.clockInAt)}{entry.clockOutAt ? ` – ${fmtTime(entry.clockOutAt)}` : ' (active)'}
+                              </Box>
+                            )}
+                            {entry.hoursWorked != null && (
+                              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: colors.text.secondary }}>
+                                ⏱ {entry.hoursWorked.toFixed(1)}h worked
+                              </Box>
+                            )}
+                            {entry.flagReason && (
+                              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: '#DC2626' }}>⚠ {entry.flagReason.replace(/_/g, ' ')}</Box>
+                            )}
+                          </Box>
+                        </Box>
+                      );
+                    })
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
+      </Box>
+    );
+  };
+
   const getTableContent = () => {
     switch (activeTab) {
       case 'shifts': return renderShiftHistory();
@@ -909,36 +1106,43 @@ export function WorkerDetails() {
           <Tab active={activeTab === 'shifts'} onClick={() => { setActiveTab('shifts'); setCurrentPage(1); }}>Shift History</Tab>
           <Tab active={activeTab === 'payslips'} onClick={() => { setActiveTab('payslips'); setCurrentPage(1); }}>Payslips</Tab>
           <Tab active={activeTab === 'holidays'} onClick={() => { setActiveTab('holidays'); setCurrentPage(1); }}>Holiday Request</Tab>
+          <Tab active={activeTab === 'timesheet'} onClick={() => { setActiveTab('timesheet'); setCurrentPage(1); }}>Timesheet</Tab>
         </TabsRow>
 
-        <FilterRow>
-          <FilterLeft>
-            <SearchInput
-              placeholder="Search here..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ color: '#9CA3AF', fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FilterButton><FilterList sx={{ fontSize: 18 }} /> Filter</FilterButton>
-          </FilterLeft>
-          <FilterRight>
-            <DropdownButton>Date Range <KeyboardArrowDown sx={{ fontSize: 18 }} /></DropdownButton>
-            <DropdownButton>All Status <KeyboardArrowDown sx={{ fontSize: 18 }} /></DropdownButton>
-            <ExportButton>
-              Export as {activeTab === 'holidays' ? 'XLS' : 'CSV'} <FileDownload sx={{ fontSize: 18 }} />
-            </ExportButton>
-          </FilterRight>
-        </FilterRow>
+        {activeTab !== 'timesheet' && (
+          <FilterRow>
+            <FilterLeft>
+              <SearchInput
+                placeholder="Search here..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: '#9CA3AF', fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FilterButton><FilterList sx={{ fontSize: 18 }} /> Filter</FilterButton>
+            </FilterLeft>
+            <FilterRight>
+              <DropdownButton>Date Range <KeyboardArrowDown sx={{ fontSize: 18 }} /></DropdownButton>
+              <DropdownButton>All Status <KeyboardArrowDown sx={{ fontSize: 18 }} /></DropdownButton>
+              <ExportButton>
+                Export as {activeTab === 'holidays' ? 'XLS' : 'CSV'} <FileDownload sx={{ fontSize: 18 }} />
+              </ExportButton>
+            </FilterRight>
+          </FilterRow>
+        )}
 
-        <Box sx={{ overflowX: 'auto' }}>
-          <Table>{getTableContent()}</Table>
-        </Box>
+        {activeTab === 'timesheet' ? (
+          renderTimesheet()
+        ) : (
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table>{getTableContent()}</Table>
+          </Box>
+        )}
 
         <MuiMenu
           anchorEl={menuAnchor}
@@ -951,7 +1155,7 @@ export function WorkerDetails() {
           {activeTab === 'shifts' ? getShiftMenuItems() : getHolidayMenuItems()}
         </MuiMenu>
 
-        <PaginationRow>
+        {activeTab !== 'timesheet' && <PaginationRow>
           <Box display="flex" alignItems="center" gap="8px">
             <PaginationText>Rows per page</PaginationText>
             <Select
@@ -989,7 +1193,7 @@ export function WorkerDetails() {
               <ChevronRight sx={{ fontSize: 18 }} />
             </PageButton>
           </PaginationControls>
-        </PaginationRow>
+        </PaginationRow>}
       </TableCard>
 
       <InviteWorkerModal open={inviteOpen} onClose={() => setInviteOpen(false)} />

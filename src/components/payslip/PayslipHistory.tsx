@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -51,8 +52,9 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
   onView,
   onDownload,
 }) => {
+  const navigate = useNavigate();
   const [payslips, setPayslips] = useState<PayslipRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPayslip, setSelectedPayslip] = useState<PayslipRecord | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -146,8 +148,9 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
   };
 
   const handleViewDetails = (payslip: PayslipRecord) => {
-    setSelectedPayslip(payslip);
-    setDetailDialogOpen(true);
+    // Navigate to payslip detail page
+    navigate(`/payroll/${payslip.id}`);
+    // Also call the callback if provided
     onView?.(payslip);
   };
 
