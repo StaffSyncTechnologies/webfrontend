@@ -408,8 +408,8 @@ export function ChatPage() {
       setAttachmentMenuAnchor(null);
       
       // Clear React Query cache for chat-related queries
-      queryClient.invalidateQueries(['chat']);
-      queryClient.removeQueries(['chat']);
+      queryClient.invalidateQueries({ queryKey: ['chat'] });
+      queryClient.removeQueries({ queryKey: ['chat'] });
     };
   }, [queryClient]);
 

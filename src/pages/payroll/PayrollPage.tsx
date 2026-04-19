@@ -781,7 +781,7 @@ export function PayrollPage() {
                     </Td>
                     <Td>
                       <WorkerCell onClick={() => {
-                        setSelectedWorkerId(row.workerId);
+                        setSelectedWorkerId(row.worker.id);
                         setPayslipManagerOpen(true); // Open modal
                       }}>
                         <Avatar sx={{ width: 32, height: 32, bgcolor: '#E5E7EB', fontSize: 13 }}>
@@ -994,7 +994,7 @@ export function PayrollPage() {
               Payslip Management
               {selectedWorkerId && (
                 <Typography variant="body2" sx={{ mt: 1, color: colors.text.secondary, fontFamily: "'Outfit', sans-serif" }}>
-                  {payslips.find(p => p.workerId === selectedWorkerId)?.workerName}
+                  {payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName}
                 </Typography>
               )}
             </ModalTitle>
@@ -1006,7 +1006,7 @@ export function PayrollPage() {
               <Box>
                 {/* Debug info */}
                 <Typography variant="body2" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif", color: '#666' }}>
-                  Debug: Worker ID = {selectedWorkerId}, Found Name = {payslips.find(p => p.workerId === selectedWorkerId)?.workerName || 'Not found'}
+                  Debug: Worker ID = {selectedWorkerId}, Found Name = {payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName || 'Not found'}
                 </Typography>
                 
                 {/* Try to render PayslipManager */}
@@ -1020,7 +1020,7 @@ export function PayrollPage() {
                   {/* Test simple component first */}
                   <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                     <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", mb: 2 }}>
-                      Test Component for Worker: {payslips.find(p => p.workerId === selectedWorkerId)?.workerName || 'Unknown'}
+                      Test Component for Worker: {payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName || 'Unknown'}
                     </Typography>
                     <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif", mb: 2 }}>
                       Worker ID: {selectedWorkerId}
@@ -1050,7 +1050,7 @@ export function PayrollPage() {
                     </Typography>
                     <PayslipManager 
                       workerId={selectedWorkerId} 
-                      workerName={payslips.find(p => p.workerId === selectedWorkerId)?.workerName}
+                      workerName={payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName}
                     />
                   </Box>
                 </Box>

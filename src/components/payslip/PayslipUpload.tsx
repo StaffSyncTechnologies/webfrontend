@@ -272,7 +272,7 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
           size="large"
           startIcon={<UploadFile />}
           onClick={handleUpload}
-          disabled={!file || !payPeriodMonth || uploading}
+          disabled={!file || !payPeriodDate || uploading}
           fullWidth
         >
           {uploading ? 'Uploading…' : 'Upload Payslip'}
