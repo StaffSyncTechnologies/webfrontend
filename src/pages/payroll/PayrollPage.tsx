@@ -666,10 +666,10 @@ export function PayrollPage() {
         <Box sx={{ p: 3 }}>
           {activeTab === 0 && (
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif" }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Use the bulk operation buttons in the header above to generate payslips, download payment sheets, or approve multiple payslips at once.
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+              <Typography variant="body2" color="text.secondary">
                 Individual payslip actions (view details, approve, mark as paid) are available in the Action column of the payment history table below.
               </Typography>
             </Box>
@@ -677,14 +677,14 @@ export function PayrollPage() {
 
           {activeTab === 1 && (
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif" }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Click on any worker's name in the payment history table below to open their payslip management tools in a modal.
               </Typography>
               <Box sx={{ p: 4, textAlign: 'center', border: '2px dashed #E5E7EB', borderRadius: 2 }}>
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif" }}>
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
                   Select a worker from the payment history table
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+                <Typography variant="body2" color="text.secondary">
                   Click on a worker's name in the table to access their payslip management tools
                 </Typography>
               </Box>
@@ -985,79 +985,34 @@ export function PayrollPage() {
       {/* Payslip Manager Modal */}
       <Modal open={payslipManagerOpen} onClose={() => setPayslipManagerOpen(false)}>
         <ModalOverlay onClick={() => setPayslipManagerOpen(false)}>
-          <ModalCard sx={{ width: '85vw', maxWidth: '1000px', maxHeight: '85vh', overflow: 'auto' }}>
+          <ModalCard 
+            sx={{ width: '85vw', maxWidth: '1000px', maxHeight: '85vh', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <ModalClose onClick={() => setPayslipManagerOpen(false)}>
               <Close />
             </ModalClose>
-            <ModalTitle sx={{ fontFamily: "'Outfit', sans-serif" }}>
+            <ModalTitle>
               <AccountBalanceWallet sx={{ mr: 2, verticalAlign: 'middle' }} />
               Payslip Management
               {selectedWorkerId && (
-                <Typography variant="body2" sx={{ mt: 1, color: colors.text.secondary, fontFamily: "'Outfit', sans-serif" }}>
+                <Typography variant="body2" sx={{ mt: 1, color: colors.text.secondary }}>
                   {payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName}
                 </Typography>
               )}
             </ModalTitle>
-            <ModalSubtitle sx={{ fontFamily: "'Outfit', sans-serif" }}>
+            <ModalSubtitle>
               Manage individual worker payslips, calculate custom payslips, or upload PDF payslips.
             </ModalSubtitle>
             
             {selectedWorkerId ? (
-              <Box>
-                {/* Debug info */}
-                <Typography variant="body2" sx={{ mb: 2, fontFamily: "'Outfit', sans-serif", color: '#666' }}>
-                  Debug: Worker ID = {selectedWorkerId}, Found Name = {payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName || 'Not found'}
-                </Typography>
-                
-                {/* Try to render PayslipManager */}
-                <Box sx={{ border: '1px solid #E5E7EB', borderRadius: 2, p: 2, minHeight: '400px' }}>
-                  <Box sx={{ mb: 2, fontFamily: "'Outfit', sans-serif" }}>
-                    <Typography variant="body2" color="primary">
-                      PayslipManager Component:
-                    </Typography>
-                  </Box>
-                  
-                  {/* Test simple component first */}
-                  <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                    <Typography variant="h6" sx={{ fontFamily: "'Outfit', sans-serif", mb: 2 }}>
-                      Test Component for Worker: {payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName || 'Unknown'}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif", mb: 2 }}>
-                      Worker ID: {selectedWorkerId}
-                    </Typography>
-                    
-                    {/* Test tabs */}
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                      <Typography variant="body1" sx={{ p: 2, fontFamily: "'Outfit', sans-serif" }}>
-                        Tab 1: Calculator
-                      </Typography>
-                      <Typography variant="body1" sx={{ p: 2, fontFamily: "'Outfit', sans-serif" }}>
-                        Tab 2: History  
-                      </Typography>
-                      <Typography variant="body1" sx={{ p: 2, fontFamily: "'Outfit', sans-serif" }}>
-                        Tab 3: Settings
-                      </Typography>
-                      <Typography variant="body1" sx={{ p: 2, fontFamily: "'Outfit', sans-serif" }}>
-                        Tab 4: Upload PDF
-                      </Typography>
-                    </Box>
-                  </Box>
-                  
-                  {/* Try actual PayslipManager */}
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
-                      Attempting to load actual PayslipManager...
-                    </Typography>
-                    <PayslipManager 
-                      workerId={selectedWorkerId} 
-                      workerName={payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName}
-                    />
-                  </Box>
-                </Box>
-              </Box>
+              <PayslipManager 
+                workerId={selectedWorkerId} 
+                workerName={payslips.find(p => p.worker.id === selectedWorkerId)?.worker.fullName}
+              />
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+                <Typography variant="body1" color="text.secondary">
                   No worker selected
                 </Typography>
               </Box>

@@ -119,7 +119,7 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%' }} onClick={(e) => e.stopPropagation()}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" gutterBottom>
           <Assessment sx={{ mr: 2, verticalAlign: 'middle' }} />
