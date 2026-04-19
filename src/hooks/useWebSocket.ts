@@ -62,7 +62,10 @@ export function useWebSocket({
     socketRef.current = socket;
 
     return () => {
-      socket.disconnect();
+      console.log('Disconnecting WebSocket...');
+      if (socket && socket.connected) {
+        socket.disconnect();
+      }
       socketRef.current = null;
       setIsConnected(false);
     };
@@ -117,7 +120,9 @@ export function useWebSocket({
 
     return () => {
       console.log('Cleaning up room listeners for:', roomId);
-      socket.emit('chat:leave', { roomId });
+      if (socket && socket.connected) {
+        socket.emit('chat:leave', { roomId });
+      }
       socket.off('chat:message', handleMessage);
       socket.off('chat:typing', handleTyping);
       socket.off('chat:messages_read', handleRead);
