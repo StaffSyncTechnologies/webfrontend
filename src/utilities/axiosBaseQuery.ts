@@ -29,7 +29,7 @@ export const axiosBaseQuery = ({
       const headers: Record<string, string> = {};
       
       // Add API key header
-      headers['X-API-Key'] = 'staffsync-api-key-2024';
+      headers['X-API-Key'] = import.meta.env.VITE_API_KEY || '';
 
       // Add default headers
       if (prepareHeaders) {

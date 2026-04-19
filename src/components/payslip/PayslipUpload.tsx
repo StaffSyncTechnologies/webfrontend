@@ -127,7 +127,7 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
       }
       
       // Add API key header for backend validation
-      headers['X-API-Key'] = 'staffsync-api-key-2024';
+      headers['X-API-Key'] = import.meta.env.VITE_API_KEY || '';
       
       const res = await fetch(`${API_BASE_URL}${PAYSLIPS.UPLOAD}`, {
         method: 'POST',
