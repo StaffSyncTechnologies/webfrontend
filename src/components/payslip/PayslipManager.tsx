@@ -47,7 +47,16 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
       id={`payslip-tabpanel-${index}`}
       aria-labelledby={`payslip-tab-${index}`}
     >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ 
+          p: 3, 
+          fontFamily: "'Outfit', sans-serif",
+          minHeight: '400px',
+          bgcolor: 'background.paper'
+        }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 };
@@ -121,47 +130,57 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
   return (
     <Box sx={{ width: '100%' }} onClick={(e) => e.stopPropagation()}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>
           <Assessment sx={{ mr: 2, verticalAlign: 'middle' }} />
           Payslip Management
         </Typography>
         {workerName && (
-          <Typography variant="body1" color="textSecondary">
+          <Typography variant="body1" color="textSecondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
             Employee: {workerName}
           </Typography>
         )}
       </Box>
 
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ mb: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           aria-label="Payslip management tabs"
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              fontFamily: "'Outfit', sans-serif",
+              fontWeight: 600,
+              minHeight: 72,
+              textTransform: 'none',
+              fontSize: '14px'
+            },
+            '& .Mui-selected': {
+              color: 'primary.main',
+              fontWeight: 700
+            }
+          }}
         >
           <Tab
             icon={<Calculate />}
             label="Calculator"
             iconPosition="start"
-            sx={{ minHeight: 64 }}
           />
           <Tab
             icon={<History />}
             label="History"
             iconPosition="start"
-            sx={{ minHeight: 64 }}
           />
           <Tab
             icon={<Settings />}
             label="Settings"
             iconPosition="start"
-            sx={{ minHeight: 64 }}
           />
           <Tab
             icon={<UploadFile />}
             label="Upload PDF"
             iconPosition="start"
-            sx={{ minHeight: 64 }}
           />
         </Tabs>
 
@@ -170,6 +189,7 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
             workerId={workerId}
             onSave={handleSavePayslip}
             initialSalary={initialSalary}
+            payPeriodType={payPeriodType}
           />
         </TabPanel>
 
@@ -185,10 +205,18 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
 
         <TabPanel value={tabValue} index={2}>
           <Box>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
               Payslip Settings
             </Typography>
-            <Alert severity="info">
+            <Alert 
+              severity="info" 
+              sx={{ 
+                fontFamily: "'Outfit', sans-serif",
+                '& .MuiAlert-message': {
+                  fontFamily: "'Outfit', sans-serif"
+                }
+              }}
+            >
               Payslip settings management will be implemented here. This will allow you to configure
               default tax codes, pension rates, and other payroll settings for this employee.
             </Alert>

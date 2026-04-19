@@ -151,6 +151,93 @@ export const calcAnnualStudentLoan = (annualGross: number, plan: StudentLoanPlan
   return annualGross <= threshold ? 0 : round2((annualGross - threshold) * rate);
 };
 
+// Weekly helpers
+export const calcWeeklyEmployeeNI = (annualGross: number): number => {
+  const weeklyGross = annualGross / 52;
+  const weeklyThreshold = NI.PRIMARY_THRESHOLD / 52;
+  const weeklyUpperLimit = NI.UPPER_LIMIT / 52;
+  
+  if (weeklyGross <= weeklyThreshold) return 0;
+  
+  if (weeklyGross <= weeklyUpperLimit) {
+    return round2((weeklyGross - weeklyThreshold) * NI.BASIC_RATE);
+  }
+  
+  return round2(
+    (weeklyUpperLimit - weeklyThreshold) * NI.BASIC_RATE +
+    (weeklyGross - weeklyUpperLimit) * NI.HIGHER_RATE
+  );
+};
+
+export const calcWeeklyEmployerNI = (annualGross: number): number => {
+  const weeklyGross = annualGross / 52;
+  const weeklyThreshold = NI.EMPLOYER_THRESHOLD / 52;
+  const weeklyUpperLimit = NI.UPPER_LIMIT / 52;
+  
+  if (weeklyGross <= weeklyThreshold) return 0;
+  
+  if (weeklyGross <= weeklyUpperLimit) {
+    return round2((weeklyGross - weeklyThreshold) * NI.EMPLOYER_RATE);
+  }
+  
+  return round2(
+    (weeklyUpperLimit - weeklyThreshold) * NI.EMPLOYER_RATE +
+    (weeklyGross - weeklyUpperLimit) * NI.EMPLOYER_RATE
+  );
+};
+
+export const calcWeeklyTax = (annualGross: number, options: PayslipOptions): number => {
+  const weeklyGross = annualGross / 52;
+  const weeklyAllowance = TAX.PERSONAL_ALLOWANCE / 52;
+  const weeklyBasicLimit = TAX.BASIC_RATE_LIMIT / 52;
+  const weeklyHigherLimit = TAX.HIGHER_RATE_LIMIT / 52;
+  
+  let taxableWeekly = weeklyGross - weeklyAllowance;
+  if (taxableWeekly <= 0) return 0;
+  
+  let tax = 0;
+  if (taxableWeekly <= weeklyBasicLimit) {
+    tax = taxableWeekly * TAX.BASIC_RATE;
+  } else {
+    tax = weeklyBasicLimit * TAX.BASIC_RATE;
+    const higherIncome = taxableWeekly - weeklyBasicLimit;
+    if (higherIncome <= (weeklyHigherLimit - weeklyBasicLimit)) {
+      tax += higherIncome * TAX.HIGHER_RATE;
+    } else {
+      tax += (weeklyHigherLimit - weeklyBasicLimit) * TAX.HIGHER_RATE;
+      const additionalIncome = higherIncome - (weeklyHigherLimit - weeklyBasicLimit);
+      tax += additionalIncome * TAX.ADDITIONAL_RATE;
+    }
+  }
+  
+  return round2(tax);
+};
+
+export const calcWeeklyEmployeePension = (annualGross: number, options: PayslipOptions): number => {
+  if (options.pensionOptOut) return 0;
+  const weeklyGross = annualGross / 52;
+  const weeklyLowerLimit = PENSION.LOWER_LIMIT / 52;
+  const qualifyingEarnings = Math.max(0, weeklyGross - weeklyLowerLimit);
+  const rate = options.pensionEmployeeRate ?? PENSION.DEFAULT_EMPLOYEE_RATE;
+  return round2(qualifyingEarnings * rate);
+};
+
+export const calcWeeklyEmployerPension = (annualGross: number, options: PayslipOptions): number => {
+  if (options.pensionOptOut) return 0;
+  const weeklyGross = annualGross / 52;
+  const weeklyLowerLimit = PENSION.LOWER_LIMIT / 52;
+  const qualifyingEarnings = Math.max(0, weeklyGross - weeklyLowerLimit);
+  const rate = options.pensionEmployerRate ?? PENSION.DEFAULT_EMPLOYER_RATE;
+  return round2(qualifyingEarnings * rate);
+};
+
+export const calcWeeklyStudentLoan = (annualGross: number, plan: StudentLoanPlan): number => {
+  const weeklyGross = annualGross / 52;
+  const weeklyThreshold = STUDENT_LOAN[plan].threshold / 52;
+  if (weeklyGross <= weeklyThreshold) return 0;
+  return round2((weeklyGross - weeklyThreshold) * STUDENT_LOAN[plan].rate);
+};
+
 // ─── W1/M1 (non-cumulative) monthly calculation ──────────────────────────────
 
 /**
@@ -379,8 +466,55 @@ const estimateFirstTaxMonth = (
 // ─── Main entry point ────────────────────────────────────────────────────────
 
 /**
- * Calculate monthly payslip. Uses cumulative basis by default.
- * Pass options.taxBasis = 'W1M1' for emergency / non-cumulative.
+ * Main weekly payslip calculator (2024/25 rates)
+ */
+export const calculateWeeklyPayslip = (
+  annualGross: number,
+  options: PayslipOptions = {}
+): PayslipResult => {
+  const weeklyGross = annualGross / 52;
+  const weeklyNI = calcWeeklyEmployeeNI(annualGross);
+  const weeklyTax = calcWeeklyTax(annualGross, options);
+  const weeklyPension = calcWeeklyEmployeePension(annualGross, options);
+  const weeklyStudentLoan = calcWeeklyStudentLoan(annualGross, options.studentLoan ?? 'NONE');
+  const weeklyDeductions = weeklyNI + weeklyTax + weeklyPension + weeklyStudentLoan;
+  const weeklyNetPay = weeklyGross - weeklyDeductions;
+  const weeklyEmployerNI = calcWeeklyEmployerNI(annualGross);
+  const weeklyEmployerPension = calcWeeklyEmployerPension(annualGross, options);
+
+  // Calculate effective tax rate
+  const effectiveTaxRate = weeklyGross > 0 ? (weeklyTax / weeklyGross) * 100 : 0;
+
+  // Cumulative PAYE support (simplified for weekly)
+  const taxBasis = options.taxBasis ?? 'CUMULATIVE';
+  const taxMonth = options.taxMonth ?? currentTaxMonth();
+  const cumulativeGross = options.cumulativeGross ?? 0;
+  const cumulativeTaxPaid = options.cumulativeTaxPaid ?? 0;
+
+  return {
+    annualGross,
+    monthlyGross: annualGross / 12, // Keep monthly for compatibility
+    incomeTax: weeklyTax,
+    nationalInsurance: weeklyNI,
+    employeePension: weeklyPension,
+    studentLoan: weeklyStudentLoan,
+    totalDeductions: weeklyDeductions,
+    netPay: weeklyNetPay,
+    employerNI: weeklyEmployerNI,
+    employerPension: weeklyEmployerPension,
+    pensionOptedOut: options.pensionOptOut ?? false,
+    effectiveTaxRate,
+    taxBasis,
+    taxMonth,
+    cumulativeGross,
+    cumulativeTaxOwed: weeklyTax * 52, // Annual estimate
+    taxFreeThisMonth: 0, // Simplified for weekly
+    firstTaxPayingMonth: undefined, // Simplified for weekly
+  };
+};
+
+/**
+ * Main monthly payslip calculator (2024/25 rates)
  */
 export const calculateMonthlyPayslip = (
   annualGross: number,

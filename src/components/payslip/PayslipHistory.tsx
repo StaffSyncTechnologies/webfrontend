@@ -185,38 +185,40 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
   }
 
   return (
-    <Box>
+    <Box sx={{ fontFamily: "'Outfit', sans-serif" }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <History sx={{ mr: 2 }} />
-        <Typography variant="h5">Payslip History</Typography>
+        <History sx={{ mr: 2, color: 'primary.main' }} />
+        <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>
+          Payslip History
+        </Typography>
       </Box>
 
-      <Card>
+      <Card sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <CardContent>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>Pay Period</TableCell>
-                  <TableCell align="right">Gross Pay</TableCell>
-                  <TableCell align="right">Net Pay</TableCell>
-                  <TableCell align="right">Deductions</TableCell>
-                  <TableCell align="right">Tax Rate</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                <TableRow sx={{ '& th': { fontFamily: "'Outfit', sans-serif", fontWeight: 600 } }}>
+                  <TableCell sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Pay Period</TableCell>
+                  <TableCell align="right" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Gross Pay</TableCell>
+                  <TableCell align="right" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Net Pay</TableCell>
+                  <TableCell align="right" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Deductions</TableCell>
+                  <TableCell align="right" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Tax Rate</TableCell>
+                  <TableCell sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Status</TableCell>
+                  <TableCell align="center" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {payslips.map((payslip) => (
                   <TableRow key={payslip.id} hover>
-                    <TableCell>
+                    <TableCell sx={{ fontFamily: "'Outfit', sans-serif" }}>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                         <Box>
-                          <Typography variant="body2">
+                          <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif" }}>
                             {formatPayPeriod(payslip.payPeriod)}
                           </Typography>
-                          <Typography variant="caption" color="textSecondary">
+                          <Typography variant="caption" color="textSecondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
                             Paid: {new Date(payslip.payDate).toLocaleDateString()}
                           </Typography>
                         </Box>

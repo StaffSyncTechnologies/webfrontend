@@ -56,6 +56,7 @@ import {
 import type { PayslipOptions, StudentLoanPlan, PayslipResult, TaxBasis } from '../../types/payslip.types';
 import {
   calculateMonthlyPayslip,
+  calculateWeeklyPayslip,
   calculateFullBreakdown,
   currentTaxMonth,
   taxMonthLabel,
@@ -67,6 +68,7 @@ interface PayslipCalculatorProps {
   onSave?: (result: PayslipResult, payPeriod: string) => void;
   initialOptions?: Partial<PayslipOptions>;
   initialSalary?: number;
+  payPeriodType?: 'WEEKLY' | 'MONTHLY';
 }
 
 const GBP = (n: number) =>
@@ -199,8 +201,9 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
   onSave,
   initialOptions = {},
   initialSalary = 30000,
+  payPeriodType = 'MONTHLY',
 }) => {
-  const [salary, setSalary] = useState(initialSalary.toString());
+  const [salary, setSalary] = useState(String(initialSalary));
   const [taxCodeInput, setTaxCodeInput] = useState(initialOptions.taxCode ?? '1257L');
   const [taxCodeError, setTaxCodeError] = useState('');
   const [taxBasis, setTaxBasis] = useState<TaxBasis>(initialOptions.taxBasis ?? 'CUMULATIVE');
@@ -216,6 +219,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
   const [resultTab, setResultTab] = useState(0);
   const [showPensionInfo, setShowPensionInfo] = useState(false);
   const [showCumulativeInfo, setShowCumulativeInfo] = useState(false);
+  const [payPeriodType, setPayPeriodType] = useState<'WEEKLY' | 'MONTHLY'>(payPeriodType);
 
   // ── Real-time calculation (no API call needed) ──────────────────────────────
   const result = useMemo<PayslipResult | null>(() => {
@@ -237,11 +241,13 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
     };
 
     try {
-      return calculateMonthlyPayslip(annualGross, opts);
+      return payPeriodType === 'WEEKLY' 
+        ? calculateWeeklyPayslip(annualGross, opts)
+        : calculateMonthlyPayslip(annualGross, opts);
     } catch {
       return null;
     }
-  }, [salary, taxCodeInput, taxBasis, taxMonth, priorGross, priorTaxPaid, pensionOptOut, employeeRate, employerRate, studentLoan, blindAllowance, marriageAllowance]);
+  }, [salary, taxCodeInput, taxBasis, taxMonth, priorGross, priorTaxPaid, pensionOptOut, employeeRate, employerRate, studentLoan, blindAllowance, marriageAllowance, payPeriodType]);
 
   const annual = useMemo(() => {
     const annualGross = parseFloat(salary);
@@ -289,27 +295,53 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
           <Stack spacing={2}>
 
             {/* Salary */}
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Salary</Typography>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ fontFamily: "'Outfit', sans-serif" }}>
+                  Salary
+                </Typography>
                 <TextField
                   fullWidth
                   label="Annual Gross Salary"
                   type="number"
                   value={salary}
                   onChange={(e) => setSalary(e.target.value)}
-                  InputProps={{ startAdornment: <InputAdornment position="start">£</InputAdornment> }}
+                  InputProps={{ 
+                    startAdornment: <InputAdornment position="start">£</InputAdornment>,
+                    sx: { fontFamily: "'Outfit', sans-serif" }
+                  }}
                   size="small"
-                  helperText={result ? `= ${GBP(result.monthlyGross)} / month` : ''}
+                  sx={{ 
+                    '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" },
+                    '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }
+                  }}
+                  helperText={result ? `= ${GBP(payPeriodType === 'WEEKLY' ? result.netPay * 52 / 12 : result.monthlyGross)} / month` : ''}
                 />
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ fontFamily: "'Outfit', sans-serif" }}>Pay Period Type</InputLabel>
+                  <Select
+                    value={payPeriodType}
+                    onChange={(e) => setPayPeriodType(e.target.value as 'WEEKLY' | 'MONTHLY')}
+                    label="Pay Period Type"
+                    sx={{ 
+                      '& .MuiSelect-select': { fontFamily: "'Outfit', sans-serif" },
+                      '& .MuiMenuItem-root': { fontFamily: "'Outfit', sans-serif" }
+                    }}
+                  >
+                    <MenuItem value="MONTHLY">Monthly</MenuItem>
+                    <MenuItem value="WEEKLY">Weekly</MenuItem>
+                  </Select>
+                </FormControl>
               </CardContent>
             </Card>
 
             {/* Tax Basis */}
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={600}>PAYE Tax Basis</Typography>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ fontFamily: "'Outfit', sans-serif" }}>
+                    PAYE Tax Basis
+                  </Typography>
                   <Tooltip title="Toggle details" arrow>
                     <IconButton size="small" onClick={() => setShowCumulativeInfo(p => !p)}>
                       {showCumulativeInfo ? <KeyboardArrowUp fontSize="small" /> : <KeyboardArrowDown fontSize="small" />}
@@ -318,7 +350,17 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                 </Box>
 
                 <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
-                  <RadioGroup row value={taxBasis} onChange={(e) => setTaxBasis(e.target.value as TaxBasis)}>
+                  <RadioGroup 
+                    row 
+                    value={taxBasis} 
+                    onChange={(e) => setTaxBasis(e.target.value as TaxBasis)}
+                    sx={{ 
+                      '& .MuiFormControlLabel-label': { 
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: '14px'
+                      }
+                    }}
+                  >
                     <FormControlLabel
                       value="CUMULATIVE"
                       control={<Radio size="small" />}
@@ -555,7 +597,9 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                           : 'W1/M1 Basis — Emergency Tax'}
                       </Typography>
                       <Typography variant="h3" fontWeight={700}>{GBP(result.netPay)}</Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.85 }}>Net Monthly Pay</Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                        Net {payPeriodType === 'WEEKLY' ? 'Weekly' : 'Monthly'} Pay
+                      </Typography>
                     </Grid>
                     <Grid size="auto">
                       <Stack spacing={0.5} alignItems="flex-end">
@@ -575,17 +619,17 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
               {/* Tabs: Monthly / Annual / Employer */}
               <Card variant="outlined">
                 <Tabs value={resultTab} onChange={(_, v) => setResultTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
-                  <Tab label="Monthly" />
+                  <Tab label={payPeriodType === 'WEEKLY' ? 'Weekly' : 'Monthly'} />
                   <Tab label="Annual" />
                   <Tab label="Employer Costs" />
                 </Tabs>
 
                 <CardContent>
-                  {/* Monthly tab */}
+                  {/* Weekly/Monthly tab */}
                   {resultTab === 0 && (
                     <>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>EARNINGS</Typography>
-                      <EarningRow label="Gross Pay" amount={result.monthlyGross} />
+                      <EarningRow label={`Gross Pay (${payPeriodType === 'WEEKLY' ? 'Week' : 'Month'})`} amount={payPeriodType === 'WEEKLY' ? result.netPay + result.totalDeductions : result.monthlyGross} />
                       <Divider sx={{ my: 1.5 }} />
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>DEDUCTIONS</Typography>
                       <DeductionRow
@@ -646,17 +690,21 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                   {/* Employer costs tab */}
                   {resultTab === 2 && (
                     <>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>MONTHLY EMPLOYER COSTS</Typography>
-                      <EarningRow label="Gross Salary" amount={result.monthlyGross} />
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        {payPeriodType === 'WEEKLY' ? 'WEEKLY' : 'MONTHLY'} EMPLOYER COSTS
+                      </Typography>
+                      <EarningRow label="Gross Salary" amount={payPeriodType === 'WEEKLY' ? result.netPay + result.totalDeductions : result.monthlyGross} />
                       <EarningRow label="Employer NI (13.8%)" amount={result.employerNI} />
                       {!result.pensionOptedOut && (
                         <EarningRow label={`Employer Pension (${employerRate}%)`} amount={result.employerPension} />
                       )}
                       <Divider sx={{ my: 1.5 }} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, bgcolor: 'action.hover', px: 1.5, borderRadius: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>Total Monthly Cost</Typography>
                         <Typography variant="subtitle1" fontWeight={700}>
-                          {GBP(result.monthlyGross + result.employerNI + result.employerPension)}
+                          Total {payPeriodType === 'WEEKLY' ? 'Weekly' : 'Monthly'} Cost
+                        </Typography>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {GBP((payPeriodType === 'WEEKLY' ? result.netPay + result.totalDeductions : result.monthlyGross) + result.employerNI + result.employerPension)}
                         </Typography>
                       </Box>
                       {annual && (
