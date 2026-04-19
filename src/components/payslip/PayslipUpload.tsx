@@ -120,9 +120,18 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
 
     try {
       const token = localStorage.getItem('token') ?? sessionStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      // Add API key header for backend validation
+      headers['X-API-Key'] = 'staffsync-api-key-2024';
+      
       const res = await fetch(`${API_BASE_URL}${PAYSLIPS.UPLOAD}`, {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers,
         body: formData,
       });
 
@@ -143,19 +152,7 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
       setFile(null);
       onSuccess?.(json.data.payslipId, label);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Upload failed';
-      
-      // Provide specific guidance for 403 errors and debugging info
-      if (errorMessage.includes('403') || errorMessage.includes('FORBIDDEN') || errorMessage.includes('Not authorized')) {
-        setError(`Permission denied (403): Your role may not be properly recognized. Please check the browser console and server logs for debugging information. Error: ${errorMessage}`);
-        console.error('Upload 403 Error Details:', {
-          error: err,
-          message: errorMessage,
-          timestamp: new Date().toISOString()
-        });
-      } else {
-        setError(errorMessage);
-      }
+      setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -215,9 +212,17 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
             helperText={period ? `Period: ${period.label}` : ''}
           />
           {period && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontFamily: "'Outfit', sans-serif" }}>
-              {toISODate(period.start)} - {toISODate(period.end)}
-            </Typography>
+            <Box sx={{ mt: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
+                Pay Period Dates:
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+                Start: {toISODate(period.start)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
+                End: {toISODate(period.end)}
+              </Typography>
+            </Box>
           )}
         </Box>
 

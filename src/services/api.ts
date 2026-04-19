@@ -10,7 +10,7 @@ export const api = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': import.meta.env.VITE_API_KEY || '',
+    'X-API-Key': 'staffsync-api-key-2024',
   },
 });
 
