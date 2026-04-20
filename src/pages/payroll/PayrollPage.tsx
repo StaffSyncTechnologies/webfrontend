@@ -48,9 +48,9 @@ import {
 import {
   useGetPaymentSheetSummaryQuery,
 } from '../../store/slices/bankAccountSlice';
-import { BANK_ACCOUNT } from '../../utilities/endpoint';
+import { BANK_ACCOUNT, PAYSLIPS } from '../../utilities/endpoint';
 import { PayslipManager } from '../../components/payslip/PayslipManager';
-import { Button, Typography, Tabs, Tab, Box as MuiBox } from '@mui/material';
+import { Button, Typography, Tabs, Tab } from '@mui/material';
 
 // ============ STYLED COMPONENTS ============
 const HeaderRow = styled(Box)({
@@ -63,7 +63,7 @@ const HeaderRow = styled(Box)({
 const TitleSection = styled(Box)({});
 
 const PageTitle = styled('h1')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '28px',
   fontWeight: 700,
   color: colors.primary.navy,
@@ -71,7 +71,7 @@ const PageTitle = styled('h1')({
 });
 
 const PageSubtitle = styled('p')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   color: colors.text.secondary,
   margin: '4px 0 0',
@@ -85,7 +85,7 @@ const ApproveAllButton = styled('button')({
   borderRadius: '8px',
   border: 'none',
   backgroundColor: colors.primary.navy,
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   fontWeight: 600,
   color: colors.secondary.white,
@@ -104,7 +104,7 @@ const CardHeader = styled(Box)({
   padding: '20px 24px',
   borderBottom: '1px solid #E5E7EB',
   '& h3': {
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "Outfit, sans-serif",
     fontSize: '16px',
     fontWeight: 600,
     color: colors.primary.navy,
@@ -141,7 +141,7 @@ const SearchInput = styled(TextField)({
   },
   '& .MuiInputBase-input': {
     padding: '10px 14px',
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "Outfit, sans-serif",
     fontSize: '14px',
   },
   width: '240px',
@@ -155,7 +155,7 @@ const FilterButton = styled('button')({
   borderRadius: '8px',
   border: '1px solid #E5E7EB',
   backgroundColor: colors.secondary.white,
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   color: colors.text.secondary,
   cursor: 'pointer',
@@ -170,7 +170,7 @@ const DropdownButton = styled('button')({
   borderRadius: '8px',
   border: '1px solid #E5E7EB',
   backgroundColor: colors.secondary.white,
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   color: colors.text.secondary,
   cursor: 'pointer',
@@ -185,7 +185,7 @@ const ExportButton = styled('button')({
   borderRadius: '8px',
   border: 'none',
   backgroundColor: colors.primary.navy,
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   fontWeight: 500,
   color: colors.secondary.white,
@@ -199,7 +199,7 @@ const Table = styled('table')({
 });
 
 const Th = styled('th')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '13px',
   fontWeight: 500,
   color: colors.text.secondary,
@@ -209,7 +209,7 @@ const Th = styled('th')({
 });
 
 const Td = styled('td')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   color: colors.primary.navy,
   padding: '16px',
@@ -221,7 +221,7 @@ const WorkerCell = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   gap: '10px',
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   fontWeight: 500,
   color: colors.primary.navy,
@@ -249,7 +249,7 @@ const StatusBadge = styled('span', {
   return {
     padding: '4px 12px',
     borderRadius: '16px',
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "Outfit, sans-serif",
     fontSize: '12px',
     fontWeight: 500,
     backgroundColor: bgMap[status.toLowerCase()] ?? '#F3F4F6',
@@ -264,7 +264,7 @@ const ActionMenuItem = styled(Box, {
   alignItems: 'center',
   gap: '8px',
   padding: '8px 16px',
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   color: danger ? colors.status.error : colors.primary.navy,
   cursor: 'pointer',
@@ -281,7 +281,7 @@ const Pagination = styled(Box)({
 });
 
 const PaginationText = styled('span')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '13px',
   color: colors.text.secondary,
 });
@@ -302,7 +302,7 @@ const PageButton = styled('button')({
   alignItems: 'center',
   justifyContent: 'center',
   cursor: 'pointer',
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '13px',
   '&:hover': { backgroundColor: '#F9FAFB' },
   '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
@@ -334,7 +334,7 @@ const ModalClose = styled(IconButton)({
 });
 
 const ModalTitle = styled('h2')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '22px',
   fontWeight: 700,
   color: colors.primary.navy,
@@ -343,7 +343,7 @@ const ModalTitle = styled('h2')({
 });
 
 const ModalSubtitle = styled('p')({
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   color: colors.text.secondary,
   margin: '0 0 24px',
@@ -366,19 +366,19 @@ const SummaryItem = styled(Box)({
   borderRight: '1px solid #E5E7EB',
   '&:last-child': { borderRight: 'none' },
   '& .label': {
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "Outfit, sans-serif",
     fontSize: '12px',
     color: colors.text.secondary,
     marginBottom: '4px',
   },
   '& .value': {
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "Outfit, sans-serif",
     fontSize: '20px',
     fontWeight: 700,
     color: colors.primary.navy,
   },
   '& .value-red': {
-    fontFamily: "'Outfit', sans-serif",
+    fontFamily: "Outfit, sans-serif",
     fontSize: '20px',
     fontWeight: 700,
     color: colors.status.error,
@@ -391,7 +391,7 @@ const ApproveButton = styled('button')({
   borderRadius: '8px',
   border: 'none',
   backgroundColor: colors.primary.navy,
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   fontWeight: 600,
   color: colors.secondary.white,
@@ -415,7 +415,7 @@ const DoneButton = styled('button')({
   borderRadius: '8px',
   border: 'none',
   backgroundColor: colors.primary.navy,
-  fontFamily: "'Outfit', sans-serif",
+  fontFamily: "Outfit, sans-serif",
   fontSize: '14px',
   fontWeight: 600,
   color: colors.secondary.white,
@@ -462,12 +462,19 @@ export function PayrollPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [payslipManagerOpen, setPayslipManagerOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: string[] } | null>(null);
+  const [importPeriodStart, setImportPeriodStart] = useState('');
+  const [importPeriodEnd, setImportPeriodEnd] = useState('');
+  const [payPeriodFilter, setPayPeriodFilter] = useState('');
 
   // API Hooks
   const { data: payslipData, isLoading, refetch } = useGetPayslipListQuery({
     page: currentPage,
     limit: rowsPerPage,
     ...(statusFilter && { status: statusFilter }),
+    ...(payPeriodFilter && { payPeriodStart: payPeriodFilter }),
   });
   const [bulkApprove, { isLoading: bulkApproving }] = useBulkApprovePayslipsMutation();
   const [approvePayslip] = useApprovePayslipMutation();
@@ -584,6 +591,64 @@ export function PayrollPage() {
     }
   };
 
+  const handleExportTemplate = async () => {
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://dev.staffsynctech.co.uk/api/v1'}${PAYSLIPS.EXPORT_TEMPLATE}`, {
+        headers: { Authorization: `Bearer ${token}`, 'X-API-Key': import.meta.env.VITE_API_KEY || '' },
+      });
+      if (!response.ok) throw new Error('Failed to download template');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const disposition = response.headers.get('Content-Disposition');
+      const filename = disposition?.match(/filename="(.+)"/)?.[1] || 'payslip-template.xlsx';
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download template:', error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!importFile) return;
+    setImporting(true);
+    setImportResult(null);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const formData = new FormData();
+      formData.append('file', importFile);
+      if (importPeriodStart) formData.append('periodStart', importPeriodStart);
+      if (importPeriodEnd) formData.append('periodEnd', importPeriodEnd);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://dev.staffsynctech.co.uk/api/v1'}${PAYSLIPS.BULK_IMPORT}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'X-API-Key': import.meta.env.VITE_API_KEY || '' },
+        body: formData,
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.message ?? 'Import failed');
+      setImportResult(json.data);
+      setImportFile(null);
+      setImportPeriodStart('');
+      setImportPeriodEnd('');
+      refetch();
+    } catch (error) {
+      console.error('Failed to import:', error);
+      setImportResult({ created: 0, updated: 0, skipped: 0, errors: [error instanceof Error ? error.message : 'Import failed'] });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <DashboardContainer>
       <HeaderRow>
@@ -667,11 +732,134 @@ export function PayrollPage() {
           {activeTab === 0 && (
             <Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Use the bulk operation buttons in the header above to generate payslips, download payment sheets, or approve multiple payslips at once.
+                Export a pre-filled Excel template with all workers, fill in payslip data, then import to create/update payslip records.
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Individual payslip actions (view details, approve, mark as paid) are available in the Action column of the payment history table below.
-              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownload />}
+                  onClick={handleExportTemplate}
+                  disabled={downloading}
+                  sx={{ fontFamily: "Outfit, sans-serif" }}
+                >
+                  {downloading ? 'Downloading...' : 'Download Template'}
+                </Button>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ fontFamily: "Outfit, sans-serif", minWidth: '100px' }}>
+                  Pay Period:
+                </Typography>
+                <TextField
+                  type="date"
+                  size="small"
+                  value={importPeriodStart}
+                  onChange={(e) => setImportPeriodStart(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ fontFamily: "Outfit, sans-serif", width: 160 }}
+                />
+                <Typography variant="body2" sx={{ fontFamily: "Outfit, sans-serif" }}>
+                  to
+                </Typography>
+                <TextField
+                  type="date"
+                  size="small"
+                  value={importPeriodEnd}
+                  onChange={(e) => setImportPeriodEnd(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ fontFamily: "Outfit, sans-serif", width: 160 }}
+                />
+                <Typography variant="caption" color="textSecondary" sx={{ fontFamily: "Outfit, sans-serif" }}>
+                  (Optional - overrides Excel dates)
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  border: '2px dashed #E5E7EB',
+                  borderRadius: 2,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  '&:hover': { borderColor: '#3B82F6', bgcolor: '#F9FAFB' },
+                }}
+                onClick={() => document.getElementById('excel-upload-input')?.click()}
+              >
+                <input
+                  id="excel-upload-input"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setImportFile(file);
+                  }}
+                />
+                {importFile ? (
+                  <Box>
+                    <Typography variant="body1" sx={{ fontFamily: "Outfit, sans-serif", fontWeight: 500 }}>
+                      {importFile.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {(importFile.size / 1024).toFixed(1)} KB
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Typography variant="body1" color="textSecondary" sx={{ fontFamily: "Outfit, sans-serif" }}>
+                      Click or drag to upload filled Excel file
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      .xlsx or .xls files only, max 5MB
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {importFile && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleBulkImport}
+                    disabled={importing}
+                    sx={{ fontFamily: "Outfit, sans-serif" }}
+                  >
+                    {importing ? <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} /> : null}
+                    Import Payslips
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setImportFile(null);
+                      setImportResult(null);
+                    }}
+                    sx={{ fontFamily: "Outfit, sans-serif" }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              )}
+
+              {importResult && (
+                <Box sx={{ mt: 3, p: 2, bgcolor: importResult.errors.length > 0 ? '#FEF3C7' : '#D1FAE5', borderRadius: 2 }}>
+                  <Typography variant="body2" sx={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, mb: 1 }}>
+                    Import Results:
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ fontFamily: "Outfit, sans-serif" }}>
+                    Created: {importResult.created} | Updated: {importResult.updated} | Skipped: {importResult.skipped}
+                  </Typography>
+                  {importResult.errors.length > 0 && (
+                    <Box sx={{ mt: 1, maxHeight: 120, overflowY: 'auto' }}>
+                      {importResult.errors.map((err, i) => (
+                        <Typography key={i} variant="caption" color="error" sx={{ fontFamily: "Outfit, sans-serif", display: 'block' }}>
+                          {err}
+                        </Typography>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+              )}
             </Box>
           )}
 
@@ -721,15 +909,25 @@ export function PayrollPage() {
               onChange={(e) => { setStatusFilter(e.target.value as any); setCurrentPage(1); }}
               displayEmpty
               size="small"
-              sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', minWidth: 120 }}
+              sx={{ fontFamily: "Outfit, sans-serif", fontSize: '13px', minWidth: 120 }}
             >
               <MenuItem value="">All Status</MenuItem>
               <MenuItem value="DRAFT">Pending</MenuItem>
               <MenuItem value="APPROVED">Processing</MenuItem>
               <MenuItem value="PAID">Paid</MenuItem>
             </Select>
-            <ExportButton>
-              Export as XLS <FileDownload sx={{ fontSize: 18 }} />
+            <TextField
+              type="date"
+              size="small"
+              value={payPeriodFilter}
+              onChange={(e) => { setPayPeriodFilter(e.target.value); setCurrentPage(1); }}
+              InputLabelProps={{ shrink: true }}
+              placeholder="Filter by pay period start"
+              sx={{ fontFamily: "Outfit, sans-serif", fontSize: '13px', width: 160 }}
+            />
+            <ExportButton onClick={handleExportTemplate} disabled={downloading}>
+              {downloading ? <CircularProgress size={16} sx={{ color: 'white' }} /> : <FileDownload sx={{ fontSize: 18 }} />}
+              Export as XLS
             </ExportButton>
           </FilterRight>
         </FilterRow>
@@ -769,42 +967,44 @@ export function PayrollPage() {
                   </Td>
                 </tr>
               ) : (
-                payslips.map((row) => (
-                  <tr key={row.id}>
-                    <Td>
-                      <Checkbox 
-                        size="small" 
-                        checked={selectedIds.includes(row.id)}
-                        onChange={(e) => handleSelectOne(row.id, e.target.checked)}
-                        disabled={row.status !== 'DRAFT'}
-                      />
-                    </Td>
-                    <Td>
-                      <WorkerCell onClick={() => {
-                        setSelectedWorkerId(row.worker.id);
-                        setPayslipManagerOpen(true); // Open modal
-                      }}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: '#E5E7EB', fontSize: 13 }}>
-                          {row.worker.fullName.charAt(0)}
-                        </Avatar>
-                        {row.worker.fullName}
-                      </WorkerCell>
-                    </Td>
-                    <Td>{formatDate(row.periodStart)} - {formatDate(row.periodEnd)}</Td>
-                    <Td>{row.totalHours.toFixed(1)}h</Td>
-                    <Td>{formatCurrency(row.grossPay)}</Td>
-                    <Td>{formatCurrency(row.grossPay - row.netPay)}</Td>
-                    <Td>{formatCurrency(row.netPay)}</Td>
-                    <Td>
-                      <StatusBadge status={getStatusLabel(row.status)}>{getStatusLabel(row.status)}</StatusBadge>
-                    </Td>
-                    <Td>
-                      <IconButton size="small" onClick={(e) => handleMenuOpen(e, row)}>
-                        <MoreVert sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Td>
-                  </tr>
-                ))
+                <>
+                  {payslips.map((row) => (
+                    <tr key={row.id}>
+                      <Td>
+                        <Checkbox 
+                          size="small" 
+                          checked={selectedIds.includes(row.id)}
+                          onChange={(e) => handleSelectOne(row.id, e.target.checked)}
+                          disabled={row.status !== 'DRAFT'}
+                        />
+                      </Td>
+                      <Td>
+                        <WorkerCell onClick={() => {
+                          setSelectedWorkerId(row.worker.id);
+                          setPayslipManagerOpen(true); // Open modal
+                        }}>
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: '#E5E7EB', fontSize: 13 }}>
+                            {row.worker.fullName.charAt(0)}
+                          </Avatar>
+                          {row.worker.fullName}
+                        </WorkerCell>
+                      </Td>
+                      <Td>{formatDate(row.periodStart)} - {formatDate(row.periodEnd)}</Td>
+                      <Td>{row.totalHours.toFixed(1)}h</Td>
+                      <Td>{formatCurrency(row.grossPay)}</Td>
+                      <Td>{formatCurrency(row.grossPay - row.netPay)}</Td>
+                      <Td>{formatCurrency(row.netPay)}</Td>
+                      <Td>
+                        <StatusBadge status={getStatusLabel(row.status)}>{getStatusLabel(row.status)}</StatusBadge>
+                      </Td>
+                      <Td>
+                        <IconButton size="small" onClick={(e) => handleMenuOpen(e, row)}>
+                          <MoreVert sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Td>
+                    </tr>
+                  ))}
+                </>
               )}
             </tbody>
           </Table>
@@ -845,7 +1045,7 @@ export function PayrollPage() {
               value={rowsPerPage}
               onChange={(e) => setRowsPerPage(Number(e.target.value))}
               size="small"
-              sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}
+              sx={{ fontFamily: "Outfit, sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}
             >
               <MenuItem value={8}>08</MenuItem>
               <MenuItem value={10}>10</MenuItem>
@@ -933,7 +1133,7 @@ export function PayrollPage() {
             </ModalSubtitle>
 
             {paymentSheetSummary ? (
-              <>
+              <Box>
                 <SummaryRow>
                   <SummaryItem>
                     <div className="label">Workers</div>
@@ -962,7 +1162,7 @@ export function PayrollPage() {
                     marginBottom: '16px',
                   }}>
                     <Warning sx={{ fontSize: 20, color: '#D97706' }} />
-                    <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', color: '#92400E' }}>
+                    <Box sx={{ fontFamily: "Outfit, sans-serif", fontSize: '13px', color: '#92400E' }}>
                       <strong>{paymentSheetSummary.missingBankDetails}</strong> worker(s) are missing bank account details. They will be flagged in the payment sheet.
                     </Box>
                   </Box>
@@ -972,9 +1172,9 @@ export function PayrollPage() {
                   {downloading ? <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} /> : <FileDownload sx={{ fontSize: 18, mr: 1 }} />}
                   Download Payment Sheet (CSV)
                 </ApproveButton>
-              </>
+              </Box>
             ) : (
-              <Box sx={{ textAlign: 'center', py: 2, fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary }}>
+              <Box sx={{ textAlign: 'center', py: 2, fontFamily: "Outfit, sans-serif", fontSize: '14px', color: colors.text.secondary }}>
                 No approved payslips found. Generate and approve payslips first.
               </Box>
             )}

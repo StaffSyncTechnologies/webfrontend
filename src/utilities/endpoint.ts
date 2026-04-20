@@ -291,6 +291,8 @@ export const PAYSLIPS = {
   DETAIL: (payslipId: string) => `${API_BASE}/payslips/${payslipId}`,
   APPROVE: (payslipId: string) => `${API_BASE}/payslips/${payslipId}/approve`,
   MARK_PAID: (payslipId: string) => `${API_BASE}/payslips/${payslipId}/mark-paid`,
+  EXPORT_TEMPLATE: `${API_BASE}/payslips/export-template`,
+  BULK_IMPORT: `${API_BASE}/payslips/bulk-import`,
 } as const;
 
 // Holiday/Leave endpoints

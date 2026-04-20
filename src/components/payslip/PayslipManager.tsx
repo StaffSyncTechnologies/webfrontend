@@ -68,6 +68,7 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
   payPeriodType = 'MONTHLY',
 }) => {
   const [tabValue, setTabValue] = useState(0);
+  const [historyKey, setHistoryKey] = useState(0);
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -196,6 +197,7 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
         <TabPanel value={tabValue} index={1}>
           <PayslipHistory
             workerId={workerId}
+            refreshKey={historyKey}
             onView={(payslip) => {
               console.log('View payslip:', payslip);
             }}
@@ -230,6 +232,7 @@ export const PayslipManager: React.FC<PayslipManagerProps> = ({
             payPeriodType={payPeriodType}
             onSuccess={(_payslipId, periodLabel) => {
               showNotification(`Payslip for ${periodLabel} uploaded — worker will see PDF in app`, 'success');
+              setHistoryKey((k) => k + 1);
               setTabValue(1);
             }}
           />
