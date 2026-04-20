@@ -49,6 +49,7 @@ import {
   useGetPaymentSheetSummaryQuery,
 } from '../../store/slices/bankAccountSlice';
 import { BANK_ACCOUNT, PAYSLIPS } from '../../utilities/endpoint';
+import { API_BASE_URL } from '../../services/endpoints';
 import { PayslipManager } from '../../components/payslip/PayslipManager';
 import { Button, Typography, Tabs, Tab } from '@mui/material';
 
@@ -595,7 +596,7 @@ export function PayrollPage() {
     setDownloading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const url = `${import.meta.env.VITE_API_URL || 'https://dev.staffsynctech.co.uk/api/v1'}${PAYSLIPS.EXPORT_TEMPLATE}`;
+      const url = `${API_BASE_URL}${PAYSLIPS.EXPORT_TEMPLATE}`;
       console.log('Fetching template from:', url);
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}`, 'X-API-Key': import.meta.env.VITE_API_KEY || '' },
@@ -638,7 +639,7 @@ export function PayrollPage() {
       if (importPeriodStart) formData.append('periodStart', importPeriodStart);
       if (importPeriodEnd) formData.append('periodEnd', importPeriodEnd);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://dev.staffsynctech.co.uk/api/v1'}${PAYSLIPS.BULK_IMPORT}`, {
+      const response = await fetch(`${API_BASE_URL}${PAYSLIPS.BULK_IMPORT}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'X-API-Key': import.meta.env.VITE_API_KEY || '' },
         body: formData,
