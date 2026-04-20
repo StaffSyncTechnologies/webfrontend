@@ -94,14 +94,14 @@ const STUDENT_LOAN_PLANS: { value: StudentLoanPlan; label: string; desc: string;
 const DeductionRow = ({ label, amount, tooltip }: { label: string; amount: number; tooltip?: string }) => (
   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.75 }}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <Typography variant="body2" color="text.secondary">{label}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>{label}</Typography>
       {tooltip && (
         <Tooltip title={tooltip} arrow>
           <HelpOutline sx={{ fontSize: 14, color: 'text.disabled', cursor: 'help' }} />
         </Tooltip>
       )}
     </Box>
-    <Typography variant="body2" color={amount > 0 ? 'error.main' : 'text.primary'} fontWeight={500}>
+    <Typography variant="body2" color={amount > 0 ? 'error.main' : 'text.primary'} fontWeight={500} sx={{ fontFamily: "'Outfit', sans-serif" }}>
       {amount > 0 ? `-${GBP(amount)}` : GBP(0)}
     </Typography>
   </Box>
@@ -109,8 +109,8 @@ const DeductionRow = ({ label, amount, tooltip }: { label: string; amount: numbe
 
 const EarningRow = ({ label, amount }: { label: string; amount: number }) => (
   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.75 }}>
-    <Typography variant="body2" color="text.secondary">{label}</Typography>
-    <Typography variant="body2" fontWeight={500}>{GBP(amount)}</Typography>
+    <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>{label}</Typography>
+    <Typography variant="body2" fontWeight={500} sx={{ fontFamily: "'Outfit', sans-serif" }}>{GBP(amount)}</Typography>
   </Box>
 );
 
@@ -118,7 +118,7 @@ const EarningRow = ({ label, amount }: { label: string; amount: number }) => (
 
 const PensionOptOutPanel = () => (
   <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'warning.50', borderColor: 'warning.300' }}>
-    <Typography variant="subtitle2" color="warning.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+    <Typography variant="subtitle2" color="warning.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
       <WarningAmber fontSize="small" /> Pension Opt-Out — Statutory Process (UK)
     </Typography>
     <Stack spacing={0.75}>
@@ -131,13 +131,13 @@ const PensionOptOutPanel = () => (
         { icon: '6.', text: 'Worker loses employer contributions (free money) and pension tax relief by opting out.' },
         { icon: '7.', text: 'Worker can opt back in at any time by writing to the employer.' },
       ].map(({ icon, text }) => (
-        <Typography key={icon} variant="caption" color="text.secondary" sx={{ display: 'flex', gap: 1 }}>
+        <Typography key={icon} variant="caption" color="text.secondary" sx={{ display: 'flex', gap: 1, fontFamily: "'Outfit', sans-serif" }}>
           <span style={{ fontWeight: 600, minWidth: 16 }}>{icon}</span> {text}
         </Typography>
       ))}
     </Stack>
-    <Alert severity="warning" sx={{ mt: 1.5, py: 0.5 }}>
-      <Typography variant="caption">
+    <Alert severity="warning" sx={{ mt: 1.5, py: 0.5, '& .MuiAlert-message': { fontFamily: "'Outfit', sans-serif" } }}>
+      <Typography variant="caption" sx={{ fontFamily: "'Outfit', sans-serif" }}>
         <strong>Tax impact:</strong> Pension contributions are deducted from gross pay (before tax). Opting out increases taxable income — the worker pays more income tax and NI as a result.
       </Typography>
     </Alert>
@@ -154,39 +154,39 @@ const MidYearStarterPanel = ({ result, annualGross }: { result: PayslipResult; a
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'info.50', borderColor: 'info.200' }}>
-      <Typography variant="subtitle2" color="info.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+      <Typography variant="subtitle2" color="info.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
         <InfoOutlined fontSize="small" /> Mid-Year Starter — Cumulative PAYE Benefit
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontFamily: "'Outfit', sans-serif" }}>
         Starting in tax month {result.taxMonth} ({monthLabel}) means{' '}
         <strong>{result.taxMonth - 1} months of unused personal allowance</strong> carry forward:
       </Typography>
       <Stack spacing={0.5} sx={{ mb: 1.5 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Typography variant="caption" color="text.secondary">Accumulated carry-forward allowance</Typography>
-          <Typography variant="caption" fontWeight={600}>{GBP(unusedAllowance)}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>Accumulated carry-forward allowance</Typography>
+          <Typography variant="caption" fontWeight={600} sx={{ fontFamily: "'Outfit', sans-serif" }}>{GBP(unusedAllowance)}</Typography>
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Typography variant="caption" color="text.secondary">Estimated initial tax saving (vs full year)</Typography>
-          <Typography variant="caption" fontWeight={600} color="success.main">{GBP(taxSavedVsFullYear)}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>Estimated initial tax saving (vs full year)</Typography>
+          <Typography variant="caption" fontWeight={600} color="success.main" sx={{ fontFamily: "'Outfit', sans-serif" }}>{GBP(taxSavedVsFullYear)}</Typography>
         </Box>
         {result.firstTaxPayingMonth && result.firstTaxPayingMonth > result.taxMonth && (
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="caption" color="text.secondary">Estimated first month paying tax</Typography>
-            <Typography variant="caption" fontWeight={600}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>Estimated first month paying tax</Typography>
+            <Typography variant="caption" fontWeight={600} sx={{ fontFamily: "'Outfit', sans-serif" }}>
               Month {result.firstTaxPayingMonth} ({taxMonthLabel(result.firstTaxPayingMonth)})
             </Typography>
           </Box>
         )}
         {result.incomeTax === 0 && (
-          <Alert severity="success" sx={{ py: 0.25, mt: 0.5 }}>
-            <Typography variant="caption">
+          <Alert severity="success" sx={{ py: 0.25, mt: 0.5, '& .MuiAlert-message': { fontFamily: "'Outfit', sans-serif" } }}>
+            <Typography variant="caption" sx={{ fontFamily: "'Outfit', sans-serif" }}>
               <strong>£0 income tax this month</strong> — personal allowance absorbs all taxable pay.
             </Typography>
           </Alert>
         )}
       </Stack>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
         <strong>How it works (UK PAYE cumulative basis):</strong> Each month, tax is calculated on <em>total earnings since 6 April</em> minus <em>total allowance accumulated to date</em>. Starting mid-year means prior months' unused allowance reduces your initial tax liability.
         This is the statutory HMRC default — it stops when cumulative earnings exceed cumulative allowance.
       </Typography>
@@ -283,10 +283,10 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1.5 }}>
         <Calculate color="primary" sx={{ fontSize: 30 }} />
         <Box>
-          <Typography variant="h5" fontWeight={700}>Payslip Calculator</Typography>
-          <Typography variant="caption" color="text.secondary">2024/25 UK tax year — real-time calculations</Typography>
+          <Typography variant="h5" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>Payslip Calculator</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>2024/25 UK tax year — real-time calculations</Typography>
         </Box>
-        <Chip label="Accurate" color="success" size="small" icon={<CheckCircleOutline />} sx={{ ml: 'auto' }} />
+        <Chip label="Accurate" color="success" size="small" icon={<CheckCircleOutline />} sx={{ ml: 'auto', fontFamily: "'Outfit', sans-serif" }} />
       </Box>
 
       <Grid container spacing={3}>
@@ -412,6 +412,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                       onChange={(e) => setPriorGross(parseFloat(e.target.value) || 0)}
                       InputProps={{ startAdornment: <InputAdornment position="start">£</InputAdornment> }}
                       helperText="Total gross earned Apr–last month (0 if new starter)"
+                      sx={{ '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" }, '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }, '& .MuiFormHelperText-root': { fontFamily: "'Outfit', sans-serif" } }}
                     />
                     <TextField
                       fullWidth size="small"
@@ -421,13 +422,14 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                       onChange={(e) => setPriorTaxPaid(parseFloat(e.target.value) || 0)}
                       InputProps={{ startAdornment: <InputAdornment position="start">£</InputAdornment> }}
                       helperText="Total income tax paid Apr–last month (0 if new starter)"
+                      sx={{ '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" }, '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }, '& .MuiFormHelperText-root': { fontFamily: "'Outfit', sans-serif" } }}
                     />
                   </Stack>
                 )}
 
                 <Collapse in={showCumulativeInfo}>
-                  <Alert severity="info" sx={{ mt: 1.5 }} icon={<InfoOutlined fontSize="small" />}>
-                    <Typography variant="caption">
+                  <Alert severity="info" sx={{ mt: 1.5, '& .MuiAlert-message': { fontFamily: "'Outfit', sans-serif" } }} icon={<InfoOutlined fontSize="small" />}>
+                    <Typography variant="caption" sx={{ fontFamily: "'Outfit', sans-serif" }}>
                       <strong>Cumulative:</strong> Tax is calculated on total earnings since 6 April, minus total personal allowance to date. Mid-year starters benefit from unused prior-month allowance — they may pay NO tax initially.<br />
                       <strong>W1/M1:</strong> Emergency basis — only this month's allowance (£1,047.50) is used. No carry-forward. Worker pays the same tax every month regardless of start date.
                     </Typography>
@@ -437,9 +439,9 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
             </Card>
 
             {/* Tax Code */}
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Tax Code</Typography>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ fontFamily: "'Outfit', sans-serif" }}>Tax Code</Typography>
                 <TextField
                   fullWidth size="small"
                   label="Tax Code"
@@ -447,14 +449,15 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                   onChange={(e) => handleTaxCodeChange(e.target.value.toUpperCase())}
                   error={!!taxCodeError}
                   helperText={taxCodeError || 'Standard: 1257L  |  No allowance: BR or 0T  |  No tax: NT'}
+                  sx={{ '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" }, '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }, '& .MuiFormHelperText-root': { fontFamily: "'Outfit', sans-serif" } }}
                 />
               </CardContent>
             </Card>
 
             {/* Student Loan */}
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Student Loan</Typography>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ fontFamily: "'Outfit', sans-serif" }}>Student Loan</Typography>
                 <FormControl component="fieldset">
                   <RadioGroup
                     value={studentLoan}
@@ -467,8 +470,8 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                         control={<Radio size="small" />}
                         label={
                           <Box sx={{ display: 'flex', gap: 1, alignItems: 'baseline' }}>
-                            <Typography variant="body2">{plan.label}</Typography>
-                            <Typography variant="caption" color="text.secondary">{plan.desc} — {plan.threshold} threshold</Typography>
+                            <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif" }}>{plan.label}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>{plan.desc} — {plan.threshold} threshold</Typography>
                           </Box>
                         }
                       />
@@ -479,10 +482,10 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
             </Card>
 
             {/* Pension */}
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={600}>Pension (Auto-Enrolment)</Typography>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ fontFamily: "'Outfit', sans-serif" }}>Pension (Auto-Enrolment)</Typography>
                   <IconButton size="small" onClick={() => setShowPensionInfo(p => !p)}>
                     {showPensionInfo ? <KeyboardArrowUp fontSize="small" /> : <KeyboardArrowDown fontSize="small" />}
                   </IconButton>
@@ -498,10 +501,10 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                   }
                   label={
                     <Box>
-                      <Typography variant="body2" fontWeight={500}>
+                      <Typography variant="body2" fontWeight={500} sx={{ fontFamily: "'Outfit', sans-serif" }}>
                         {pensionOptOut ? '⚠ Opted out of pension' : '✓ Enrolled in pension'}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
                         {pensionOptOut
                           ? 'No deductions — worker loses employer contributions'
                           : `Employee ${employeeRate}% + Employer ${employerRate}% on qualifying earnings`}
@@ -523,6 +526,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                         inputProps: { min: 0, max: 100, step: 0.5 }
                       }}
                       helperText="Statutory minimum: 5%"
+                      sx={{ '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" }, '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }, '& .MuiFormHelperText-root': { fontFamily: "'Outfit', sans-serif" } }}
                     />
                     <TextField
                       fullWidth size="small"
@@ -535,8 +539,9 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                         inputProps: { min: 0, max: 100, step: 0.5 }
                       }}
                       helperText="Statutory minimum: 3%"
+                      sx={{ '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" }, '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }, '& .MuiFormHelperText-root': { fontFamily: "'Outfit', sans-serif" } }}
                     />
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
                       Applied on qualifying earnings £6,240–£50,270/yr
                     </Typography>
                   </Stack>
@@ -549,16 +554,16 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
             </Card>
 
             {/* Allowances */}
-            <Card variant="outlined">
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>Additional Allowances</Typography>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ fontFamily: "'Outfit', sans-serif" }}>Additional Allowances</Typography>
                 <Stack>
                   <FormControlLabel
                     control={<Switch size="small" checked={blindAllowance} onChange={(e) => setBlindAllowance(e.target.checked)} />}
                     label={
                       <Box>
-                        <Typography variant="body2">Blind Person's Allowance</Typography>
-                        <Typography variant="caption" color="text.secondary">+£2,870 — total allowance £15,440</Typography>
+                        <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif" }}>Blind Person's Allowance</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>+£2,870 — total allowance £15,440</Typography>
                       </Box>
                     }
                   />
@@ -566,8 +571,8 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                     control={<Switch size="small" checked={marriageAllowance} onChange={(e) => setMarriageAllowance(e.target.checked)} />}
                     label={
                       <Box>
-                        <Typography variant="body2">Marriage Allowance (receiving partner)</Typography>
-                        <Typography variant="caption" color="text.secondary">+£1,260 transferred from spouse — total allowance £13,830</Typography>
+                        <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif" }}>Marriage Allowance (receiving partner)</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>+£1,260 transferred from spouse — total allowance £13,830</Typography>
                       </Box>
                     }
                   />
@@ -576,7 +581,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
             </Card>
 
             {onSave && result && (
-              <Button variant="outlined" startIcon={<Save />} onClick={handleSave} fullWidth>
+              <Button variant="outlined" startIcon={<Save />} onClick={handleSave} fullWidth sx={{ fontFamily: "'Outfit', sans-serif", textTransform: 'none', fontWeight: 600 }}>
                 Save Payslip Record
               </Button>
             )}
@@ -586,24 +591,24 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
         {/* ── RIGHT: Results ───────────────────────────────────────────── */}
         <Grid size={{ xs: 12, lg: 7 }}>
           {!result ? (
-            <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', color: 'text.disabled' }}>
+            <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', color: 'text.disabled', borderRadius: 2 }}>
               <Calculate sx={{ fontSize: 48, mb: 1, opacity: 0.3 }} />
-              <Typography variant="body1">Enter an annual salary to see the payslip breakdown</Typography>
+              <Typography variant="body1" sx={{ fontFamily: "'Outfit', sans-serif" }}>Enter an annual salary to see the payslip breakdown</Typography>
             </Paper>
           ) : (
             <Stack spacing={2}>
               {/* Net pay hero */}
-              <Card sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+              <Card sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 2 }}>
                 <CardContent>
                   <Grid container alignItems="center">
                     <Grid size="grow">
-                      <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: "'Outfit', sans-serif" }}>
                         {taxBasis === 'CUMULATIVE'
                           ? `Tax Month ${taxMonth} (${taxMonthLabel(taxMonth)}) — Cumulative PAYE`
                           : 'W1/M1 Basis — Emergency Tax'}
                       </Typography>
-                      <Typography variant="h3" fontWeight={700}>{GBP(result.netPay)}</Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                      <Typography variant="h3" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>{GBP(result.netPay)}</Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.85, fontFamily: "'Outfit', sans-serif" }}>
                         Net {payPeriodType === 'WEEKLY' ? 'Weekly' : 'Monthly'} Pay
                       </Typography>
                     </Grid>
@@ -623,8 +628,16 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
               </Card>
 
               {/* Tabs: Monthly / Annual / Employer */}
-              <Card variant="outlined">
-                <Tabs value={resultTab} onChange={(_, v) => setResultTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
+              <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <Tabs
+                  value={resultTab}
+                  onChange={(_, v) => setResultTab(v)}
+                  sx={{
+                    borderBottom: 1, borderColor: 'divider', px: 2,
+                    '& .MuiTab-root': { fontFamily: "'Outfit', sans-serif", fontWeight: 600, textTransform: 'none', fontSize: '14px' },
+                    '& .Mui-selected': { color: 'primary.main', fontWeight: 700 },
+                  }}
+                >
                   <Tab label={payPeriodType === 'WEEKLY' ? 'Weekly' : 'Monthly'} />
                   <Tab label="Annual" />
                   <Tab label="Employer Costs" />
@@ -634,10 +647,10 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                   {/* Weekly/Monthly tab */}
                   {resultTab === 0 && (
                     <>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>EARNINGS</Typography>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>EARNINGS</Typography>
                       <EarningRow label={`Gross Pay (${payPeriodType === 'WEEKLY' ? 'Week' : 'Month'})`} amount={payPeriodType === 'WEEKLY' ? result.netPay + result.totalDeductions : result.monthlyGross} />
                       <Divider sx={{ my: 1.5 }} />
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>DEDUCTIONS</Typography>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>DEDUCTIONS</Typography>
                       <DeductionRow
                         label="Income Tax (PAYE)"
                         amount={result.incomeTax}
@@ -662,12 +675,12 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                       )}
                       <Divider sx={{ my: 1.5 }} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
-                        <Typography variant="subtitle2">Total Deductions</Typography>
-                        <Typography variant="subtitle2" color="error.main">-{GBP(result.totalDeductions)}</Typography>
+                        <Typography variant="subtitle2" sx={{ fontFamily: "'Outfit', sans-serif" }}>Total Deductions</Typography>
+                        <Typography variant="subtitle2" color="error.main" sx={{ fontFamily: "'Outfit', sans-serif" }}>-{GBP(result.totalDeductions)}</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, bgcolor: 'action.hover', px: 1.5, borderRadius: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>Net Pay</Typography>
-                        <Typography variant="subtitle1" fontWeight={700} color="primary">{GBP(result.netPay)}</Typography>
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>Net Pay</Typography>
+                        <Typography variant="subtitle1" fontWeight={700} color="primary" sx={{ fontFamily: "'Outfit', sans-serif" }}>{GBP(result.netPay)}</Typography>
                       </Box>
                     </>
                   )}
@@ -675,7 +688,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                   {/* Annual tab */}
                   {resultTab === 1 && annual && (
                     <>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>FULL YEAR (W1/M1 ANNUAL BASIS)</Typography>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>FULL YEAR (W1/M1 ANNUAL BASIS)</Typography>
                       <EarningRow label="Annual Gross" amount={annual.annual.gross} />
                       <Divider sx={{ my: 1.5 }} />
                       <DeductionRow label="Income Tax" amount={annual.annual.tax} />
@@ -684,10 +697,10 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                       {annual.annual.studentLoan > 0 && <DeductionRow label="Student Loan" amount={annual.annual.studentLoan} />}
                       <Divider sx={{ my: 1.5 }} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, bgcolor: 'action.hover', px: 1.5, borderRadius: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>Annual Net Pay</Typography>
-                        <Typography variant="subtitle1" fontWeight={700} color="primary">{GBP(annual.annual.netPay)}</Typography>
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>Annual Net Pay</Typography>
+                        <Typography variant="subtitle1" fontWeight={700} color="primary" sx={{ fontFamily: "'Outfit', sans-serif" }}>{GBP(annual.annual.netPay)}</Typography>
                       </Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontFamily: "'Outfit', sans-serif" }}>
                         Annual view uses W1/M1 basis (full-year allowance). Actual take-home may differ with cumulative PAYE for mid-year starters.
                       </Typography>
                     </>
@@ -696,7 +709,7 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                   {/* Employer costs tab */}
                   {resultTab === 2 && (
                     <>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
                         {payPeriodType === 'WEEKLY' ? 'WEEKLY' : 'MONTHLY'} EMPLOYER COSTS
                       </Typography>
                       <EarningRow label="Gross Salary" amount={payPeriodType === 'WEEKLY' ? result.netPay + result.totalDeductions : result.monthlyGross} />
@@ -706,23 +719,23 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                       )}
                       <Divider sx={{ my: 1.5 }} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, bgcolor: 'action.hover', px: 1.5, borderRadius: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>
                           Total {payPeriodType === 'WEEKLY' ? 'Weekly' : 'Monthly'} Cost
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={700}>
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>
                           {GBP((payPeriodType === 'WEEKLY' ? result.netPay + result.totalDeductions : result.monthlyGross) + result.employerNI + result.employerPension)}
                         </Typography>
                       </Box>
                       {annual && (
                         <Box sx={{ mt: 2 }}>
-                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>ANNUAL EMPLOYER COSTS</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>ANNUAL EMPLOYER COSTS</Typography>
                           <EarningRow label="Annual Salary" amount={annual.annual.gross} />
                           <EarningRow label="Annual Employer NI" amount={annual.monthly.employerNI * 12} />
                           {!pensionOptOut && <EarningRow label="Annual Employer Pension" amount={annual.monthly.employerPension * 12} />}
                           <Divider sx={{ my: 1 }} />
                           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography variant="body2" fontWeight={700}>Total Annual Cost</Typography>
-                            <Typography variant="body2" fontWeight={700}>
+                            <Typography variant="body2" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>Total Annual Cost</Typography>
+                            <Typography variant="body2" fontWeight={700} sx={{ fontFamily: "'Outfit', sans-serif" }}>
                               {GBP(annual.annual.gross + annual.monthly.employerNI * 12 + annual.monthly.employerPension * 12)}
                             </Typography>
                           </Box>
@@ -738,12 +751,12 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
 
               {/* Tax summary chips */}
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Chip size="small" label={`Tax code: ${taxCodeInput}`} variant="outlined" />
-                <Chip size="small" label={taxBasis === 'CUMULATIVE' ? `Month ${taxMonth} cumulative` : 'W1/M1 emergency'} variant="outlined" color={taxBasis === 'CUMULATIVE' ? 'default' : 'warning'} />
-                <Chip size="small" label={pensionOptOut ? 'No pension' : `Pension ${employeeRate}%+${employerRate}%`} variant="outlined" color={pensionOptOut ? 'warning' : 'success'} />
-                {studentLoan !== 'NONE' && <Chip size="small" label={`Student loan: ${studentLoan}`} variant="outlined" />}
-                {blindAllowance && <Chip size="small" label="Blind allowance" variant="outlined" />}
-                {marriageAllowance && <Chip size="small" label="Marriage allowance" variant="outlined" />}
+                <Chip size="small" label={`Tax code: ${taxCodeInput}`} variant="outlined" sx={{ fontFamily: "'Outfit', sans-serif" }} />
+                <Chip size="small" label={taxBasis === 'CUMULATIVE' ? `Month ${taxMonth} cumulative` : 'W1/M1 emergency'} variant="outlined" color={taxBasis === 'CUMULATIVE' ? 'default' : 'warning'} sx={{ fontFamily: "'Outfit', sans-serif" }} />
+                <Chip size="small" label={pensionOptOut ? 'No pension' : `Pension ${employeeRate}%+${employerRate}%`} variant="outlined" color={pensionOptOut ? 'warning' : 'success'} sx={{ fontFamily: "'Outfit', sans-serif" }} />
+                {studentLoan !== 'NONE' && <Chip size="small" label={`Student loan: ${studentLoan}`} variant="outlined" sx={{ fontFamily: "'Outfit', sans-serif" }} />}
+                {blindAllowance && <Chip size="small" label="Blind allowance" variant="outlined" sx={{ fontFamily: "'Outfit', sans-serif" }} />}
+                {marriageAllowance && <Chip size="small" label="Marriage allowance" variant="outlined" sx={{ fontFamily: "'Outfit', sans-serif" }} />}
               </Box>
             </Stack>
           )}
