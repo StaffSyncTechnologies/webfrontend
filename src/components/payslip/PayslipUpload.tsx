@@ -119,7 +119,19 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
     formData.append('payPeriodDate', payPeriodDate);
 
     try {
-      const token = localStorage.getItem('token') ?? sessionStorage.getItem('token');
+      const authToken = localStorage.getItem('authToken') ?? sessionStorage.getItem('authToken');
+      const legacyToken = localStorage.getItem('token') ?? sessionStorage.getItem('token');
+      const token = authToken ?? legacyToken;
+      
+      console.log('=== Payslip Upload Auth Debug ===');
+      console.log('Auth Token (localStorage):', localStorage.getItem('authToken'));
+      console.log('Legacy Token (localStorage):', localStorage.getItem('token'));
+      console.log('Auth Token (sessionStorage):', sessionStorage.getItem('authToken'));
+      console.log('Legacy Token (sessionStorage):', sessionStorage.getItem('token'));
+      console.log('Selected Token:', token ? `${token.substring(0, 20)}...` : 'NONE');
+      console.log('API Key:', import.meta.env.VITE_API_KEY ? `${import.meta.env.VITE_API_KEY.substring(0, 20)}...` : 'NONE');
+      console.log('================================');
+      
       const headers: Record<string, string> = {};
       
       if (token) {
