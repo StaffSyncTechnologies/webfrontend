@@ -159,10 +159,24 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
       
       if (!res.ok) throw new Error(json.message ?? `Upload failed (${res.status})`);
 
-      const label = json.data.periodLabel ?? period?.label ?? payPeriodDate;
-      setSuccess({ payslipId: json.data.payslipId, label });
+      console.log('=== Upload Response Debug ===');
+      console.log('Response status:', res.status);
+      console.log('Response JSON:', json);
+      console.log('Response data:', json.data);
+      console.log('============================');
+
+      // Safely extract values with proper null checks
+      const responseData = json.data || {};
+      const payslipId = responseData.payslipId;
+      const label = responseData.periodLabel ?? period?.label ?? payPeriodDate;
+      
+      if (!payslipId) {
+        throw new Error('Upload succeeded but no payslip ID returned from server');
+      }
+      
+      setSuccess({ payslipId, label });
       setFile(null);
-      onSuccess?.(json.data.payslipId, label);
+      onSuccess?.(payslipId, label);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
