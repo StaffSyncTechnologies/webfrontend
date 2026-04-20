@@ -315,9 +315,15 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                     '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" },
                     '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }
                   }}
-                  helperText={result ? `= ${GBP(payPeriodType === 'WEEKLY' ? result.netPay * 52 / 12 : result.monthlyGross)} / month` : ''}
+                  helperText={
+                    result
+                      ? payPeriodType === 'WEEKLY'
+                        ? `= ${GBP(result.netPay)} / week  ·  ${GBP(result.netPay * 52 / 12)} / month`
+                        : `= ${GBP(result.monthlyGross)} / month  ·  ${GBP(result.monthlyGross * 12)} / year`
+                      : ''
+                  }
                 />
-                <FormControl fullWidth size="small">
+                <FormControl fullWidth size="small" sx={{ mt: 2 }}>
                   <InputLabel sx={{ fontFamily: "'Outfit', sans-serif" }}>Pay Period Type</InputLabel>
                   <Select
                     value={payPeriodType}
@@ -328,8 +334,8 @@ export const PayslipCalculator: React.FC<PayslipCalculatorProps> = ({
                       '& .MuiMenuItem-root': { fontFamily: "'Outfit', sans-serif" }
                     }}
                   >
-                    <MenuItem value="MONTHLY">Monthly</MenuItem>
-                    <MenuItem value="WEEKLY">Weekly</MenuItem>
+                    <MenuItem value="MONTHLY" sx={{ fontFamily: "'Outfit', sans-serif" }}>Monthly</MenuItem>
+                    <MenuItem value="WEEKLY" sx={{ fontFamily: "'Outfit', sans-serif" }}>Weekly</MenuItem>
                   </Select>
                 </FormControl>
               </CardContent>
