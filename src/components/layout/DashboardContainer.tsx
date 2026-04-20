@@ -1,5 +1,5 @@
 import { Box, styled, IconButton, Drawer, useMediaQuery, InputBase, Avatar, Badge, Modal } from '@mui/material';
-import { useState, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Menu, Close, Search, Notifications } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { colors } from '../../utilities/colors';
@@ -303,6 +303,15 @@ export function DashboardContainer({
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const location = useLocation();
   const navigate = useNavigate();
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   const { user } = useAppSelector((state) => state.auth);
   const { data: unreadData } = useGetUnreadCountQuery(undefined, { 
     pollingInterval: 15000,
@@ -489,7 +498,7 @@ export function DashboardContainer({
             {header}
           </Box>
         )}
-        <ContentWrapper>{children}</ContentWrapper>
+        <ContentWrapper ref={contentRef}>{children}</ContentWrapper>
       </MainWrapper>
 
       {/* Profile Details Modal */}

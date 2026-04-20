@@ -33,7 +33,6 @@ import {
 } from '@mui/material';
 import { useDocumentTitle, useWebSocket } from '../../hooks';
 import { useAppSelector } from '../../store';
-import { useQueryClient } from '@tanstack/react-query';
 import { DashboardContainer } from '../../components/layout';
 import { colors } from '../../utilities/colors';
 import { API_BASE_URL } from '../../services/endpoints';
@@ -327,7 +326,6 @@ const TypingIndicator = styled('span')({
 // ============ COMPONENT ============
 export function ChatPage() {
   useDocumentTitle('Chat');
-  const queryClient = useQueryClient();
 
   const currentUser = useAppSelector((state) => state.auth.user);
   const currentUserId = currentUser?.id;
@@ -393,25 +391,6 @@ export function ChatPage() {
     onNewRoomMessage,
   });
 
-  // Cleanup effect when component unmounts
-  useEffect(() => {
-    return () => {
-      console.log('ChatPage unmounting, cleaning up...');
-      // Clear all local state to force cleanup
-      setLocalMessages([]);
-      setSelectedRoomId(null);
-      setSearchTerm('');
-      setMessage('');
-      setIsOtherTyping(false);
-      setNewChatDialogOpen(false);
-      setWorkerSearch('');
-      setAttachmentMenuAnchor(null);
-      
-      // Clear React Query cache for chat-related queries
-      queryClient.invalidateQueries({ queryKey: ['chat'] });
-      queryClient.removeQueries({ queryKey: ['chat'] });
-    };
-  }, [queryClient]);
 
   useEffect(() => {
     if (messages.length > 0) {
