@@ -48,8 +48,8 @@ import {
 import {
   useGetPaymentSheetSummaryQuery,
 } from '../../store/slices/bankAccountSlice';
-import { BANK_ACCOUNT, PAYSLIPS } from '../../utilities/endpoint';
-import { API_BASE_URL } from '../../services/endpoints';
+import { BANK_ACCOUNT } from '../../utilities/endpoint';
+import { API_BASE_URL, PAYSLIPS } from '../../services/endpoints';
 import { PayslipManager } from '../../components/payslip/PayslipManager';
 import { Button, Typography, Tabs, Tab } from '@mui/material';
 
