@@ -595,21 +595,30 @@ export function PayrollPage() {
     setDownloading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://dev.staffsynctech.co.uk/api/v1'}${PAYSLIPS.EXPORT_TEMPLATE}`, {
+      const url = `${import.meta.env.VITE_API_URL || 'https://dev.staffsynctech.co.uk/api/v1'}${PAYSLIPS.EXPORT_TEMPLATE}`;
+      console.log('Fetching template from:', url);
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}`, 'X-API-Key': import.meta.env.VITE_API_KEY || '' },
       });
-      if (!response.ok) throw new Error('Failed to download template');
+      console.log('Response status:', response.status, response.statusText);
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error response:', text);
+        throw new Error(`Failed to download template (${response.status}): ${text}`);
+      }
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      console.log('Blob size:', blob.size, 'type:', blob.type);
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = downloadUrl;
       const disposition = response.headers.get('Content-Disposition');
       const filename = disposition?.match(/filename="(.+)"/)?.[1] || 'payslip-template.xlsx';
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
+      console.log('Download triggered for:', filename);
     } catch (error) {
       console.error('Failed to download template:', error);
     } finally {
