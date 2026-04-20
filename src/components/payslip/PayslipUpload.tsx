@@ -75,7 +75,8 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
   payPeriodType = 'MONTHLY',
   onSuccess,
 }) => {
-  const [payPeriodDate, setPayPeriodDate] = useState<string>(todayISO);
+  const [startDate, setStartDate] = useState<string>(todayISO);
+  const [endDate, setEndDate] = useState<string>(todayISO);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState<{ payslipId: string; label: string } | null>(null);
@@ -83,7 +84,6 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const period = payPeriodDate ? computePeriod(payPeriodDate, payPeriodType) : null;
 
   const handleFileSelect = (selected: File | null) => {
     if (!selected) return;
@@ -108,7 +108,7 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
   };
 
   const handleUpload = async () => {
-    if (!file || !payPeriodDate) return;
+    if (!file || !startDate || !endDate) return;
 
     setUploading(true);
     setError(null);
@@ -116,7 +116,8 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
     const formData = new FormData();
     formData.append('file', file);
     formData.append('workerId', workerId);
-    formData.append('payPeriodDate', payPeriodDate);
+    formData.append('payPeriodDate', startDate);
+    formData.append('periodEndDate', endDate);
 
     try {
       const token = localStorage.getItem('authToken') ?? sessionStorage.getItem('authToken');
@@ -145,7 +146,7 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
 
       const responseData = json.data || {};
       const payslipId = responseData.payslipId;
-      const label = responseData.periodLabel ?? period?.label ?? payPeriodDate;
+      const label = responseData.periodLabel ?? `${startDate} – ${endDate}`;
 
       if (!payslipId) throw new Error(`Upload failed: ${JSON.stringify(json)}`);
 
@@ -199,29 +200,39 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
           <Typography variant="subtitle2" gutterBottom sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
             Pay Period
           </Typography>
-          <TextField
-            fullWidth
-            type="date"
-            value={payPeriodDate}
-            onChange={(e) => setPayPeriodDate(e.target.value)}
-            label={payPeriodType === 'WEEKLY' ? 'Week Start Date' : 'Month'}
-            size="small"
-            sx={{ 
-              '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" },
-              '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" }
-            }}
-            helperText={period ? `Period: ${period.label}` : ''}
-          />
-          {period && (
-            <Box sx={{ mt: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-              <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
-                Pay Period Dates:
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
-                Start: {toISODate(period.start)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Outfit', sans-serif" }}>
-                End: {toISODate(period.end)}
+          <Stack direction="row" spacing={2}>
+            <TextField
+              fullWidth
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              label="Start Date"
+              size="small"
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" },
+                '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" },
+              }}
+            />
+            <TextField
+              fullWidth
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              label="End Date"
+              size="small"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: startDate }}
+              sx={{
+                '& .MuiInputLabel-root': { fontFamily: "'Outfit', sans-serif" },
+                '& .MuiInputBase-input': { fontFamily: "'Outfit', sans-serif" },
+              }}
+            />
+          </Stack>
+          {startDate && endDate && (
+            <Box sx={{ mt: 1, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" sx={{ fontFamily: "'Outfit', sans-serif", color: 'text.secondary' }}>
+                Period: <strong>{startDate}</strong> → <strong>{endDate}</strong>
               </Typography>
             </Box>
           )}
@@ -308,7 +319,7 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
           size="large"
           startIcon={<UploadFile />}
           onClick={handleUpload}
-          disabled={!file || !payPeriodDate || uploading}
+          disabled={!file || !startDate || !endDate || uploading}
           fullWidth
         >
           {uploading ? 'Uploading…' : 'Upload Payslip'}
