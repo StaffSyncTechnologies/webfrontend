@@ -119,28 +119,12 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
     formData.append('payPeriodDate', payPeriodDate);
 
     try {
-      const authToken = localStorage.getItem('authToken') ?? sessionStorage.getItem('authToken');
-      const legacyToken = localStorage.getItem('token') ?? sessionStorage.getItem('token');
-      const token = authToken ?? legacyToken;
-      
-      console.log('=== Payslip Upload Auth Debug ===');
-      console.log('Auth Token (localStorage):', localStorage.getItem('authToken'));
-      console.log('Legacy Token (localStorage):', localStorage.getItem('token'));
-      console.log('Auth Token (sessionStorage):', sessionStorage.getItem('authToken'));
-      console.log('Legacy Token (sessionStorage):', sessionStorage.getItem('token'));
-      console.log('Selected Token:', token ? `${token.substring(0, 20)}...` : 'NONE');
-      console.log('API Key:', import.meta.env.VITE_API_KEY ? `${import.meta.env.VITE_API_KEY.substring(0, 20)}...` : 'NONE');
-      console.log('================================');
-      
+      const token = localStorage.getItem('authToken') ?? sessionStorage.getItem('authToken');
       const headers: Record<string, string> = {};
       
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      
-      // Add API key header for backend validation
+      if (token) headers.Authorization = `Bearer ${token}`;
       headers['X-API-Key'] = import.meta.env.VITE_API_KEY || '';
-      
+
       const res = await fetch(`${API_BASE_URL}${PAYSLIPS.UPLOAD}`, {
         method: 'POST',
         headers,
@@ -159,21 +143,12 @@ export const PayslipUpload: React.FC<PayslipUploadProps> = ({
       
       if (!res.ok) throw new Error(json.message ?? `Upload failed (${res.status})`);
 
-      console.log('=== Upload Response Debug ===');
-      console.log('Response status:', res.status);
-      console.log('Response JSON:', json);
-      console.log('Response data:', json.data);
-      console.log('============================');
-
-      // Safely extract values with proper null checks
       const responseData = json.data || {};
       const payslipId = responseData.payslipId;
       const label = responseData.periodLabel ?? period?.label ?? payPeriodDate;
-      
-      if (!payslipId) {
-        throw new Error('Upload succeeded but no payslip ID returned from server');
-      }
-      
+
+      if (!payslipId) throw new Error(`Upload failed: ${JSON.stringify(json)}`);
+
       setSuccess({ payslipId, label });
       setFile(null);
       onSuccess?.(payslipId, label);

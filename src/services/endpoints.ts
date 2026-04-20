@@ -58,7 +58,7 @@ export const PAYSLIPS = {
   LIST: '/payslips/list',
   MY_PAYSLIP: '/payslips/my-payslip',
   DETAIL: (payslipId: string) => `/payslips/${payslipId}`,
-  UPLOAD: '/payslips/upload-debug', // Temporary debug endpoint
+  UPLOAD: '/payslips/upload',
 } as const;
 
 // Holiday/Leave endpoints
