@@ -23,6 +23,11 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
 } from '@mui/material';
 import {
   History,
@@ -64,6 +69,9 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
   const [payslips, setPayslips] = useState<ApiPayslip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [periodType, setPeriodType] = useState<'WEEKLY' | 'MONTHLY'>('MONTHLY');
+  const [periodNumber, setPeriodNumber] = useState<number>(new Date().getMonth() + 1);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
 
   const fetchPayslipHistory = useCallback(async () => {
     setLoading(true);
@@ -71,7 +79,36 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
 
     try {
       const token = localStorage.getItem('authToken') ?? sessionStorage.getItem('authToken');
-      const params = new URLSearchParams({ workerId, limit: String(limit), page: '1' });
+      
+      // Calculate date range from period type and number
+      let periodStart: string;
+      let periodEnd: string;
+
+      if (periodType === 'WEEKLY') {
+        // Tax weeks in UK start on April 6th
+        const taxYearStart = new Date(year, 3, 6); // April 6th
+        const startDate = new Date(taxYearStart);
+        startDate.setDate(taxYearStart.getDate() + (periodNumber - 1) * 7);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        periodStart = startDate.toISOString().split('T')[0];
+        periodEnd = endDate.toISOString().split('T')[0];
+      } else {
+        // Monthly periods
+        const startDate = new Date(year, periodNumber - 1, 1);
+        const endDate = new Date(year, periodNumber, 0); // Last day of month
+        periodStart = startDate.toISOString().split('T')[0];
+        periodEnd = endDate.toISOString().split('T')[0];
+      }
+
+      const params = new URLSearchParams({
+        workerId,
+        limit: String(limit),
+        page: '1',
+        payPeriodStart: periodStart,
+        payPeriodEnd: periodEnd,
+      });
+      
       const res = await fetch(`${API_BASE_URL}${PAYSLIPS.ADMIN_LIST}?${params}`, {
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -86,7 +123,7 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [workerId, limit]);
+  }, [workerId, limit, periodType, periodNumber, year]);
 
   useEffect(() => {
     fetchPayslipHistory();
@@ -144,6 +181,45 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
         <Typography variant="h5" sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>
           Payslip History
         </Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Period Type</InputLabel>
+          <Select
+            value={periodType}
+            label="Period Type"
+            onChange={(e) => setPeriodType(e.target.value as 'WEEKLY' | 'MONTHLY')}
+          >
+            <MenuItem value="MONTHLY">Monthly (1-12)</MenuItem>
+            <MenuItem value="WEEKLY">Weekly (Tax Week 1-52)</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>
+            {periodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
+          </InputLabel>
+          <Select
+            value={periodNumber}
+            label={periodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
+            onChange={(e) => setPeriodNumber(Number(e.target.value))}
+          >
+            {Array.from({ length: periodType === 'WEEKLY' ? 52 : 12 }, (_, i) => i + 1).map(num => (
+              <MenuItem key={num} value={num}>{num}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <TextField
+          size="small"
+          type="number"
+          label="Year"
+          value={year}
+          onChange={(e) => setYear(Number(e.target.value))}
+          InputProps={{ inputProps: { min: 2020, max: 2030 } }}
+          sx={{ width: 100 }}
+        />
       </Box>
 
       <Card sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
