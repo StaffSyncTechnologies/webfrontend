@@ -80,33 +80,13 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
     try {
       const token = localStorage.getItem('authToken') ?? sessionStorage.getItem('authToken');
       
-      // Calculate date range from period type and number
-      let periodStart: string;
-      let periodEnd: string;
-
-      if (periodType === 'WEEKLY') {
-        // Tax weeks in UK start on April 6th
-        const taxYearStart = new Date(year, 3, 6); // April 6th
-        const startDate = new Date(taxYearStart);
-        startDate.setDate(taxYearStart.getDate() + (periodNumber - 1) * 7);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        periodStart = startDate.toISOString().split('T')[0];
-        periodEnd = endDate.toISOString().split('T')[0];
-      } else {
-        // Monthly periods
-        const startDate = new Date(year, periodNumber - 1, 1);
-        const endDate = new Date(year, periodNumber, 0); // Last day of month
-        periodStart = startDate.toISOString().split('T')[0];
-        periodEnd = endDate.toISOString().split('T')[0];
-      }
-
       const params = new URLSearchParams({
         workerId,
         limit: String(limit),
         page: '1',
-        payPeriodStart: periodStart,
-        payPeriodEnd: periodEnd,
+        periodType,
+        periodNumber: String(periodNumber),
+        year: String(year),
       });
       
       const res = await fetch(`${API_BASE_URL}${PAYSLIPS.ADMIN_LIST}?${params}`, {
