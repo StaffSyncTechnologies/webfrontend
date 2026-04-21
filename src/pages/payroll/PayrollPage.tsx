@@ -32,6 +32,8 @@ import {
   Avatar,
   Modal,
   CircularProgress,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer, GridCols4 } from '../../components/layout';
@@ -466,8 +468,7 @@ export function PayrollPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: string[] } | null>(null);
-  const [importPeriodStart, setImportPeriodStart] = useState('');
-  const [importPeriodEnd, setImportPeriodEnd] = useState('');
+  const [importPeriodType, setImportPeriodType] = useState<'WEEKLY' | 'MONTHLY'>('MONTHLY');
   const [payPeriodFilter, setPayPeriodFilter] = useState('');
 
   // API Hooks
@@ -636,8 +637,7 @@ export function PayrollPage() {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
       formData.append('file', importFile);
-      if (importPeriodStart) formData.append('periodStart', importPeriodStart);
-      if (importPeriodEnd) formData.append('periodEnd', importPeriodEnd);
+      formData.append('periodType', importPeriodType);
 
       const response = await fetch(`${API_BASE_URL}${PAYSLIPS.BULK_IMPORT}`, {
         method: 'POST',
@@ -648,8 +648,6 @@ export function PayrollPage() {
       if (!response.ok) throw new Error(json.message ?? 'Import failed');
       setImportResult(json.data);
       setImportFile(null);
-      setImportPeriodStart('');
-      setImportPeriodEnd('');
       refetch();
     } catch (error) {
       console.error('Failed to import:', error);
@@ -759,29 +757,21 @@ export function PayrollPage() {
 
               <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
                 <Typography variant="body2" sx={{ fontFamily: "Outfit, sans-serif", minWidth: '100px' }}>
-                  Pay Period:
+                  Period Type:
                 </Typography>
-                <TextField
-                  type="date"
-                  size="small"
-                  value={importPeriodStart}
-                  onChange={(e) => setImportPeriodStart(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ fontFamily: "Outfit, sans-serif", width: 160 }}
-                />
-                <Typography variant="body2" sx={{ fontFamily: "Outfit, sans-serif" }}>
-                  to
-                </Typography>
-                <TextField
-                  type="date"
-                  size="small"
-                  value={importPeriodEnd}
-                  onChange={(e) => setImportPeriodEnd(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ fontFamily: "Outfit, sans-serif", width: 160 }}
-                />
-                <Typography variant="caption" color="textSecondary" sx={{ fontFamily: "Outfit, sans-serif" }}>
-                  (Optional - overrides Excel dates)
+                <FormControl size="small" sx={{ minWidth: 150, fontFamily: "Outfit, sans-serif" }}>
+                  <InputLabel>Pay Period</InputLabel>
+                  <Select
+                    value={importPeriodType}
+                    label="Pay Period"
+                    onChange={(e) => setImportPeriodType(e.target.value as 'WEEKLY' | 'MONTHLY')}
+                  >
+                    <MenuItem value="MONTHLY">Monthly (1-12)</MenuItem>
+                    <MenuItem value="WEEKLY">Weekly (Tax Week 1-52)</MenuItem>
+                  </Select>
+                </FormControl>
+                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "Outfit, sans-serif" }}>
+                  {importPeriodType === 'WEEKLY' ? 'Enter Tax Week (1-52) in Excel' : 'Enter Month (1-12) in Excel'}
                 </Typography>
               </Box>
 
