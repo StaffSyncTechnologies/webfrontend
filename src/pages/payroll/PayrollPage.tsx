@@ -473,7 +473,7 @@ export function PayrollPage() {
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [payPeriodFilter, setPayPeriodFilter] = useState('');
   const [historyPeriodType, setHistoryPeriodType] = useState<'WEEKLY' | 'MONTHLY'>('MONTHLY');
-  const [historyPeriodNumber, setHistoryPeriodNumber] = useState<number>(new Date().getMonth() + 1);
+  const [historyPeriodNumber, setHistoryPeriodNumber] = useState<number>(0); // 0 = All
   const [historyYear, setHistoryYear] = useState<number>(new Date().getFullYear());
 
   // API Hooks
@@ -482,7 +482,7 @@ export function PayrollPage() {
     limit: rowsPerPage,
     ...(statusFilter && { status: statusFilter }),
     ...(historyPeriodType && { periodType: historyPeriodType }),
-    ...(historyPeriodNumber && { periodNumber: historyPeriodNumber }),
+    ...(historyPeriodNumber > 0 && { periodNumber: historyPeriodNumber }),
     ...(historyYear && { year: historyYear }),
   });
   const [bulkApprove, { isLoading: bulkApproving }] = useBulkApprovePayslipsMutation();
@@ -970,6 +970,7 @@ export function PayrollPage() {
                 label={historyPeriodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
                 onChange={(e) => { setHistoryPeriodNumber(Number(e.target.value)); setCurrentPage(1); }}
               >
+                <MenuItem value={0}>All</MenuItem>
                 {Array.from({ length: historyPeriodType === 'WEEKLY' ? 52 : 12 }, (_, i) => i + 1).map(num => (
                   <MenuItem key={num} value={num}>{num}</MenuItem>
                 ))}

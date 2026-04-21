@@ -70,7 +70,7 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [periodType, setPeriodType] = useState<'WEEKLY' | 'MONTHLY'>('MONTHLY');
-  const [periodNumber, setPeriodNumber] = useState<number>(new Date().getMonth() + 1);
+  const [periodNumber, setPeriodNumber] = useState<number>(0); // 0 = All
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
   const fetchPayslipHistory = useCallback(async () => {
@@ -85,9 +85,12 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
         limit: String(limit),
         page: '1',
         periodType,
-        periodNumber: String(periodNumber),
         year: String(year),
       });
+      
+      if (periodNumber > 0) {
+        params.append('periodNumber', String(periodNumber));
+      }
       
       const res = await fetch(`${API_BASE_URL}${PAYSLIPS.ADMIN_LIST}?${params}`, {
         headers: {
@@ -176,7 +179,7 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 120 }}>
+        <FormControl size="small" sx={{ minWidth: 120, fontFamily: "Outfit, sans-serif" }}>
           <InputLabel>
             {periodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
           </InputLabel>
@@ -185,6 +188,7 @@ export const PayslipHistory: React.FC<PayslipHistoryProps> = ({
             label={periodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
             onChange={(e) => setPeriodNumber(Number(e.target.value))}
           >
+            <MenuItem value={0}>All</MenuItem>
             {Array.from({ length: periodType === 'WEEKLY' ? 52 : 12 }, (_, i) => i + 1).map(num => (
               <MenuItem key={num} value={num}>{num}</MenuItem>
             ))}
