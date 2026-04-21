@@ -472,13 +472,18 @@ export function PayrollPage() {
   const [periodNumber, setPeriodNumber] = useState<number>(new Date().getMonth() + 1);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [payPeriodFilter, setPayPeriodFilter] = useState('');
+  const [historyPeriodType, setHistoryPeriodType] = useState<'WEEKLY' | 'MONTHLY'>('MONTHLY');
+  const [historyPeriodNumber, setHistoryPeriodNumber] = useState<number>(new Date().getMonth() + 1);
+  const [historyYear, setHistoryYear] = useState<number>(new Date().getFullYear());
 
   // API Hooks
   const { data: payslipData, isLoading, refetch } = useGetPayslipListQuery({
     page: currentPage,
     limit: rowsPerPage,
     ...(statusFilter && { status: statusFilter }),
-    ...(payPeriodFilter && { payPeriodStart: payPeriodFilter }),
+    ...(historyPeriodType && { periodType: historyPeriodType }),
+    ...(historyPeriodNumber && { periodNumber: historyPeriodNumber }),
+    ...(historyYear && { year: historyYear }),
   });
   const [bulkApprove, { isLoading: bulkApproving }] = useBulkApprovePayslipsMutation();
   const [approvePayslip] = useApprovePayslipMutation();
@@ -945,15 +950,43 @@ export function PayrollPage() {
               <MenuItem value="APPROVED">Processing</MenuItem>
               <MenuItem value="PAID">Paid</MenuItem>
             </Select>
-            <TextField
-              type="date"
-              size="small"
-              value={payPeriodFilter}
-              onChange={(e) => { setPayPeriodFilter(e.target.value); setCurrentPage(1); }}
-              InputLabelProps={{ shrink: true }}
-              placeholder="Filter by pay period start"
-              sx={{ fontFamily: "Outfit, sans-serif", fontSize: '13px', width: 160 }}
-            />
+            <FormControl size="small" sx={{ minWidth: 150, fontFamily: "Outfit, sans-serif" }}>
+              <InputLabel>Period Type</InputLabel>
+              <Select
+                value={historyPeriodType}
+                label="Period Type"
+                onChange={(e) => { setHistoryPeriodType(e.target.value as 'WEEKLY' | 'MONTHLY'); setCurrentPage(1); }}
+              >
+                <MenuItem value="MONTHLY">Monthly (1-12)</MenuItem>
+                <MenuItem value="WEEKLY">Weekly (Tax Week 1-52)</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120, fontFamily: "Outfit, sans-serif" }}>
+              <InputLabel>
+                {historyPeriodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
+              </InputLabel>
+              <Select
+                value={historyPeriodNumber}
+                label={historyPeriodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
+                onChange={(e) => { setHistoryPeriodNumber(Number(e.target.value)); setCurrentPage(1); }}
+              >
+                {Array.from({ length: historyPeriodType === 'WEEKLY' ? 52 : 12 }, (_, i) => i + 1).map(num => (
+                  <MenuItem key={num} value={num}>{num}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 100, fontFamily: "Outfit, sans-serif" }}>
+              <InputLabel>Year</InputLabel>
+              <Select
+                value={historyYear}
+                label="Year"
+                onChange={(e) => { setHistoryYear(Number(e.target.value)); setCurrentPage(1); }}
+              >
+                {Array.from({ length: 11 }, (_, i) => 2020 + i).map(y => (
+                  <MenuItem key={y} value={y}>{y}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <ExportButton onClick={handleExportTemplate} disabled={downloading}>
               {downloading ? <CircularProgress size={16} sx={{ color: 'white' }} /> : <FileDownload sx={{ fontSize: 18 }} />}
               Export as XLS
