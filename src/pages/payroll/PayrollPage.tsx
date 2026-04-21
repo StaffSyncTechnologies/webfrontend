@@ -469,6 +469,8 @@ export function PayrollPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors: string[] } | null>(null);
   const [importPeriodType, setImportPeriodType] = useState<'WEEKLY' | 'MONTHLY'>('MONTHLY');
+  const [periodNumber, setPeriodNumber] = useState<number>(new Date().getMonth() + 1);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
   const [payPeriodFilter, setPayPeriodFilter] = useState('');
 
   // API Hooks
@@ -638,6 +640,8 @@ export function PayrollPage() {
       const formData = new FormData();
       formData.append('file', importFile);
       formData.append('periodType', importPeriodType);
+      formData.append('periodNumber', String(periodNumber));
+      formData.append('year', String(year));
 
       const response = await fetch(`${API_BASE_URL}${PAYSLIPS.BULK_IMPORT}`, {
         method: 'POST',
@@ -755,7 +759,7 @@ export function PayrollPage() {
                 </Button>
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Typography variant="body2" sx={{ fontFamily: "Outfit, sans-serif", minWidth: '100px' }}>
                   Period Type:
                 </Typography>
@@ -770,9 +774,34 @@ export function PayrollPage() {
                     <MenuItem value="WEEKLY">Weekly (Tax Week 1-52)</MenuItem>
                   </Select>
                 </FormControl>
-                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "Outfit, sans-serif" }}>
-                  {importPeriodType === 'WEEKLY' ? 'Enter Tax Week (1-52) in Excel' : 'Enter Month (1-12) in Excel'}
-                </Typography>
+
+                <FormControl size="small" sx={{ minWidth: 120, fontFamily: "Outfit, sans-serif" }}>
+                  <InputLabel>
+                    {importPeriodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
+                  </InputLabel>
+                  <Select
+                    value={periodNumber}
+                    label={importPeriodType === 'WEEKLY' ? 'Tax Week' : 'Month'}
+                    onChange={(e) => setPeriodNumber(Number(e.target.value))}
+                  >
+                    {Array.from({ length: importPeriodType === 'WEEKLY' ? 52 : 12 }, (_, i) => i + 1).map(num => (
+                      <MenuItem key={num} value={num}>{num}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 100, fontFamily: "Outfit, sans-serif" }}>
+                  <InputLabel>Year</InputLabel>
+                  <Select
+                    value={year}
+                    label="Year"
+                    onChange={(e) => setYear(Number(e.target.value))}
+                  >
+                    {Array.from({ length: 11 }, (_, i) => 2020 + i).map(y => (
+                      <MenuItem key={y} value={y}>{y}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
 
               <Box
