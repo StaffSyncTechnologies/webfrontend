@@ -1,6 +1,9 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { RECURRING_SCHEDULES } from '../../services/endpoints';
 import { axiosBaseQuery } from '../../utilities/axiosBaseQuery';
+import { API_BASE_URL } from '../../services/endpoints';
+
+
 
 // Types
 export interface RecurringSchedule {
@@ -75,6 +78,7 @@ export interface CreateRequestData {
 export const recurringScheduleApi = createApi({
   reducerPath: 'recurringScheduleApi',
   baseQuery: axiosBaseQuery({
+    baseUrl: API_BASE_URL,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('authToken');
       if (token) {

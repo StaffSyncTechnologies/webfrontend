@@ -435,7 +435,7 @@ function NewScheduleModal({
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSave} disabled={loading}>
+        <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ bgcolor: '#00AFEF', '&:hover': { bgcolor: '#0099D6' } }}>
           {loading ? <CircularProgress size={20} /> : 'Create Schedule'}
         </Button>
       </DialogActions>
@@ -556,7 +556,7 @@ function RecurringScheduleContent() {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>Permanent Schedules</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} size="small" onClick={() => setShowNewModal(true)}>
+        <Button variant="contained" startIcon={<AddIcon />} size="small" onClick={() => setShowNewModal(true)} sx={{ bgcolor: '#00AFEF', '&:hover': { bgcolor: '#0099D6' } }}>
           Assign Schedule
         </Button>
       </Box>
@@ -666,7 +666,7 @@ function RecurringScheduleContent() {
                         <Button size="small" color="error" onClick={() => handleRejectRequest(request.id)}>
                           Reject
                         </Button>
-                        <Button size="small" variant="contained" onClick={() => handleApproveRequest(request.id)}>
+                        <Button size="small" variant="contained" onClick={() => handleApproveRequest(request.id)} sx={{ bgcolor: '#00AFEF', '&:hover': { bgcolor: '#0099D6' } }}>
                           Approve
                         </Button>
                       </Box>
