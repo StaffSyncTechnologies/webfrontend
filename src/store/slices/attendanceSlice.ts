@@ -36,19 +36,19 @@ export const attendanceApi = createApi({
       query: (shiftId) => ({ url: ATTENDANCE.SHIFT_ATTENDANCE(shiftId) }),
       providesTags: ['Attendance'],
     }),
-    clockIn: builder.mutation<Attendance, { shiftId: string; location: { lat: number; lng: number } }>({
-      query: ({ shiftId, location }) => ({
+    clockIn: builder.mutation<Attendance, { shiftId: string; latitude: number; longitude: number }>({
+      query: ({ shiftId, latitude, longitude }) => ({
         url: ATTENDANCE.CLOCK_IN(shiftId),
         method: 'POST',
-        body: { location },
+        body: { latitude, longitude },
       }),
       invalidatesTags: ['Attendance'],
     }),
-    clockOut: builder.mutation<Attendance, { shiftId: string; location: { lat: number; lng: number } }>({
-      query: ({ shiftId, location }) => ({
+    clockOut: builder.mutation<Attendance, { shiftId: string; latitude: number; longitude: number }>({
+      query: ({ shiftId, latitude, longitude }) => ({
         url: ATTENDANCE.CLOCK_OUT(shiftId),
         method: 'POST',
-        body: { location },
+        body: { latitude, longitude },
       }),
       invalidatesTags: ['Attendance'],
     }),

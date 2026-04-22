@@ -656,7 +656,7 @@ function RecurringScheduleContent() {
                         </Box>
                       </Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{schedule.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">From {schedule.startDate}</Typography>
+                      <Typography variant="caption" color="text.secondary">From {new Date(schedule.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</Typography>
                       <DayChips days={schedule.days} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                         <Typography variant="body2"><strong>{weeklyHours(schedule.days)}h</strong>/week</Typography>
@@ -669,14 +669,22 @@ function RecurringScheduleContent() {
                               <IconButton size="small" color="error" onClick={() => handleEndSchedule(schedule.id)} title="End">
                                 <StopIcon fontSize="small" />
                               </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
                             </>
                           )}
                           {schedule.status === 'PAUSED' && (
-                            <IconButton size="small" color="success" onClick={() => handleResumeSchedule(schedule.id)} title="Resume">
-                              <PlayArrowIcon fontSize="small" />
-                            </IconButton>
+                            <>
+                              <IconButton size="small" color="success" onClick={() => handleResumeSchedule(schedule.id)} title="Resume">
+                                <PlayArrowIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </>
                           )}
-                          {schedule.status === 'PENDING_APPROVAL' && (
+                          {(schedule.status === 'PENDING_APPROVAL' || schedule.status === 'ENDED') && (
                             <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -720,7 +728,7 @@ function RecurringScheduleContent() {
                       <Typography variant="body2" sx={{ mb: 2 }}>
                         Pattern: <strong>{request.proposedDays?.map((d: ScheduleDay) => DAY_LABELS[d.dayOfWeek]).join(', ')}</strong>
                         {' '}· {request.proposedDays?.[0]?.startTime} – {request.proposedDays?.[0]?.endTime}
-                        {' '}· Starting {request.proposedStartDate}
+                        {' '}· Starting {new Date(request.proposedStartDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                         <Button size="small" color="error" onClick={() => handleRejectRequest(request.id)}>
