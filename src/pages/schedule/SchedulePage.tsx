@@ -550,7 +550,11 @@ function RecurringScheduleContent() {
 
   if (schedulesLoading || requestsLoading) return <CircularProgress />;
 
-  const pendingCount = requests.filter(r => r.status === 'PENDING').length;
+  const requestsArray = Array.isArray(requests) ? requests : [];
+  const pendingCount = requestsArray.filter(r => r.status === 'PENDING').length;
+
+  const schedulesArray = Array.isArray(schedules) ? schedules : [];
+  const requestsArrayForDisplay = Array.isArray(requests) ? requests : [];
 
   return (
     <>
@@ -575,11 +579,11 @@ function RecurringScheduleContent() {
 
       {tab === 0 && (
         <Box>
-          {schedules.length === 0 ? (
+          {schedulesArray.length === 0 ? (
             <Alert severity="info">No schedules yet. Create one to get started.</Alert>
           ) : (
             <Grid container spacing={3}>
-              {schedules.map(schedule => (
+              {schedulesArray.map(schedule => (
                 <Grid size={{ xs: 12, md: 6, lg: 4 }} key={schedule.id}>
                   <StyledCard>
                     <CardContent>
@@ -634,11 +638,11 @@ function RecurringScheduleContent() {
 
       {tab === 1 && (
         <Box>
-          {requests.length === 0 ? (
+          {requestsArrayForDisplay.length === 0 ? (
             <Alert severity="info">No pending worker requests.</Alert>
           ) : (
             <Grid container spacing={2}>
-              {requests.map(request => (
+              {requestsArrayForDisplay.map(request => (
                 <Grid size={{ xs: 12 }} key={request.id}>
                   <Card>
                     <CardContent>
