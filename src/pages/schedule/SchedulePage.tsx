@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer, PageTitle } from '../../components/layout';
-import { Box, styled, Button, Card, CardContent, Typography, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, Grid, Tabs, Tab, Badge, Alert, CircularProgress, IconButton } from '@mui/material';
+import { Box, styled, Button, Card, CardContent, Typography, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, Grid, Tabs, Tab, Badge, Alert, CircularProgress, IconButton, createTheme, ThemeProvider } from '@mui/material';
 import { Close as CloseIcon, Add as AddIcon, Pause as PauseIcon, PlayArrow as PlayArrowIcon, Stop as StopIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { colors } from '../../utilities/colors';
 import {
@@ -21,6 +21,22 @@ import {
 import { useGetWorkersQuery } from '../../store/slices/workerSlice';
 import { useGetClientsQuery } from '../../store/slices/organizationSlice';
 
+// Create theme with Outfit font
+const theme = createTheme({
+  typography: {
+    fontFamily: 'Outfit, system-ui, Avenir, Helvetica, Arial, sans-serif',
+  },
+  components: {
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          fontFamily: 'Outfit, system-ui, Avenir, Helvetica, Arial, sans-serif',
+        },
+      },
+    },
+  },
+});
+
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
 const DAY_LABELS: Record<string, string> = { MON: 'Mon', TUE: 'Tue', WED: 'Wed', THU: 'Thu', FRI: 'Fri', SAT: 'Sat', SUN: 'Sun' };
 const DAY_FULL: Record<string, string> = { MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday', SAT: 'Saturday', SUN: 'Sunday' };
@@ -33,15 +49,26 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 const StyledCard = styled(Card)({
-  borderRadius: '12px',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  transition: 'all 0.2s',
+  borderRadius: '16px',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   cursor: 'pointer',
-  '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.12)', transform: 'translateY(-2px)' },
+  border: '1px solid rgba(0,0,0,0.08)',
+  '&:hover': {
+    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+    transform: 'translateY(-4px)',
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
 });
 
 const StatusChip = styled(Chip)(({ textColor, bg }: { textColor: string; bg: string }) => ({
-  backgroundColor: bg, color: textColor, fontWeight: 600, fontSize: '12px',
+  backgroundColor: bg,
+  color: textColor,
+  fontWeight: 600,
+  fontSize: '11px',
+  fontFamily: 'Outfit, system-ui, sans-serif',
+  height: '24px',
+  borderRadius: '6px',
 }));
 
 // Helpers
@@ -68,7 +95,7 @@ function StatusPill({ status }: { status: string }) {
 function WorkerAvatar({ name, size = 40 }: { name: string; size?: number }) {
   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#0ea5e9', '#14b8a6', '#f59e0b'];
   const idx = name.charCodeAt(0) % colors.length;
-  return <Avatar sx={{ width: size, height: size, bgcolor: colors[idx], fontSize: size * 0.4, fontWeight: 700 }}>{getInitials(name)}</Avatar>;
+  return <Avatar sx={{ width: size, height: size, bgcolor: colors[idx], fontSize: size * 0.4, fontWeight: 700, fontFamily: 'Outfit, system-ui, sans-serif' }}>{getInitials(name)}</Avatar>;
 }
 
 function DayChips({ days }: { days: ScheduleDay[] }) {
@@ -677,11 +704,13 @@ function RecurringScheduleContent() {
 export function SchedulePage() {
   useDocumentTitle('Schedule');
   return (
-    <DashboardContainer
-      header={<PageTitle>Permanent Schedules</PageTitle>}
-    >
-      <RecurringScheduleContent />
-    </DashboardContainer>
+    <ThemeProvider theme={theme}>
+      <DashboardContainer
+        header={<PageTitle>Permanent Schedules</PageTitle>}
+      >
+        <RecurringScheduleContent />
+      </DashboardContainer>
+    </ThemeProvider>
   );
 }
 
