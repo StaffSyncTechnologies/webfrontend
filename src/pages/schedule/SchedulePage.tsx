@@ -122,7 +122,7 @@ function NewScheduleModal({
   open: boolean;
   onClose: () => void;
   onSave: (data: CreateScheduleData) => void;
-  workers: Array<{ id: string; fullName: string }>;
+  workers: Array<{ id: string; fullName: string; email?: string }>;
   clients: Array<{ id: string; name: string; locations?: Array<{ id: string; name: string }> }>;
 }) {
   const [form, setForm] = useState({
@@ -140,6 +140,7 @@ function NewScheduleModal({
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [dayTimes, setDayTimes] = useState<Record<string, { startTime: string; endTime: string }>>({});
   const [loading, setLoading] = useState(false);
+  const [workerSearch, setWorkerSearch] = useState('');
 
   const toggleDay = (d: string) => {
     setSelectedDays(prev => {
@@ -199,6 +200,12 @@ function NewScheduleModal({
     return t + parseFloat(calcHours(dayTimes[d].startTime, dayTimes[d].endTime));
   }, 0).toFixed(1);
 
+  // Filter workers based on search term
+  const filteredWorkers = workers.filter(worker =>
+    worker.fullName.toLowerCase().includes(workerSearch.toLowerCase()) ||
+    (worker.email && worker.email.toLowerCase().includes(workerSearch.toLowerCase()))
+  );
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -215,6 +222,14 @@ function NewScheduleModal({
           <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
             Worker
           </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by name or email…"
+            value={workerSearch}
+            onChange={e => setWorkerSearch(e.target.value)}
+            sx={{ mb: 1 }}
+          />
           <Select
             fullWidth
             size="small"
@@ -223,9 +238,10 @@ function NewScheduleModal({
             displayEmpty
           >
             <MenuItem value="">Select worker…</MenuItem>
-            {workers.map(worker => (
+            {filteredWorkers.map(worker => (
               <MenuItem key={worker.id} value={worker.id}>
                 {worker.fullName}
+                {worker.email && ` (${worker.email})`}
               </MenuItem>
             ))}
           </Select>
@@ -506,7 +522,7 @@ function RecurringScheduleContent() {
   const { data: schedules = [], isLoading: schedulesLoading, refetch: refetchSchedules } = useListSchedulesQuery({});
   const { data: requests = [], isLoading: requestsLoading, refetch: refetchRequests } = useListRequestsQuery({});
   const { data: workersData, isLoading: workersLoading } = useGetWorkersQuery({ status: 'ACTIVE' });
-  const workers = workersData?.data || [];
+  const workers = workersData?.data?.map((w: any) => ({ id: w.id, fullName: w.fullName, email: w.email })) || [];
   const { data: clients = [] } = useGetClientsQuery();
   
   const [createSchedule] = useCreateScheduleMutation();
