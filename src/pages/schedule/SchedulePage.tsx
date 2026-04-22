@@ -443,11 +443,64 @@ function NewScheduleModal({
   );
 }
 
+// Reason Modal Component
+function ReasonModal({ open, onClose, onSubmit, action }: { open: boolean; onClose: () => void; onSubmit: (reason: string) => void; action: 'pause' | 'resume' | 'end' }) {
+  const [reason, setReason] = useState('');
+
+  const actionTitle = {
+    pause: 'Pause Schedule',
+    resume: 'Resume Schedule',
+    end: 'End Schedule'
+  }[action];
+
+  const actionLabel = {
+    pause: 'Pause',
+    resume: 'Resume',
+    end: 'End'
+  }[action];
+
+  const handleSubmit = () => {
+    if (action !== 'resume' && !reason.trim()) {
+      return;
+    }
+    onSubmit(reason);
+    setReason('');
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{actionTitle}</DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Reason"
+          fullWidth
+          multiline
+          rows={3}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          required={action !== 'resume'}
+          placeholder={action === 'resume' ? 'Optional reason for resuming' : 'Please provide a reason'}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSubmit} variant="contained" sx={{ bgcolor: '#00AFEF', '&:hover': { bgcolor: '#0099D6' } }}>
+          {actionLabel}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 // Main Component
 function RecurringScheduleContent() {
   const [tab, setTab] = useState(0);
   const [showNewModal, setShowNewModal] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [reasonModal, setReasonModal] = useState<{ open: boolean; scheduleId: string; action: 'pause' | 'resume' | 'end' }>({ open: false, scheduleId: '', action: 'pause' });
+  const [reason, setReason] = useState('');
 
   // Redux hooks
   const { data: schedules = [], isLoading: schedulesLoading, refetch: refetchSchedules } = useListSchedulesQuery({});
@@ -481,37 +534,40 @@ function RecurringScheduleContent() {
     }
   };
 
-  const handlePauseSchedule = async (id: string) => {
-    try {
-      await pauseSchedule({ id }).unwrap();
-      refetchSchedules();
-      showToast('Schedule paused successfully');
-    } catch (error) {
-      console.error('Failed to pause schedule:', error);
-      showToast('Failed to pause schedule', 'error');
-    }
+  const handlePauseSchedule = (id: string) => {
+    setReasonModal({ open: true, scheduleId: id, action: 'pause' });
+    setReason('');
   };
 
-  const handleResumeSchedule = async (id: string) => {
-    try {
-      await resumeSchedule(id).unwrap();
-      refetchSchedules();
-      showToast('Schedule resumed successfully');
-    } catch (error) {
-      console.error('Failed to resume schedule:', error);
-      showToast('Failed to resume schedule', 'error');
-    }
+  const handleResumeSchedule = (id: string) => {
+    setReasonModal({ open: true, scheduleId: id, action: 'resume' });
+    setReason('');
   };
 
-  const handleEndSchedule = async (id: string) => {
+  const handleEndSchedule = (id: string) => {
+    setReasonModal({ open: true, scheduleId: id, action: 'end' });
+    setReason('');
+  };
+
+  const handleReasonSubmit = async (reasonText: string) => {
     try {
-      const endDate = new Date().toISOString().split('T')[0];
-      await endSchedule({ id, endDate }).unwrap();
+      if (reasonModal.action === 'pause') {
+        await pauseSchedule({ id: reasonModal.scheduleId, reason: reasonText }).unwrap();
+        showToast('Schedule paused successfully');
+      } else if (reasonModal.action === 'resume') {
+        await resumeSchedule(reasonModal.scheduleId).unwrap();
+        showToast('Schedule resumed successfully');
+      } else if (reasonModal.action === 'end') {
+        const endDate = new Date().toISOString().split('T')[0];
+        await endSchedule({ id: reasonModal.scheduleId, endDate, reason: reasonText }).unwrap();
+        showToast('Schedule ended successfully');
+      }
+      setReasonModal({ open: false, scheduleId: '', action: 'pause' });
+      setReason('');
       refetchSchedules();
-      showToast('Schedule ended successfully');
     } catch (error) {
-      console.error('Failed to end schedule:', error);
-      showToast('Failed to end schedule', 'error');
+      console.error('Failed to perform action:', error);
+      showToast('Failed to perform action', 'error');
     }
   };
 
@@ -692,6 +748,13 @@ function RecurringScheduleContent() {
           clients={clients}
         />
       )}
+
+      <ReasonModal
+        open={reasonModal.open}
+        onClose={() => setReasonModal({ open: false, scheduleId: '', action: 'pause' })}
+        onSubmit={handleReasonSubmit}
+        action={reasonModal.action}
+      />
 
       {toast && (
         <Alert 
