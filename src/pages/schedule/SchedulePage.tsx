@@ -528,9 +528,10 @@ function RecurringScheduleContent() {
       setShowNewModal(false);
       refetchSchedules();
       showToast('Schedule created successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create schedule:', error);
-      showToast('Failed to create schedule', 'error');
+      const errorMessage = error?.data?.error || error?.message || 'Failed to create schedule';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -576,9 +577,10 @@ function RecurringScheduleContent() {
       await deleteSchedule(id).unwrap();
       refetchSchedules();
       showToast('Schedule deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete schedule:', error);
-      showToast('Failed to delete schedule', 'error');
+      const errorMessage = error?.data?.error || error?.message || 'Failed to delete schedule';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -648,7 +650,8 @@ function RecurringScheduleContent() {
                           <WorkerAvatar name={schedule.worker.fullName} />
                           <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{schedule.worker.fullName}</Typography>
-                            <Typography variant="caption" color="text.secondary">{schedule.role || 'No role'}</Typography>
+                            <Typography variant="caption" color="text.secondary">{schedule.worker.email}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{schedule.role || 'No role'}</Typography>
                           </Box>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -657,6 +660,11 @@ function RecurringScheduleContent() {
                       </Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{schedule.title}</Typography>
                       <Typography variant="caption" color="text.secondary">From {new Date(schedule.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</Typography>
+                      {schedule.clientCompany && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          Client: {schedule.clientCompany.name}
+                        </Typography>
+                      )}
                       <DayChips days={schedule.days} />
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                         <Typography variant="body2"><strong>{weeklyHours(schedule.days)}h</strong>/week</Typography>

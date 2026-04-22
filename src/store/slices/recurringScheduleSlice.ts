@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../../services/endpoints';
 export interface RecurringSchedule {
   id: string;
   workerId: string;
-  worker: { id: string; fullName: string; profilePicUrl?: string | null };
+  worker: { id: string; fullName: string; email: string; profilePicUrl?: string | null };
   title: string;
   role?: string;
   status: 'ACTIVE' | 'PENDING_APPROVAL' | 'PAUSED' | 'ENDED';
