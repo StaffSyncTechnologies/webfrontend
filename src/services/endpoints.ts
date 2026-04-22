@@ -112,3 +112,21 @@ export const NOTIFICATIONS = {
   MARK_READ: (id: string) => `/notifications/${id}/read`,
   MARK_ALL_READ: '/notifications/read-all',
 } as const;
+
+// Recurring Schedule endpoints
+export const RECURRING_SCHEDULES = {
+  LIST: '/recurring-schedules',
+  GET_BY_ID: (id: string) => `/recurring-schedules/${id}`,
+  CREATE: '/recurring-schedules',
+  UPDATE: (id: string) => `/recurring-schedules/${id}`,
+  PAUSE: (id: string) => `/recurring-schedules/${id}/pause`,
+  RESUME: (id: string) => `/recurring-schedules/${id}/resume`,
+  END: (id: string) => `/recurring-schedules/${id}/end`,
+  DELETE: (id: string) => `/recurring-schedules/${id}`,
+  LIST_REQUESTS: '/recurring-schedules/requests/list',
+  APPROVE_REQUEST: (requestId: string) => `/recurring-schedules/requests/${requestId}/approve`,
+  REJECT_REQUEST: (requestId: string) => `/recurring-schedules/requests/${requestId}/reject`,
+  GENERATE: (id: string) => `/recurring-schedules/${id}/generate`,
+  MY_LIST: '/recurring-schedules/my/list',
+  CREATE_REQUEST: '/recurring-schedules/requests/create',
+} as const;
