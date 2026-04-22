@@ -99,7 +99,7 @@ export const recurringScheduleApi = createApi({
       limit?: number;
     }>({
       query: (params) => ({ url: RECURRING_SCHEDULES.LIST, params }),
-      transformResponse: (response: any) => response.schedules ?? response.data ?? response ?? [],
+      transformResponse: (response: any) => response.data?.schedules ?? response.schedules ?? response.data ?? response ?? [],
       providesTags: ['RecurringSchedule'],
     }),
 
@@ -153,7 +153,7 @@ export const recurringScheduleApi = createApi({
       limit?: number;
     }>({
       query: (params) => ({ url: RECURRING_SCHEDULES.LIST_REQUESTS, params }),
-      transformResponse: (response: any) => response.requests ?? response.data ?? response ?? [],
+      transformResponse: (response: any) => response.data?.requests ?? response.requests ?? response.data ?? response ?? [],
       providesTags: ['ScheduleChangeRequest'],
     }),
 
