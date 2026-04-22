@@ -4,20 +4,22 @@ import { DashboardContainer, PageTitle } from '../../components/layout';
 import { Box, styled, Button, Card, CardContent, Typography, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, Grid, Tabs, Tab, Badge, Alert, CircularProgress, IconButton } from '@mui/material';
 import { Close as CloseIcon, Add as AddIcon, Pause as PauseIcon, PlayArrow as PlayArrowIcon, Stop as StopIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { colors } from '../../utilities/colors';
-import { 
-  useListSchedulesQuery, 
-  useListRequestsQuery, 
-  useCreateScheduleMutation, 
-  usePauseScheduleMutation, 
-  useResumeScheduleMutation, 
-  useEndScheduleMutation, 
-  useDeleteScheduleMutation, 
-  useApproveRequestMutation, 
+import {
+  useListSchedulesQuery,
+  useListRequestsQuery,
+  useCreateScheduleMutation,
+  usePauseScheduleMutation,
+  useResumeScheduleMutation,
+  useEndScheduleMutation,
+  useDeleteScheduleMutation,
+  useApproveRequestMutation,
   useRejectRequestMutation,
   type CreateScheduleData,
   type ScheduleDay,
   type RecurringSchedule,
 } from '../../store/slices/recurringScheduleSlice';
+import { useGetWorkersQuery } from '../../store/slices/workerSlice';
+import { useGetClientsQuery } from '../../store/slices/organizationSlice';
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
 const DAY_LABELS: Record<string, string> = { MON: 'Mon', TUE: 'Tue', WED: 'Wed', THU: 'Thu', FRI: 'Fri', SAT: 'Sat', SUN: 'Sun' };
@@ -83,17 +85,23 @@ function DayChips({ days }: { days: ScheduleDay[] }) {
 }
 
 // New Schedule Modal
-function NewScheduleModal({ 
-  open, 
-  onClose, 
-  onSave 
-}: { 
-  open: boolean; 
-  onClose: () => void; 
+function NewScheduleModal({
+  open,
+  onClose,
+  onSave,
+  workers,
+  clients,
+}: {
+  open: boolean;
+  onClose: () => void;
   onSave: (data: CreateScheduleData) => void;
+  workers: Array<{ id: string; fullName: string }>;
+  clients: Array<{ id: string; name: string; locations?: Array<{ id: string; name: string }> }>;
 }) {
   const [form, setForm] = useState({
     workerId: '',
+    clientCompanyId: '',
+    locationId: '',
     title: '',
     role: '',
     payRate: '',
@@ -126,7 +134,7 @@ function NewScheduleModal({
 
   const handleSave = async () => {
     if (!form.title || selectedDays.length === 0 || !form.startDate || !form.workerId) return;
-    
+
     setLoading(true);
     const days = selectedDays.map(d => ({ dayOfWeek: d as any, ...dayTimes[d] }));
     const data: CreateScheduleData = {
@@ -135,14 +143,18 @@ function NewScheduleModal({
       payRate: form.payRate ? parseFloat(form.payRate) : undefined,
       breakMinutes: parseInt(form.breakMinutes),
       endDate: form.endDate || undefined,
+      clientCompanyId: form.clientCompanyId || undefined,
+      locationId: form.locationId || undefined,
     };
-    
+
     await onSave(data);
     setLoading(false);
-    
+
     // Reset form
     setForm({
       workerId: '',
+      clientCompanyId: '',
+      locationId: '',
       title: '',
       role: '',
       payRate: '',
@@ -184,12 +196,57 @@ function NewScheduleModal({
             displayEmpty
           >
             <MenuItem value="">Select worker…</MenuItem>
-            {/* TODO: Fetch workers from API */}
-            <MenuItem value="w1">Jamie Collins</MenuItem>
-            <MenuItem value="w2">Priya Nair</MenuItem>
-            <MenuItem value="w3">Dean Fletcher</MenuItem>
+            {workers.map(worker => (
+              <MenuItem key={worker.id} value={worker.id}>
+                {worker.fullName}
+              </MenuItem>
+            ))}
           </Select>
         </Box>
+
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
+              Client Company
+            </Typography>
+            <Select
+              fullWidth
+              size="small"
+              value={form.clientCompanyId}
+              onChange={e => {
+                setForm(f => ({ ...f, clientCompanyId: e.target.value, locationId: '' }));
+              }}
+              displayEmpty
+            >
+              <MenuItem value="">Select client…</MenuItem>
+              {clients.map(client => (
+                <MenuItem key={client.id} value={client.id}>
+                  {client.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
+              Location
+            </Typography>
+            <Select
+              fullWidth
+              size="small"
+              value={form.locationId}
+              onChange={e => setForm(f => ({ ...f, locationId: e.target.value }))}
+              displayEmpty
+              disabled={!form.clientCompanyId}
+            >
+              <MenuItem value="">Select location…</MenuItem>
+              {form.clientCompanyId && clients.find(c => c.id === form.clientCompanyId)?.locations?.map(location => (
+                <MenuItem key={location.id} value={location.id}>
+                  {location.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+        </Grid>
 
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid size={{ xs: 12, md: 6 }}>
@@ -368,6 +425,9 @@ function RecurringScheduleContent() {
   // Redux hooks
   const { data: schedules = [], isLoading: schedulesLoading, refetch: refetchSchedules } = useListSchedulesQuery({});
   const { data: requests = [], isLoading: requestsLoading, refetch: refetchRequests } = useListRequestsQuery({});
+  const { data: workersData, isLoading: workersLoading } = useGetWorkersQuery({ status: 'ACTIVE' });
+  const workers = workersData?.data || [];
+  const { data: clients = [] } = useGetClientsQuery();
   
   const [createSchedule] = useCreateScheduleMutation();
   const [pauseSchedule] = usePauseScheduleMutation();
@@ -597,6 +657,8 @@ function RecurringScheduleContent() {
           open={showNewModal}
           onClose={() => setShowNewModal(false)}
           onSave={handleCreateSchedule}
+          workers={workers}
+          clients={clients}
         />
       )}
 
