@@ -2,8 +2,7 @@
  * API Endpoints for Worker Mobile App
  */
 
-// Base URL - change for production
-// iOS Simulator can use localhost, Android emulator needs 10.0.2.2
+// Base URL - uses environment variable for production/dev
 export const API_BASE_URL = 'https://dev.staffsynctech.co.uk/api/v1';
 
 // Auth endpoints (worker passwordless auth)
