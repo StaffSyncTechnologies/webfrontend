@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
 import { useOrgTheme } from '../../contexts';
-import { H2, H3, Body, Caption, ShiftCard } from '../../components/ui';
-import { useGetMyScheduleQuery } from '../../store/api/workerApi';
+import { H2, H3, Body, Caption, ShiftCard, ScreenHeader } from '../../components/ui';
+import { useGetMyScheduleQuery, useGetMyRecurringSchedulesQuery, useGetMyScheduleChangeRequestsQuery } from '../../store/api/workerApi';
 import type { ShiftCardData } from '../../components/ui';
+import type { ScheduleChangeRequest } from '../../store/api/workerApi';
 
 type ViewMode = 'week' | 'month';
 
@@ -89,6 +90,13 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
   const to = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
   const { data: scheduleResponse, isLoading, isFetching, refetch } = useGetMyScheduleQuery({ from, to }, { refetchOnMountOrArgChange: true });
 
+  // Fetch recurring schedules and schedule change requests
+  const { data: recurringSchedulesResponse, refetch: refetchRecurringSchedules } = useGetMyRecurringSchedulesQuery(undefined, { refetchOnMountOrArgChange: true });
+  const { data: scheduleChangeRequestsResponse } = useGetMyScheduleChangeRequestsQuery(undefined, { refetchOnMountOrArgChange: true });
+  const recurringSchedules = Array.isArray(recurringSchedulesResponse) ? recurringSchedulesResponse : recurringSchedulesResponse?.data || [];
+  const scheduleChangeRequests = Array.isArray(scheduleChangeRequestsResponse) ? scheduleChangeRequestsResponse : scheduleChangeRequestsResponse?.data || [];
+
+
   // Group shifts by day-of-month
   const shiftsByDay = useMemo(() => {
     const map: Record<string, ShiftCardData[]> = {};
@@ -106,6 +114,7 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
         month: MONTHS_SHORT[d.getMonth()],
         day: d.getDate().toString(),
         payRate: s.payRate ? `£${s.payRate}/hr` : undefined,
+        recurringScheduleId: s.recurringScheduleId ?? undefined,
       });
     }
     return map;
@@ -143,9 +152,23 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="items-center py-4">
-        <H2>My Schedules</H2>
-      </View>
+      <ScreenHeader
+        title="My Schedules"
+        showOrgBranding={true}
+        rightAction={
+          <TouchableOpacity
+            onPress={() => {
+              // Navigate to schedule change request creation screen
+              navigation.getParent()?.navigate('ScheduleChangeRequest');
+            }}
+            className="w-9 h-9 rounded-full items-center justify-center"
+            style={{ backgroundColor: primaryColor }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Week / Month Toggle */}
       <View className="px-5 pb-4">
@@ -282,7 +305,15 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
                   key={shift.id}
                   shift={shift}
                   compact
-                  onPress={() => navigation.getParent()?.navigate('ClockIn', { shiftId: shift.id })}
+                  onPress={() => {
+                    // When isRecurring, pass the recurringScheduleId so ClockInScreen can match the rota shift
+                    // Otherwise pass the actual shift ID
+                    navigation.getParent()?.navigate('ClockIn', { 
+                      shiftId: shift.recurringScheduleId || shift.id, 
+                      isRecurring: !!shift.recurringScheduleId,
+                      recurringScheduleId: shift.recurringScheduleId,
+                    });
+                  }}
                 />
               ))
             ) : (
@@ -308,7 +339,15 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
                       key={shift.id}
                       shift={shift}
                       compact
-                      onPress={() => navigation.getParent()?.navigate('ClockIn', { shiftId: shift.id })}
+                      onPress={() => {
+                        // When isRecurring, pass the recurringScheduleId so ClockInScreen can match the rota shift
+                        // Otherwise pass the actual shift ID
+                        navigation.getParent()?.navigate('ClockIn', { 
+                          shiftId: shift.recurringScheduleId || shift.id, 
+                          isRecurring: !!shift.recurringScheduleId,
+                          recurringScheduleId: shift.recurringScheduleId,
+                        });
+                      }}
                     />
                   ))}
                 </View>
@@ -316,6 +355,84 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
             )}
           </View>
         )}
+
+        {/* Recurring Schedules Section */}
+        <View className="px-5 pt-4">
+          <H3 className="mb-3">Recurring Schedules</H3>
+          {recurringSchedules.length === 0 ? (
+            <View className="items-center py-4">
+              <Caption color="muted">No recurring schedules</Caption>
+            </View>
+          ) : (
+            recurringSchedules.map((schedule) => (
+              <TouchableOpacity
+                key={schedule.id}
+                className="mb-3 p-4 bg-white dark:bg-dark-card rounded-lg border border-light-border-light dark:border-dark-border-light"
+                onPress={() => {
+                  // Use todayShiftId if available, otherwise fall back to recurring schedule ID
+                  const shiftIdToUse = schedule.todayShiftId || schedule.id;
+                  navigation.getParent()?.navigate('ClockIn', { 
+                    shiftId: shiftIdToUse, 
+                    isRecurring: !!schedule.todayShiftId,
+                    recurringScheduleId: schedule.id,
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                <Body className="font-outfit-semibold mb-1">{schedule.title}</Body>
+                <Caption color="secondary" className="mb-2">{schedule.role || 'No role'}</Caption>
+                <View className="flex-row flex-wrap gap-1 mb-2">
+                  {schedule.days.map((day:any) => (
+                    <View key={day.dayOfWeek} className="px-2 py-1 bg-light-background-secondary dark:bg-dark-background-secondary rounded">
+                      <Caption>{day.dayOfWeek}</Caption>
+                    </View>
+                  ))}
+                </View>
+                {schedule.days.length > 0 && (
+                  <Body className="text-xs">{schedule.days[0].startTime} - {schedule.days[0].endTime}</Body>
+                )}
+                <View className="mt-2">
+                  <Caption color={schedule.status === 'ACTIVE' ? 'success' : 'muted'} className="text-xs">
+                    {schedule.status}
+                  </Caption>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+        {/* Schedule Change Requests Section */}
+        <View className="px-5 pt-4">
+          <H3 className="mb-3">Schedule Change Requests</H3>
+          {scheduleChangeRequests.length === 0 ? (
+            <View className="items-center py-4">
+              <Caption color="muted">No schedule change requests</Caption>
+            </View>
+          ) : (
+            scheduleChangeRequests.map((request: ScheduleChangeRequest) => (
+              <View key={request.id} className="mb-3 p-4 bg-white dark:bg-dark-card rounded-lg border border-light-border-light dark:border-dark-border-light">
+                <Body className="font-outfit-semibold mb-1">{request.recurringSchedule.title}</Body>
+                {request.workerNote && (
+                  <Caption color="secondary" className="mb-2 italic">"{request.workerNote}"</Caption>
+                )}
+                <View className="flex-row flex-wrap gap-1 mb-2">
+                  {request.proposedDays.map((day) => (
+                    <View key={day.dayOfWeek} className="px-2 py-1 bg-light-background-secondary dark:bg-dark-background-secondary rounded">
+                      <Caption>{day.dayOfWeek}</Caption>
+                    </View>
+                  ))}
+                </View>
+                <Body className="text-xs">{request.proposedDays[0]?.startTime} - {request.proposedDays[0]?.endTime}</Body>
+                <View className="mt-2">
+                  <Caption color={request.status === 'PENDING' ? 'warning' : request.status === 'APPROVED' ? 'success' : 'error'} className="text-xs">
+                    {request.status}
+                  </Caption>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
         <View className="h-5" />
       </ScrollView>
     </View>
