@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useLocation } from '../hooks/useLocation';
 import { isWithinGeofence, formatDistance, DEFAULT_GEOFENCE_RADIUS } from '../utils/geofence';
 import { useGetByIdQuery, useClockInMutation, useClockOutMutation } from '../store/api/shiftsApi';
+import { useGetMyScheduleQuery } from '../store/api/workerApi';
 import { H2, H3, Body, Caption, Button } from '../components/ui';
 
 type ClockState = 'idle' | 'clocked_in' | 'clocked_out';
@@ -28,7 +29,10 @@ function padZero(n: number) {
 export function ClockInScreen({ route, navigation }: RootStackScreenProps<'ClockIn'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
-  const { shiftId } = route.params;
+  const { shiftId, isRecurring } = route.params;
+  const [rotaShiftId, setRotaShiftId] = useState<string | null>(null);
+
+  console.log('ClockInScreen - Route params:', route.params);
 
   const [clockState, setClockState] = useState<ClockState>('idle');
   const [seconds, setSeconds] = useState(0);
@@ -46,11 +50,61 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
   const [clockInMutation, { isLoading: isClockingIn }] = useClockInMutation();
   const [clockOutMutation, { isLoading: isClockingOut }] = useClockOutMutation();
 
-  // Fetch shift data from backend
-  const { data: shiftResponse, isLoading: shiftLoading, error: shiftError } = useGetByIdQuery(shiftId);
+  // Fetch schedule data to find rota shifts when isRecurring is true
+  // Use today's date to find the rota shift for the recurring schedule
+  const today = new Date();
+  const from = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const to = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 23, 59, 59).toISOString();
+  const { data: scheduleResponse } = useGetMyScheduleQuery({ from, to }, { skip: !isRecurring });
+
+  // Fetch shift data from backend only when we have the correct shift ID
+  const actualShiftId = isRecurring && rotaShiftId ? rotaShiftId : shiftId;
+  console.log('ClockInScreen - Fetching shift:', {
+    shiftId,
+    isRecurring,
+    rotaShiftId,
+    actualShiftId,
+  });
+  const { data: shiftResponse, isLoading: shiftLoading, error: shiftError } = useGetByIdQuery(actualShiftId);
 
   // Extract the shift object from the API response wrapper { success, data }
   const shift = shiftResponse?.data ?? null;
+
+  console.log('ClockInScreen - Shift data:', {
+    shiftResponse,
+    shift,
+    shiftLoading,
+    shiftError,
+  });
+
+  // Find rota shift for current day
+  useEffect(() => {
+    if (isRecurring && scheduleResponse?.data) {
+      console.log('ClockInScreen - Finding rota shift:', {
+        shiftId,
+        isRecurring,
+        scheduleData: scheduleResponse.data,
+        scheduleDataLength: scheduleResponse.data.length,
+      });
+
+      // Find the shift that matches the recurring schedule
+      const matchingShift = scheduleResponse.data.find(s => s.recurringScheduleId === shiftId);
+      console.log('ClockInScreen - Matching shift:', matchingShift);
+
+      if (matchingShift) {
+        setRotaShiftId(matchingShift.id);
+      } else if (scheduleResponse.data.length > 0) {
+        // Fallback to first shift if no match found (backward compatibility)
+        console.log('ClockInScreen - No match found, using first shift');
+        setRotaShiftId(scheduleResponse.data[0].id);
+      } else {
+        // No shifts found for today - show error
+        console.log('ClockInScreen - No shifts found for today');
+        warning('No shift found for this recurring schedule on the selected date');
+        navigation.goBack();
+      }
+    }
+  }, [isRecurring, scheduleResponse, shiftId, warning, navigation]);
 
   // Derive geofence data from the shift
   const geofenceData = useMemo(() => {
@@ -66,16 +120,20 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
     if (!shift) return null;
     const start = new Date(shift.startAt);
     const end = new Date(shift.endAt);
+    
+    // For recurring shifts, use today's date instead of the rota shift's original date
+    const displayDate = isRecurring ? new Date() : start;
+    
     return {
       title: shift.title,
       location: shift.location?.address || shift.siteLocation || 'Unknown location',
       locationName: shift.location?.name || shift.siteLocation || 'Work Site',
       client: shift.clientCompany?.name || '',
-      date: start.toLocaleDateString(),
+      date: displayDate.toLocaleDateString(),
       time: `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
       hourlyRate: Number(shift.hourlyRate || shift.payRate || 0),
     };
-  }, [shift]);
+  }, [shift, isRecurring]);
 
   // Check geofence status
   const checkGeofenceStatus = useCallback(async () => {
@@ -202,12 +260,21 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
     setShowConfirm(false);
     
     if (clockState === 'idle') {
-      // Clock in
+      // Clock in - get fresh location first
       try {
+        console.log('🔍 CLOCK-IN: Getting current location...');
+        const location = await getCurrentLocation();
+        console.log('🔍 CLOCK-IN: Got location:', location);
+        
+        if (!location || !location.latitude || !location.longitude) {
+          Alert.alert('Location Error', 'Unable to get your location. Please ensure location services are enabled.');
+          return;
+        }
+        
         await clockInMutation({ 
           shiftId, 
-          lat: latitude || undefined, 
-          lng: longitude || undefined 
+          lat: location.latitude, 
+          lng: location.longitude 
         }).unwrap();
         
         const now = Date.now();
@@ -219,25 +286,92 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
         const data: PersistedClockData = { shiftId, startTimestamp: now, state: 'clocked_in' };
         await AsyncStorage.setItem(CLOCK_STORAGE_KEY, JSON.stringify(data));
       } catch (error: any) {
-        // Show error message from backend
-        Alert.alert('Clock In Failed', error?.data?.message || 'Failed to clock in. Please try again.');
+        console.log('ClockInScreen - Clock in error:', error);
+        console.log('ClockInScreen - Error details:', {
+          message: error?.message,
+          data: error?.data,
+          status: error?.status,
+          code: error?.code,
+        });
+        // Show specific error message based on error code
+        const errorCode = error?.data?.code || error?.code;
+        let errorMessage = 'Failed to clock in. Please try again.';
+        let errorTitle = 'Clock In Failed';
+
+        if (errorCode === 'ALREADY_CLOCKED_IN') {
+          errorTitle = 'Already Clocked In';
+          errorMessage = 'You have already clocked in for this shift.';
+        } else if (errorCode === 'TOO_EARLY') {
+          errorTitle = 'Too Early to Clock In';
+          errorMessage = error?.data?.message || 'You can clock in closer to the shift start time.';
+        } else if (errorCode === 'SHIFT_ENDED') {
+          errorTitle = 'Shift Ended';
+          errorMessage = 'This shift has already ended and cannot be started.';
+        } else if (errorCode === 'NOT_ASSIGNED') {
+          errorTitle = 'Not Assigned';
+          errorMessage = 'You are not assigned to this shift.';
+        } else if (errorCode === 'OUTSIDE_GEOFENCE') {
+          errorTitle = 'Too Far From Work Site';
+          errorMessage = error?.data?.message || 'You are too far from the work site to clock in.';
+        } else if (error?.data?.message) {
+          errorMessage = error.data.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+
+        Alert.alert(errorTitle, errorMessage);
         return;
       }
     } else if (clockState === 'clocked_in') {
-      // Clock out
+      // Clock out - get fresh location first
       try {
+        console.log('🔍 CLOCK-OUT: Getting current location...');
+        const location = await getCurrentLocation();
+        console.log('🔍 CLOCK-OUT: Got location:', location);
+        
+        if (!location || !location.latitude || !location.longitude) {
+          Alert.alert('Location Error', 'Unable to get your location. Please ensure location services are enabled.');
+          return;
+        }
+        
         await clockOutMutation({ 
           shiftId, 
-          lat: latitude || undefined, 
-          lng: longitude || undefined 
+          lat: location.latitude, 
+          lng: location.longitude 
         }).unwrap();
         
         setClockState('clocked_out');
         // Clear persisted state on clock-out
         await AsyncStorage.removeItem(CLOCK_STORAGE_KEY);
       } catch (error: any) {
-        // Show error message from backend
-        Alert.alert('Clock Out Failed', error?.data?.message || 'Failed to clock out. Please try again.');
+        console.log('ClockInScreen - Clock out error:', error);
+        console.log('ClockInScreen - Error details:', {
+          message: error?.message,
+          data: error?.data,
+          status: error?.status,
+          code: error?.code,
+        });
+        // Show specific error message based on error code
+        const errorCode = error?.data?.code || error?.code;
+        let errorMessage = 'Failed to clock out. Please try again.';
+        let errorTitle = 'Clock Out Failed';
+
+        if (errorCode === 'NO_ATTENDANCE') {
+          errorTitle = 'No Attendance Record';
+          errorMessage = 'No attendance record found. Did you clock in?';
+        } else if (errorCode === 'NOT_CLOCKED_IN') {
+          errorTitle = 'Not Clocked In';
+          errorMessage = 'You must clock in before clocking out.';
+        } else if (errorCode === 'ALREADY_CLOCKED_OUT') {
+          errorTitle = 'Already Clocked Out';
+          errorMessage = 'You have already clocked out from this shift.';
+        } else if (error?.data?.message) {
+          errorMessage = error.data.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+
+        Alert.alert(errorTitle, errorMessage);
         return;
       }
     }

@@ -2,8 +2,10 @@ import React from 'react';
 import { View, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { H1, H2, Body, Caption, Button } from '../../components/ui';
 import { LANGUAGES, changeLanguage } from '../../i18n';
+import { HAS_LAUNCHED_KEY } from '../../navigation/AuthNavigator';
 import type { AuthStackScreenProps } from '../../types/navigation';
 
 type Props = AuthStackScreenProps<'LanguageSelect'>;
@@ -17,7 +19,8 @@ export function LanguageSelectScreen({ navigation }: Props) {
     await changeLanguage(code);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    await AsyncStorage.setItem(HAS_LAUNCHED_KEY, 'true');
     navigation.navigate('InviteCode');
   };
 

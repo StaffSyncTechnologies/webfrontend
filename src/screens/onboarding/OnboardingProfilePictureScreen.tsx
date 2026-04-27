@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useOrgTheme, useToast } from '../../contexts';
 import { Button, H1, Body, Caption, StepHeader } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
-import { useWorkerUploadProfilePicMutation } from '../../store/api/authApi';
+import { useWorkerUploadProfilePicMutation, useGetMeQuery } from '../../store/api/authApi';
 import { useAppSelector } from '../../store/hooks';
 import type { AuthStackScreenProps } from '../../types/navigation';
 

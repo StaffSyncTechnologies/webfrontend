@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
 import { useOrgTheme } from '../contexts';
-import { H2, H3, Body, Caption, Button, HolidayCard } from '../components/ui';
+import { H2, H3, Body, Caption, Button, HolidayCard, ScreenHeader } from '../components/ui';
 import type { HolidayCardData } from '../components/ui';
 
 const upcomingHolidays: HolidayCardData[] = [
@@ -26,14 +26,11 @@ export function HolidaysScreen({ navigation }: RootStackScreenProps<'Holidays'>)
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="flex-row items-center px-5 py-4">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
-        </TouchableOpacity>
-        <View className="flex-1 items-center mr-10">
-          <H2>Holidays</H2>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Holidays"
+        onBack={() => navigation.goBack()}
+        showOrgBranding={true}
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Total Holidays Card */}

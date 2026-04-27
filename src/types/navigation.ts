@@ -56,6 +56,7 @@ export type MainTabParamList = {
   Shifts: undefined;
   Schedule: undefined;
   Payslip: undefined;
+  Notifications: undefined;
   Profile: undefined;
 };
 
@@ -65,7 +66,7 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   ShiftDetails: { shiftId: string };
   ShiftConfirmed: { shiftTitle: string; date: string; time: string; location: string };
-  ClockIn: { shiftId: string; clockedIn?: boolean };
+  ClockIn: { shiftId: string; clockedIn?: boolean; isRecurring?: boolean; recurringScheduleId?: string | null };
   PayslipDetail: { payslipId: string };
   Holidays: undefined;
   RequestHoliday: undefined;
@@ -85,6 +86,8 @@ export type RootStackParamList = {
   ChangePassword: undefined;
   Documents: undefined;
   PaySlips: undefined;
+  Timesheet: undefined;
+  ScheduleChangeRequest: undefined;
 };
 
 // Screen Props Types

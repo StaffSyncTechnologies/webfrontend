@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Animated,
   Dimensions,
@@ -16,13 +15,18 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onAnimationComplete }: SplashScreenProps) {
-  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const blueFillHeight = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.5)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Animate logo
-    Animated.sequence([
+    // Animate blue color from bottom to top
+    Animated.timing(blueFillHeight, {
+      toValue: height,
+      duration: 1500,
+      useNativeDriver: false,
+    }).start(() => {
+      // After blue fills the screen, show logo with animation
       Animated.parallel([
         Animated.timing(logoOpacity, {
           toValue: 1,
@@ -31,44 +35,50 @@ export function SplashScreen({ onAnimationComplete }: SplashScreenProps) {
         }),
         Animated.spring(logoScale, {
           toValue: 1,
-          friction: 4,
+          friction: 5,
           tension: 40,
           useNativeDriver: true,
         }),
-      ]),
-      // Animate text after logo
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Wait a moment then complete
-      setTimeout(() => {
-        onAnimationComplete?.();
-      }, 800);
+      ]).start(() => {
+        // Wait a moment then complete
+        setTimeout(() => {
+          onAnimationComplete?.();
+        }, 1000);
+      });
     });
   }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Animated.View
-          style={[
-            styles.logoContainer,
-            {
-              opacity: logoOpacity,
-              transform: [{ scale: logoScale }],
-            },
-          ]}
-        >
-          <Image
-            source={require('../../assets/splash-icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </Animated.View>
-      </View>
+      {/* Navy background (initial) */}
+      <View style={[StyleSheet.absoluteFill, styles.navyBackground]} />
+      
+      {/* Blue fill animating from bottom to top */}
+      <Animated.View
+        style={[
+          styles.blueFill,
+          {
+            height: blueFillHeight,
+          },
+        ]}
+      />
+
+      {/* Logo centered - appears after blue animation */}
+      <Animated.View
+        style={[
+          styles.logoContainer,
+          {
+            opacity: logoOpacity,
+            transform: [{ scale: logoScale }],
+          },
+        ]}
+      >
+        <Image
+          source={require('../../assets/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -76,35 +86,27 @@ export function SplashScreen({ onAnimationComplete }: SplashScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brandColors.primary.navy,
   },
-  content: {
-    flex: 1,
+  navyBackground: {
+    backgroundColor: brandColors.primary.navy,
+  },
+  blueFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: brandColors.primary.blue,
+  },
+  logoContainer: {
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoContainer: {
-    alignItems: 'center',
-  },
   logo: {
-    width: 180,
-    height: 180,
-  },
-  textContainer: {
-    flexDirection: 'row',
-    marginTop: 16,
-  },
-  staffText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: brandColors.primary.navy,
-    letterSpacing: 1,
-  },
-  syncText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: brandColors.primary.blue,
-    letterSpacing: 1,
+    width: 200,
+    height: 200,
+    tintColor: '#FFFFFF',
   },
 });
 

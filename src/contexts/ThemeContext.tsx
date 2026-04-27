@@ -101,7 +101,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Resolve actual theme based on mode
   const theme: 'light' | 'dark' = 
     themeMode === 'system' 
-      ? (systemColorScheme || 'light') 
+      ? (systemColorScheme === 'dark' ? 'dark' : 'light') 
       : themeMode;
 
   const isDark = theme === 'dark';

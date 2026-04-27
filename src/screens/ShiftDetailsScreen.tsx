@@ -48,7 +48,7 @@ export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'
   // Check if shift was broadcast to this worker
   const isBroadcastToMe = shift?.broadcasts?.some((b: any) => {
     const targets: string[] = (b.filters as any)?.targetWorkerIds || [];
-    return targets.includes(userId);
+    return userId ? targets.includes(userId) : false;
   }) || false;
   
   // Check if shift is filled (all needed workers have accepted)

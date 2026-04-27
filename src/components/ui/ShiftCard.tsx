@@ -16,6 +16,7 @@ export interface ShiftCardData {
   day: string;
   payRate?: string;
   status?: 'urgent' | 'confirmed' | 'open' | 'completed' | 'limited_slot' | 'high_pay';
+  recurringScheduleId?: string;
 }
 
 interface ShiftCardProps {

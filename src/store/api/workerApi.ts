@@ -11,6 +11,17 @@ export interface Document {
   createdAt: string;
 }
 
+export interface Skill {
+  id: string;
+  name: string;
+  category: string;
+}
+
+export interface MySkillsResponse {
+  success: boolean;
+  data: Skill[];
+}
+
 export interface Payslip {
   id: string;
   payPeriodStart: string;
@@ -20,6 +31,40 @@ export interface Payslip {
   netPay: number;
   status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'PAID';
   paidAt?: string;
+}
+
+export interface PayslipDetail {
+  id: string;
+  status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'PAID';
+  source?: 'GENERATED' | 'UPLOADED';
+  uploadedFileUrl?: string;
+  period?: {
+    startDate: string;
+    endDate: string;
+    payDate?: string;
+    payMethod?: string;
+  };
+  employee?: {
+    name: string;
+    empCode?: string;
+    payrollNumber?: string;
+    taxCode?: string;
+    niNumber?: string;
+  };
+  payments?: Array<{ time: number; rate: number; amount: number }>;
+  benefits?: Array<{ name: string; amount: number }>;
+  deductions?: Array<{ name: string; amount: number }>;
+  summary?: {
+    grossPay: number;
+    deductions: number;
+    netPay: number;
+  };
+  yearToDate?: {
+    grossPay: number;
+    tax: number;
+    employeeNI: number;
+    employeePension: number;
+  };
 }
 
 export interface HolidayRequest {
@@ -44,6 +89,7 @@ export interface HomeTodayShift {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
   clockedIn: boolean;
   clockedOut: boolean;
+  recurringScheduleId?: string | null;
 }
 
 export interface HomeNextShift {
@@ -97,6 +143,64 @@ export interface ScheduleShift {
   payRate: number | null;
   status: string;
   clientCompany?: { id: string; name: string } | null;
+  recurringScheduleId?: string | null;
+}
+
+export interface RecurringScheduleDay {
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface RecurringSchedule {
+  id: string;
+  title: string;
+  role: string;
+  startDate: string;
+  endDate?: string;
+  status: 'PENDING_APPROVAL' | 'ACTIVE' | 'PAUSED' | 'ENDED';
+  todayShiftId?: string | null;
+  hasShiftToday?: boolean;
+  days: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }>;
+  worker: {
+    id: string;
+    fullName: string;
+  };
+  clientCompany?: {
+    id: string;
+    name: string;
+  };
+  location?: {
+    id: string;
+    name: string;
+    address: string;
+  };
+}
+
+export interface ScheduleChangeRequest {
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestType: string;
+  proposedStartDate: string;
+  proposedDays: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }>;
+  workerNote?: string;
+  worker: {
+    id: string;
+    fullName: string;
+  };
+  recurringSchedule: {
+    id: string;
+    title: string;
+  };
+  createdAt: string;
 }
 
 export interface HomeData {
@@ -196,8 +300,12 @@ export const workerApi = baseApi.injectEndpoints({
       query: () => PAYSLIPS.MY_PAYSLIP,
       providesTags: ['Payslips'],
     }),
-    getPayslipDetail: builder.query<{ success: boolean; data: Payslip }, string>({
+    getPayslipDetail: builder.query<{ success: boolean; data: PayslipDetail }, string>({
       query: (id) => PAYSLIPS.DETAIL(id),
+      providesTags: (r, e, id) => [{ type: 'Payslips', id }],
+    }),
+    getPayslipHtml: builder.query<string, string>({
+      query: (id) => ({ url: PAYSLIPS.HTML(id), responseHandler: (response: Response) => response.text() }),
       providesTags: (r, e, id) => [{ type: 'Payslips', id }],
     }),
 
@@ -214,12 +322,42 @@ export const workerApi = baseApi.injectEndpoints({
       query: (id) => ({ url: HOLIDAYS.CANCEL(id), method: 'POST' }),
       invalidatesTags: ['Holidays'],
     }),
+
+    // Recurring Schedules
+    getMyRecurringSchedules: builder.query<RecurringSchedule[], void>({
+      query: () => '/recurring-schedules/my/list',
+      transformResponse: (response: { success: boolean; data: RecurringSchedule[] }) => response.data,
+      providesTags: ['RecurringSchedules'],
+    }),
+
+    // Schedule Change Requests
+    createScheduleChangeRequest: builder.mutation<{ success: boolean; data: ScheduleChangeRequest }, {
+      recurringScheduleId: string;
+      proposedStartDate: string;
+      proposedDays: Array<{ dayOfWeek: string; startTime: string; endTime: string }>;
+      workerNote?: string;
+    }>({
+      query: (body) => ({ url: '/recurring-schedules/requests/create', method: 'POST', body }),
+      invalidatesTags: ['ScheduleChangeRequests'],
+    }),
+
+    getMyScheduleChangeRequests: builder.query<ScheduleChangeRequest[], void>({
+      query: () => '/recurring-schedules/requests/my/list',
+      transformResponse: (response: { success: boolean; data: ScheduleChangeRequest[] }) => response.data,
+      providesTags: ['ScheduleChangeRequests'],
+    }),
+
+    // Delete own account
+    deleteMyAccount: builder.mutation<{ success: boolean; message: string }, void>({
+      query: () => ({ url: '/users/me', method: 'DELETE' }),
+    }),
   }),
 });
 
 export const {
   useGetHomeQuery,
   useGetMyScheduleQuery,
+
   useGetPayslipListQuery,
   useGetWorkerProfileQuery,
   useGetMyRTWQuery,
@@ -234,7 +372,12 @@ export const {
   useGetPayslipsQuery,
   useGetMyPayslipQuery,
   useGetPayslipDetailQuery,
+  useGetPayslipHtmlQuery,
   useGetMyHolidayRequestsQuery,
   useRequestHolidayMutation,
   useCancelHolidayRequestMutation,
+  useGetMyRecurringSchedulesQuery,
+  useCreateScheduleChangeRequestMutation,
+  useGetMyScheduleChangeRequestsQuery,
+  useDeleteMyAccountMutation,
 } = workerApi;

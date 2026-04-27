@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme, NavigationContainerRef } from '@react-navigation/native';
 import * as SplashScreenLib from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
+import * as Location from 'expo-location';
 import type { RootStackParamList } from './src/types/navigation';
 import {
   useFonts,
@@ -20,6 +22,7 @@ import { useTheme } from './src/contexts';
 import { SplashScreen } from './src/components';
 import { NetworkStatusBanner } from './src/components/NetworkStatusBanner';
 import { useNotifications } from './src/hooks/useNotifications';
+import { useAppBadge } from './src/hooks/useAppBadge';
 import './global.css';
 import './src/i18n';
 
@@ -60,16 +63,25 @@ function AppContent() {
 
   // Register push notifications when authenticated
   const { lastNotificationResponse } = useNotifications();
+  
+  // Manage app icon badge count
+  const { clearBadgeOnLogout } = useAppBadge();
 
   // Navigate to Auth screen when logged out
   useEffect(() => {
+    if (!isAuthenticated && !appReady) return; // Don't navigate during app initialization
+    
     if (!isAuthenticated && navigationRef.current) {
+      // Clear app badge when logged out
+      clearBadgeOnLogout();
+      
+      // Reset navigation stack to prevent "Not Found" errors
       navigationRef.current.resetRoot({
         index: 0,
         routes: [{ name: 'Auth' }],
       });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, appReady, clearBadgeOnLogout]);
 
   // Handle notification tap deep linking
   useEffect(() => {
@@ -104,6 +116,9 @@ function AppContent() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Request permissions on app launch
+        await Notifications.requestPermissionsAsync();
+        await Location.requestForegroundPermissionsAsync();
         // Small delay for splash animation
         await new Promise((resolve) => setTimeout(resolve, 500));
       } finally {

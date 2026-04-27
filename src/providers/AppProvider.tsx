@@ -15,10 +15,15 @@ function AuthHydrator({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function hydrate() {
+      console.log('AuthHydrator: Starting hydration...');
       const authData = await loadAuthFromStorage();
+      console.log('AuthHydrator: Auth data loaded:', authData);
       store.dispatch(hydrateAuth(authData));
+      console.log('AuthHydrator: About to load org theme...');
       await loadOrgTheme();
+      console.log('AuthHydrator: Org theme loaded');
       setIsHydrated(true);
+      console.log('AuthHydrator: Hydration complete');
     }
     hydrate();
   }, []);

@@ -1,15 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthStackParamList } from '../types/navigation';
 import { LanguageSelectScreen, InviteCodeScreen, AgencyConfirmScreen, NearbyAgenciesScreen, AgencyContactScreen, LoginScreen, RegisterScreen, VerifyOTPScreen, VerificationSuccessScreen, ForgotPasswordScreen } from '../screens/auth';
 import { OnboardingProfileScreen, OnboardingProfilePictureScreen, OnboardingSkillsScreen, OnboardingDocumentsScreen, OnboardingBankAccountScreen, OnboardingRTWScreen } from '../screens/onboarding';
 
+export const HAS_LAUNCHED_KEY = '@staffsync_has_launched';
+
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthNavigator() {
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(HAS_LAUNCHED_KEY).then((value) => {
+      setIsFirstLaunch(value === null);
+    });
+  }, []);
+
+  if (isFirstLaunch === null) return null;
+
   return (
     <Stack.Navigator
-      initialRouteName="LanguageSelect"
+      initialRouteName={isFirstLaunch ? 'LanguageSelect' : 'Login'}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',

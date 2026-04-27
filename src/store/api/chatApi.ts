@@ -7,15 +7,29 @@ interface ChatUser {
   role: string;
 }
 
+export interface ChatAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  mimeType: string;
+  duration?: number;
+  thumbnailUrl?: string;
+}
+
 export interface ChatMessage {
   id: string;
   chatRoomId: string;
   senderId: string;
-  content: string;
+  content: string | null;
+  messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
   status: 'SENT' | 'DELIVERED' | 'READ';
   createdAt: string;
   readAt: string | null;
   sender: ChatUser;
+  attachments: ChatAttachment[];
 }
 
 export interface ChatRoom {
@@ -72,6 +86,44 @@ export const chatApi = baseApi.injectEndpoints({
     getChatUnreadCount: builder.query<ApiResponse<{ count: number }>, void>({
       query: () => CHAT.UNREAD_COUNT,
     }),
+
+    // Upload file
+    uploadFile: builder.mutation<ApiResponse<ChatAttachment>, FormData>({
+      query: (formData) => ({
+        url: CHAT.UPLOAD_FILE,
+        method: 'POST',
+        body: formData,
+      }),
+    }),
+
+    // Send simple text message
+    sendMessage: builder.mutation<
+      ApiResponse<ChatMessage>,
+      { roomId: string; content: string }
+    >({
+      query: ({ roomId, content }) => ({
+        url: CHAT.SEND_MESSAGE(roomId),
+        method: 'POST',
+        body: { content, messageType: 'TEXT' },
+      }),
+    }),
+
+    // Send message with attachments
+    sendMessageWithAttachments: builder.mutation<
+      ApiResponse<ChatMessage>,
+      {
+        roomId: string;
+        content?: string;
+        messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
+        attachments: ChatAttachment[];
+      }
+    >({
+      query: ({ roomId, content, messageType, attachments }) => ({
+        url: CHAT.SEND_WITH_ATTACHMENTS(roomId),
+        method: 'POST',
+        body: { content, messageType, attachments },
+      }),
+    }),
   }),
 });
 
@@ -81,4 +133,7 @@ export const {
   useGetRoomMessagesQuery,
   useMarkMessagesAsReadMutation,
   useGetChatUnreadCountQuery,
+  useUploadFileMutation,
+  useSendMessageMutation,
+  useSendMessageWithAttachmentsMutation,
 } = chatApi;

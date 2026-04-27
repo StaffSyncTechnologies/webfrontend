@@ -56,7 +56,23 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       setCountdown(60);
       toast.success(via === 'sms' ? 'Code sent via SMS' : 'Verification code sent to your email');
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Something went wrong');
+      console.error('forgotPassword error:', JSON.stringify(err, null, 2));
+      
+      // Extract the actual error message from backend response
+      let errorMessage = 'Something went wrong';
+      
+      if (err?.status === 401 && err?.data?.error) {
+        // Backend error format: { status: 401, data: { success: false, error: "Email not found", code: "EMAIL_NOT_FOUND" } }
+        errorMessage = err.data.error;
+      } else if (err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -102,7 +118,22 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       setCountdown(60);
       toast.success('New code sent');
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to resend code');
+      console.error('resendOtp error:', JSON.stringify(err, null, 2));
+      
+      // Extract the actual error message from backend response
+      let errorMessage = 'Failed to resend code';
+      
+      if (err?.status === 401 && err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -125,14 +156,29 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       }).unwrap();
       setStep('success');
     } catch (err: any) {
-      const msg = err?.data?.message || err?.data?.error || 'Reset failed';
-      if (msg.toLowerCase().includes('code') || msg.toLowerCase().includes('otp')) {
+      console.error('resetPassword error:', JSON.stringify(err, null, 2));
+      
+      // Extract the actual error message from backend response
+      let errorMessage = 'Reset failed';
+      
+      if (err?.status === 401 && err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      if (errorMessage.toLowerCase().includes('code') || errorMessage.toLowerCase().includes('otp')) {
         // OTP was invalid/expired, send back to OTP step
-        toast.error(msg);
+        toast.error(errorMessage);
         setStep('otp');
         setOtp(['', '', '', '', '', '']);
+        otpRefs.current[0]?.focus();
       } else {
-        setErrors({ submit: msg });
+        toast.error(errorMessage);
       }
     }
   };
@@ -160,7 +206,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
           </Body>
         </View>
         <View className="pb-4">
-          <Button onPress={() => navigation.navigate('Login')}>
+          <Button onPress={() => navigation.navigate('Login', {})}>
             Back to Login
           </Button>
         </View>

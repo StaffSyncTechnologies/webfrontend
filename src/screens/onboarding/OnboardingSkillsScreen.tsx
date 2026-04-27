@@ -55,7 +55,9 @@ export function OnboardingSkillsScreen({ navigation }: Props) {
 
   const fetchSkills = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/skills`);
+      const res = await fetch(`${API_BASE_URL}/skills`, {
+        headers: { 'X-API-Key': process.env.EXPO_PUBLIC_API_KEY || '' },
+      });
       const data = await res.json();
       if (data.success && data.data) {
         const skillsList: Skill[] = data.data.skills || [];

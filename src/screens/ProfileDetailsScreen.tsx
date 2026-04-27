@@ -6,7 +6,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackScreenProps } from '../types/navigation';
 import { useOrgTheme, useToast } from '../contexts';
 import { H2, Body, Caption, Button } from '../components/ui';
+import { AuthenticatedImage } from '../components/ui/AuthenticatedImage';
 import { useGetMeQuery, useUpdateMeMutation, useWorkerUploadProfilePicMutation } from '../store/api/authApi';
+import { API_BASE_URL, API_BASE } from '../services/endpoints';
 
 function formatDateForDisplay(iso?: string | null): string {
   if (!iso) return '';
@@ -30,7 +32,7 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
   const insets = useSafeAreaInsets();
   const { secondaryColor, primaryColor } = useOrgTheme();
   const toast = useToast();
-  const { data: meResponse, isLoading: loadingProfile } = useGetMeQuery();
+  const { data: meResponse, isLoading: loadingProfile, refetch: refetchMe } = useGetMeQuery();
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
   const [uploadProfilePic, { isLoading: isUploading }] = useWorkerUploadProfilePicMutation();
   const profile = meResponse?.data;
@@ -51,9 +53,18 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
       setDob(formatDateForDisplay(profile.workerProfile?.dateOfBirth));
       setAddress(profile.workerProfile?.address || '');
       setPostcode(profile.workerProfile?.postcode || '');
-      setProfilePicUrl(profile.profilePicUrl || null);
+      setProfilePicUrl(profile.profilePicUrl 
+        ? (profile.profilePicUrl.startsWith('http') 
+            ? profile.profilePicUrl 
+            : `${API_BASE}${profile.profilePicUrl}`)
+        : null);
     }
   }, [profile]);
+
+  // Force refetch on component mount to get latest data
+  useEffect(() => {
+    refetchMe();
+  }, [refetchMe]);
 
   const handleSave = async () => {
     try {
@@ -65,6 +76,7 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
 
       await updateMe(body).unwrap();
       toast.success('Profile updated');
+      refetchMe(); // Refresh data after update
       navigation.goBack();
     } catch (err: any) {
       toast.error(err?.data?.error || 'Failed to update profile');
@@ -96,6 +108,7 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
       } as any);
       await uploadProfilePic(formData).unwrap();
       toast.success('Profile picture updated');
+      refetchMe(); // Refresh worker data with new profile picture URL
     } catch (err: any) {
       toast.error(err?.data?.error || 'Failed to upload picture');
     }
@@ -126,7 +139,10 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
         <View className="items-center pt-4 pb-6">
           <View className="w-24 h-24 rounded-full bg-gray-300 items-center justify-center mb-3 overflow-hidden">
             {profilePicUrl ? (
-              <Image source={{ uri: profilePicUrl }} className="w-24 h-24" />
+              <Image 
+                source={{ uri: profilePicUrl }} 
+                className="w-24 h-24" 
+              />
             ) : (
               <Ionicons name="person" size={40} color="#6B7280" />
             )}

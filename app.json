@@ -2,44 +2,39 @@
   "expo": {
     "name": "StaffSync Worker",
     "slug": "staffsync-worker",
+    "scheme": "staffsync-worker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/staffsync-logo.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.staffsync.worker",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "remote-notification",
-          "remote-notification"
-        ],
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "package": "com.staffsync.worker",
-      "predictiveBackGestureEnabled": false,
-      "googleServicesFile": "./google-services.json"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "backgroundColor": "#000035"
     },
     "plugins": [
       "expo-font",
       "@react-native-community/datetimepicker",
       "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "StaffSync needs access to your camera to take a profile picture.",
+          "photosPermission": "StaffSync needs access to your photos to let you set your profile picture.",
+          "allowsEditing": true,
+          "allowsMultipleSelection": false,
+          "mediaTypes": [
+            "images"
+          ],
+          "android": {
+            "usePhotoPicker": true
+          },
+          "ios": {
+            "useModernPicker": true,
+            "appleTeam": "Your Apple Team ID"
+          }
+        }
+      ],
       [
         "expo-notifications",
         {
@@ -48,24 +43,68 @@
           "sounds": [],
           "defaultChannel": "default"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "minifyEnabled": true,
+            "shrinkResources": true
+          }
+        }
+      ],
+      "expo-asset",
+      "@react-native-firebase/app",
+      "./plugins/withFirebasePodfile"
     ],
-    "build": {
-      "development": {
-        "developmentClient": true,
-        "distribution": "internal"
-      },
-      "preview": {
-        "distribution": "internal",
-        "android": {
-          "buildType": "apk"
-        }
-      },
-      "production": {
-        "android": {
-          "buildType": "apk"
-        }
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.staffsynctech.worker",
+      "buildNumber": "11",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "StaffSync needs location access to show nearby shifts and verify clock-in location for attendance tracking.",
+        "NSCameraUsageDescription": "StaffSync needs camera access to upload profile photos and work documents.",
+        "NSPhotoLibraryUsageDescription": "StaffSync needs photo library access to select profile photos and upload documents.",
+        "NSMicrophoneUsageDescription": "StaffSync needs microphone access to record and send voice messages in chat."
       }
+    },
+    "android": {
+      "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "resize",
+      "versionCode": 11,
+      "adaptiveIcon": {
+        "backgroundColor": "#00AFEF",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "package": "com.staffsync.worker",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.VIBRATE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     },
     "extra": {
       "eas": {

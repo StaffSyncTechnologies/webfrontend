@@ -1,17 +1,35 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-import { Platform, Alert } from 'react-native';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import notifee from '@notifee/react-native';
+import messaging from '@react-native-firebase/messaging';
 import { useRegisterPushTokenMutation } from '../store/api/notificationsApi';
 import { useAppSelector } from '../store/hooks';
-import { store } from '../store';
-import { baseApi } from '../store/api/baseApi';
-import { API_BASE_URL } from '../services/endpoints';
+import {
+  setupNotifeeChannels,
+  displayShiftNotification,
+  displayGeneralNotification,
+  handleShiftApiCall,
+  handleNotifeeEvent,
+  NOTIFEE_CHANNELS,
+} from '../services/notifeeService';
 
 const AUTH_TOKEN_KEY = '@staffsync_auth_token';
 const NOTIFICATION_PREFS_KEY = '@staffsync_notification_prefs';
+
+const SHIFT_TYPES = new Set([
+  'shift_available',
+  'shift_assigned',
+  'new_shift',
+  'shift_reminder',
+]);
+
+const TYPE_TO_CHANNEL: Record<string, string> = {
+  payslip_ready: NOTIFEE_CHANNELS.PAYSLIPS,
+  payslip: NOTIFEE_CHANNELS.PAYSLIPS,
+};
 
 // Map backend notification types to the toggle keys used in NotificationSettingsScreen
 const TYPE_TO_PREF: Record<string, string> = {
@@ -51,90 +69,36 @@ Notifications.setNotificationHandler({
       } catch {}
     }
 
+    // Display via Notifee for rich UI with action buttons
+    if (SHIFT_TYPES.has(type ?? '')) {
+      displayShiftNotification({
+        shiftId: (data?.shiftId as string) ?? '',
+        title: notification.request.content.title ?? undefined,
+        body: notification.request.content.body ?? undefined,
+        date: data?.date as string | undefined,
+        location: data?.location as string | undefined,
+        hours: data?.hours as string | undefined,
+        pay: data?.pay as string | undefined,
+      }).catch(console.error);
+    } else {
+      displayGeneralNotification({
+        title: notification.request.content.title ?? 'StaffSync',
+        body: notification.request.content.body ?? '',
+        channelId: TYPE_TO_CHANNEL[type ?? ''],
+      }).catch(console.error);
+    }
+
+    // Suppress expo's built-in display — Notifee handles it
     return {
-      shouldShowAlert: true,
-      shouldPlaySound: true,
+      shouldShowAlert: false,
+      shouldPlaySound: false,
       shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
+      shouldShowBanner: false,
+      shouldShowList: false,
     };
   },
 });
 
-// Register interactive notification categories
-async function setupNotificationCategories() {
-  await Notifications.setNotificationCategoryAsync('shift_action', [
-    {
-      identifier: 'accept_shift',
-      buttonTitle: '✅ Accept',
-      options: {
-        opensAppToForeground: false,
-      },
-    },
-    {
-      identifier: 'decline_shift',
-      buttonTitle: '❌ Decline',
-      options: {
-        opensAppToForeground: false,
-        isDestructive: true,
-      },
-    },
-  ]);
-}
-
-// Handle shift accept/decline directly from notification (runs outside React tree)
-async function handleShiftAction(shiftId: string, action: 'accept' | 'decline') {
-  try {
-    const token = store.getState().auth.token || await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-    if (!token) {
-      console.error('No auth token for notification action');
-      return;
-    }
-
-    const endpoint = action === 'accept'
-      ? `${API_BASE_URL}/shifts/${shiftId}/accept`
-      : `${API_BASE_URL}/shifts/${shiftId}/decline`;
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: action === 'decline' ? JSON.stringify({ reason: 'Declined from notification' }) : undefined,
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      console.log(`Shift ${action}ed successfully from notification`);
-      // Invalidate RTK Query cache so lists refresh when user opens the app
-      store.dispatch(baseApi.util.invalidateTags(['Shifts', 'Notifications']));
-
-      // Show a local confirmation notification
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: action === 'accept' ? 'Shift Accepted ✅' : 'Shift Declined',
-          body: action === 'accept'
-            ? 'You have accepted the shift. Check your schedule for details.'
-            : 'You have declined the shift.',
-        },
-        trigger: null, // show immediately
-      });
-    } else {
-      console.error(`Failed to ${action} shift:`, data.message);
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: `Could not ${action} shift`,
-          body: data.message || 'Please open the app and try again.',
-        },
-        trigger: null,
-      });
-    }
-  } catch (e) {
-    console.error(`Error handling shift ${action} from notification:`, e);
-  }
-}
 
 export function useNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
@@ -149,39 +113,31 @@ export function useNotifications() {
 
   const registerForPushNotifications = useCallback(async () => {
     try {
+      // Handle platform-specific limitations
       if (!Device.isDevice) {
-        throw new Error('Push notifications require a physical device');
+        if (Platform.OS === 'ios') {
+          console.log('[PushToken] Running on iOS simulator - push notifications may not work reliably');
+          // Continue to try, but expect limitations
+        } else {
+          console.log('[PushToken] Running on Android emulator - attempting push notifications');
+        }
       }
 
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      const { granted: existingGranted } = await Notifications.getPermissionsAsync();
+      let isGranted = existingGranted;
 
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
+      if (!isGranted) {
+        const { granted } = await Notifications.requestPermissionsAsync();
+        isGranted = granted;
       }
 
-      if (finalStatus !== 'granted') {
+      if (!isGranted) {
         throw new Error('Push notification permission denied');
       }
 
-      // Set up Android notification channels
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('shifts', {
-          name: 'Shift Notifications',
-          importance: Notifications.AndroidImportance.HIGH,
-          vibrationPattern: [0, 250, 250, 250],
-        });
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'General',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-        });
-      }
-
-      await setupNotificationCategories();
-
-     const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId: '7e3e3568-a25b-4dae-95bf-a62fe46929b3', });
+      const tokenResponse = await Notifications.getExpoPushTokenAsync({
+        projectId: '7e3e3568-a25b-4dae-95bf-a62fe46929b3',
+      });
 
       console.log('[PushToken] Expo Push Token:', tokenResponse.data);
       setExpoPushToken(tokenResponse.data);
@@ -190,7 +146,16 @@ export function useNotifications() {
       return tokenResponse.data;
     } catch (e: any) {
       console.error('[PushToken] Full Error:', e);
-      setError(e?.message ?? 'Failed to get push token');
+      const errorMessage = e?.message ?? 'Failed to get push token';
+      
+      // Provide better error messages for iOS simulators
+      if (!Device.isDevice && Platform.OS === 'ios') {
+        console.log('[PushToken] iOS simulator limitation - using mock token for development');
+        // Don't set error for iOS simulator - allow app to continue
+        return null;
+      }
+      
+      setError(errorMessage);
       return null;
     }
   }, []);
@@ -205,17 +170,20 @@ export function useNotifications() {
     ].join('-').replace(/\s+/g, '_').toLowerCase();
   }, []);
 
-  // Register token with the backend
-  const registerTokenWithBackend = useCallback(async (token: string) => {
+  // Register a token with the backend (expo = Expo format, ios/android = FCM format)
+  const registerTokenWithBackend = useCallback(async (
+    token: string,
+    platform: 'expo' | 'ios' | 'android' = 'expo',
+  ) => {
     try {
       await registerToken({
         pushToken: token,
-        platform: Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'expo',
+        platform,
         deviceId: getDeviceId(),
       }).unwrap();
-      console.log('Push token registered with backend:', token.slice(0, 20) + '...');
+      console.log(`[PushToken] Registered ${platform} token:`, token.slice(0, 20) + '...');
     } catch (e) {
-      console.error('Failed to register push token with backend:', e);
+      console.error(`[PushToken] Failed to register ${platform} token:`, e);
     }
   }, [registerToken, getDeviceId]);
 
@@ -233,54 +201,107 @@ export function useNotifications() {
     }
     console.log('[PushToken] User authenticated, registering push token...');
 
-    registerForPushNotifications().then((token) => {
-      if (token) {
+    registerForPushNotifications().then(async (expoToken) => {
+      if (expoToken) {
         hasRegistered.current = true;
-        console.log('[PushToken] Got token, registering with backend...');
-        registerTokenWithBackend(token);
+        // Register Expo token (platform = 'expo') for Expo Push Service
+        await registerTokenWithBackend(expoToken, 'expo');
+
+        // Also register FCM token (platform = 'ios'|'android') for background data messages
+        try {
+          const fcmToken = await messaging().getToken();
+          if (fcmToken) {
+            const fcmPlatform = Platform.OS === 'ios' ? 'ios' : 'android';
+            await registerTokenWithBackend(fcmToken, fcmPlatform);
+            console.log('[PushToken] FCM token registered for background support');
+          }
+        } catch (fcmErr) {
+          console.warn('[PushToken] FCM token unavailable (Firebase not configured?):', fcmErr);
+        }
       } else {
         hasRegistered.current = false;
-        console.log('[PushToken] Failed to get token');
+        console.log('[PushToken] Failed to get Expo token');
       }
     });
   }, [isAuthenticated, registerForPushNotifications, registerTokenWithBackend]);
 
-  // Set up foreground/response listeners once on mount
+  // Set up Notifee channels + expo categories, then attach listeners
   useEffect(() => {
+    // Notifee: create Android channels and iOS categories
+    setupNotifeeChannels().catch(console.error);
 
+    // Notifee foreground event handler (action buttons on Notifee-displayed notifications)
+    const unsubscribeNotifee = notifee.onForegroundEvent(handleNotifeeEvent);
+
+    // expo-notifications: update state when a notification arrives in foreground
+    // (actual display is handled by Notifee via setNotificationHandler above)
     notificationListener.current = Notifications.addNotificationReceivedListener((n) => {
       setNotification(n);
     });
 
+    // expo-notifications: handle taps / background action buttons
+    // (Notifee handles foreground button presses via onForegroundEvent)
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const actionId = response.actionIdentifier;
       const data = response.notification.request.content.data as Record<string, any>;
       const shiftId = data?.shiftId as string | undefined;
 
-      // Handle Accept/Decline action buttons pressed from notification
+      // Background expo category buttons (accept_shift / decline_shift)
       if (shiftId && actionId === 'accept_shift') {
-        handleShiftAction(shiftId, 'accept');
+        handleShiftApiCall(shiftId, 'accept').catch(console.error);
         return;
       }
       if (shiftId && actionId === 'decline_shift') {
-        handleShiftAction(shiftId, 'decline');
+        handleShiftApiCall(shiftId, 'decline').catch(console.error);
         return;
       }
 
-      // Default tap (opened the app) — pass to deep linking handler
-      console.log('Notification tapped:', data);
+      // Default tap — pass to deep linking handler
+      console.log('[Notification] Tapped:', data);
       setLastNotificationResponse(response);
     });
 
     return () => {
-      if (notificationListener.current) {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current) {
-        responseListener.current.remove();
-      }
+      unsubscribeNotifee();
+      if (notificationListener.current) notificationListener.current.remove();
+      if (responseListener.current) responseListener.current.remove();
     };
-  }, [registerForPushNotifications, registerTokenWithBackend]);
+  }, []);
 
-  return { expoPushToken, notification, lastNotificationResponse, error, registerForPushNotifications };
+  // Badge count management
+  const setBadgeCount = useCallback(async (count: number) => {
+    try {
+      await Notifications.setBadgeCountAsync(count);
+    } catch (error) {
+      console.error('Failed to set badge count:', error);
+    }
+  }, []);
+
+  const clearBadgeCount = useCallback(async () => {
+    try {
+      await Notifications.setBadgeCountAsync(0);
+    } catch (error) {
+      console.error('Failed to clear badge count:', error);
+    }
+  }, []);
+
+  const getBadgeCount = useCallback(async (): Promise<number> => {
+    try {
+      return await Notifications.getBadgeCountAsync();
+    } catch (error) {
+      console.error('Failed to get badge count:', error);
+      return 0;
+    }
+  }, []);
+
+  return { 
+    expoPushToken, 
+    notification, 
+    lastNotificationResponse, 
+    error, 
+    registerForPushNotifications,
+    setBadgeCount,
+    clearBadgeCount,
+    getBadgeCount
+  };
 }

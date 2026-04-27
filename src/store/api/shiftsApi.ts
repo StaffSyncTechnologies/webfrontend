@@ -15,7 +15,7 @@ export interface Shift {
   breakMinutes?: number;
   hourlyRate?: number;
   payRate?: number;
-  status: 'DRAFT' | 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   workersNeeded?: number;
   role?: string;
   notes?: string;
@@ -31,6 +31,8 @@ export interface Shift {
     longitude: number;
     geofenceRadius: number;
   };
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  createdAt: string;
   assignments?: Array<{
     id: string;
     workerId: string;
@@ -40,8 +42,8 @@ export interface Shift {
   attendances?: Array<{
     id: string;
     workerId: string;
-    clockInTime?: string;
-    clockOutTime?: string;
+    clockInAt?: string;
+    clockOutAt?: string;
     status: string;
   }>;
   broadcasts?: Array<{
@@ -56,11 +58,58 @@ export interface Shift {
 export interface AttendanceRecord {
   id: string;
   shiftId: string;
-  clockInTime?: string;
-  clockOutTime?: string;
-  status: 'PENDING' | 'CLOCKED_IN' | 'CLOCKED_OUT' | 'APPROVED' | 'FLAGGED';
+  clockInAt?: string;
+  clockOutAt?: string;
+  status: 'PENDING' | 'APPROVED' | 'FLAGGED';
   totalHours?: number;
   totalPay?: number;
+}
+
+export interface TimesheetEntry {
+  shiftId: string;
+  shiftTitle: string;
+  location: string | null;
+  client: string | null;
+  scheduledStart: string;
+  scheduledEnd: string;
+  hourlyRate: number | null;
+  breakMinutes: number;
+  clockInAt: string | null;
+  clockOutAt: string | null;
+  hoursWorked: number | null;
+  status: 'PENDING' | 'APPROVED' | 'FLAGGED' | 'UPCOMING' | 'MISSED';
+  flagReason: string | null;
+  geofenceValid: boolean | null;
+}
+
+export interface TimesheetDay {
+  dayName: string;
+  date: string;
+  isToday: boolean;
+  entries: TimesheetEntry[];
+  totalHours: number;
+  totalEarnings: number;
+}
+
+export interface TimesheetData {
+  weekStart: string;
+  weekEnd: string;
+  summary: {
+    totalHours: number;
+    totalEarnings: number;
+    shiftsWorked: number;
+    shiftsScheduled: number;
+    approved: number;
+    pending: number;
+    flagged: number;
+  };
+  monthly: {
+    monthName: string;
+    totalHours: number;
+    totalEarnings: number;
+    shiftsWorked: number;
+  };
+  days: TimesheetDay[];
 }
 
 export const shiftsApi = baseApi.injectEndpoints({
@@ -86,11 +135,23 @@ export const shiftsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Shifts'],
     }),
     clockIn: builder.mutation<{ success: boolean; data: AttendanceRecord }, { shiftId: string; lat?: number; lng?: number }>({
-      query: ({ shiftId, lat, lng }) => ({ url: SHIFTS.CLOCK_IN(shiftId), method: 'POST', body: { lat, lng } }),
+      query: ({ shiftId, lat, lng }) => {
+        console.log('🔍 CLOCK-IN MUTATION: Sending request:', { shiftId, lat, lng });
+        console.log('🔍 CLOCK-IN MUTATION: Body:', { latitude: lat, longitude: lng });
+        return {
+          url: SHIFTS.CLOCK_IN(shiftId), 
+          method: 'POST', 
+          body: { latitude: lat, longitude: lng } 
+        };
+      },
       invalidatesTags: ['Shifts', 'Attendance'],
     }),
     clockOut: builder.mutation<{ success: boolean; data: AttendanceRecord }, { shiftId: string; lat?: number; lng?: number }>({
-      query: ({ shiftId, lat, lng }) => ({ url: SHIFTS.CLOCK_OUT(shiftId), method: 'POST', body: { lat, lng } }),
+      query: ({ shiftId, lat, lng }) => ({ 
+        url: SHIFTS.CLOCK_OUT(shiftId), 
+        method: 'POST', 
+        body: { latitude: lat, longitude: lng } 
+      }),
       invalidatesTags: ['Shifts', 'Attendance'],
     }),
     getMyAttendanceStatus: builder.query<{ success: boolean; data: AttendanceRecord | null }, void>({
@@ -99,6 +160,13 @@ export const shiftsApi = baseApi.injectEndpoints({
     }),
     getMyAttendanceHistory: builder.query<{ success: boolean; data: AttendanceRecord[] }, void>({
       query: () => ATTENDANCE.MY_HISTORY,
+      providesTags: ['Attendance'],
+    }),
+    getMyTimesheet: builder.query<{ success: boolean; data: TimesheetData }, { weekStart?: string } | void>({
+      query: (params) => ({
+        url: ATTENDANCE.MY_TIMESHEET,
+        params: params ? { weekStart: params.weekStart } : undefined,
+      }),
       providesTags: ['Attendance'],
     }),
   }),
@@ -114,4 +182,5 @@ export const {
   useClockOutMutation,
   useGetMyAttendanceStatusQuery,
   useGetMyAttendanceHistoryQuery,
+  useGetMyTimesheetQuery,
 } = shiftsApi;

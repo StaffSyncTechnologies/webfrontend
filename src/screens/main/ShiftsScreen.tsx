@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
 import { useOrgTheme } from '../../contexts';
-import { H2, Body, Caption, ShiftCard } from '../../components/ui';
+import { H2, Body, Caption, ShiftCard, TabScreenHeader } from '../../components/ui';
 import { useGetShiftsQuery } from '../../store/api/shiftsApi';
 import type { ShiftCardData } from '../../components/ui';
 
@@ -64,9 +64,11 @@ export function ShiftsScreen({ navigation }: MainTabScreenProps<'Shifts'>) {
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="items-center py-4">
-        <H2>Shifts</H2>
-      </View>
+      <TabScreenHeader
+        title="Shifts"
+        subtitle="Available shifts for you"
+        showOrgBranding={true}
+      />
 
       {/* Search Bar */}
       <View className="px-5 pb-3">

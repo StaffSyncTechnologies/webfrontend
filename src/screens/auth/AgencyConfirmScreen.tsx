@@ -88,7 +88,7 @@ export function AgencyConfirmScreen({ navigation, route }: Props) {
           <Image
             source={logoUrl 
               ? { uri: logoUrl } 
-              : require('../../../assets/staffsync-logo.png')
+              : require('../../../assets/logo.png')
             }
             style={{ width: 80, height: 80 }}
             resizeMode="contain"

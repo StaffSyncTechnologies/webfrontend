@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
 import { useOrgTheme } from '../../contexts';
-import { H2, H3, Body, Caption } from '../../components/ui';
+import { H2, H3, Body, Caption, TabScreenHeader } from '../../components/ui';
 import { useGetPayslipListQuery } from '../../store/api/workerApi';
 
 type PayslipStatus = 'pending' | 'processed';
@@ -28,13 +28,16 @@ export function PayslipScreen({ navigation }: MainTabScreenProps<'Payslip'>) {
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 py-4">
-        <View className="w-6" />
-        <H2>Payslip</H2>
-        <TouchableOpacity>
-          <Ionicons name="options-outline" size={22} color="#000035" />
-        </TouchableOpacity>
-      </View>
+      <TabScreenHeader
+        title="Payslip"
+        subtitle="View your earnings and payslips"
+        showOrgBranding={true}
+        rightAction={
+          <TouchableOpacity>
+            <Ionicons name="options-outline" size={22} color="#000035" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {isLoading ? (

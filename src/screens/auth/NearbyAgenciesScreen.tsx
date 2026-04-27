@@ -72,7 +72,9 @@ export function NearbyAgenciesScreen({ navigation }: Props) {
         if (debouncedCity) params.set('city', debouncedCity);
 
         const url = `${API_BASE_URL}/agencies/nearby?${params.toString()}`;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: { 'X-API-Key': process.env.EXPO_PUBLIC_API_KEY || '' },
+        });
         const json = await res.json();
         setAgencies(json.data ?? []);
       } catch (err) {

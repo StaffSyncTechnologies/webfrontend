@@ -9,6 +9,7 @@ interface InputProps extends TextInputProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   containerClassName?: string;
+  className?: string;
   required?: boolean;
 }
 
@@ -52,6 +53,7 @@ export function Input({
           placeholderTextColor={placeholderColor}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          style={{ color: isDark ? '#FFFFFF' : '#000000' }}
           {...props}
         />
         {rightIcon && <View className="ml-3">{rightIcon}</View>}

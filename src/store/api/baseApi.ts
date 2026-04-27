@@ -9,6 +9,12 @@ const AUTH_TOKEN_KEY = '@staffsync_auth_token';
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: async (headers, { getState }) => {
+    // Add API key for all requests
+    const apiKey = process.env.EXPO_PUBLIC_API_KEY;
+    if (apiKey) {
+      headers.set('X-API-Key', apiKey);
+    }
+
     // Try to get token from Redux state first
     const state = getState() as RootState;
     let token = state.auth.token;
@@ -43,6 +49,8 @@ export const baseApi = createApi({
     'Skills',
     'Notifications',
     'Holidays',
+    'RecurringSchedules',
+    'ScheduleChangeRequests',
   ],
   endpoints: () => ({}),
 });

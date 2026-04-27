@@ -61,8 +61,25 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
 
     socket.emit('chat:join', { roomId });
 
-    const handleMessage = (message: ChatMessage) => {
-      onNewMessage?.(message);
+    const handleMessage = (message: any) => {
+      // Transform backend message format to frontend ChatMessage interface
+      const transformedMessage: ChatMessage = {
+        id: message.id || crypto.randomUUID(),
+        chatRoomId: message.chatRoomId || '',
+        senderId: message.senderId || '',
+        content: message.content || '',
+        messageType: message.messageType || 'TEXT' as any,
+        status: message.status || 'SENT' as const,
+        createdAt: message.createdAt || new Date().toISOString(),
+        readAt: message.readAt || null,
+        sender: message.sender || {
+          id: message.senderId || '',
+          fullName: '', // Backend doesn't send sender name in socket message
+          role: message.senderType || 'user' // Use senderType as role if available
+        },
+        attachments: message.attachments || []
+      };
+      onNewMessage?.(transformedMessage);
     };
 
     const handleTyping = (data: { userId: string; isTyping: boolean }) => {
@@ -87,7 +104,11 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
 
   const sendMessage = useCallback((content: string) => {
     if (!socketRef.current || !roomId) return;
-    socketRef.current.emit('chat:message', { roomId, content });
+    socketRef.current.emit('chat:message', { 
+      roomId: roomId,
+      content: content,
+      attachments: []
+    });
   }, [roomId]);
 
   const sendTyping = useCallback((isTyping: boolean) => {

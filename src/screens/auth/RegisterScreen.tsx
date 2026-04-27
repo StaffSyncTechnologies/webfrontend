@@ -68,7 +68,7 @@ export function RegisterScreen({ navigation, route }: Props) {
           <Image
             source={orgTheme?.logoUrl 
               ? { uri: orgTheme.logoUrl } 
-              : require('../../../assets/staffsync-logo.png')
+              : require('../../../assets/logo.png')
             }
             className="w-14 h-14"
             resizeMode="contain"

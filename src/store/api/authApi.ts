@@ -34,6 +34,11 @@ export interface WorkerSaveProfileRequest {
   niNumber: string;
 }
 
+export interface WorkerSaveSkillsRequest {
+  email: string;
+  skillIds: string[];
+}
+
 export interface SaveBankAccountRequest {
   accountHolder: string;
   bankName: string;
@@ -52,6 +57,11 @@ export interface Worker {
   rtwStatus?: string;
   onboardingStep?: number;
   organizationId: string;
+  workerProfile?: {
+    dateOfBirth?: string;
+    address?: string;
+    postcode?: string;
+  };
   organization?: {
     id: string;
     name: string;
@@ -195,6 +205,15 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Save worker skills (onboarding Step 2)
+    workerSaveSkills: builder.mutation<{ success: boolean; message: string }, WorkerSaveSkillsRequest>({
+      query: (body) => ({
+        url: AUTH.WORKER_SAVE_SKILLS,
+        method: 'POST',
+        body,
+      }),
+    }),
+
     // Save bank account details (onboarding Step 4)
     saveBankAccount: builder.mutation<{ success: boolean; message: string }, SaveBankAccountRequest>({
       query: (body) => ({
@@ -253,6 +272,7 @@ export const {
   useWorkerVerifyOtpMutation,
   useWorkerRegisterMutation,
   useWorkerSaveProfileMutation,
+  useWorkerSaveSkillsMutation,
   useSaveBankAccountMutation,
   useGetMeQuery,
   useUpdateMeMutation,

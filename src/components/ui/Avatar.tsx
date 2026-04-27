@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Image, Text } from 'react-native';
+import {  API_BASE } from '../../services/endpoints';
+import { AuthenticatedImage } from './AuthenticatedImage';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -28,10 +30,14 @@ function getInitials(name?: string): string {
 export function Avatar({ source, name, size = 'md', className = '' }: AvatarProps) {
   const { container, text } = sizeClasses[size];
 
-  if (source) {
+  const imageUrl = source 
+    ? (source.startsWith('http') ? source : `${API_BASE}${source}`)
+    : null;
+
+  if (imageUrl) {
     return (
       <Image
-        source={{ uri: source }}
+        source={{ uri: imageUrl }}
         className={`${container} rounded-full ${className}`}
         resizeMode="cover"
       />

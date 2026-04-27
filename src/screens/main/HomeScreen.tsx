@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
 import { useAppSelector } from '../../store/hooks';
 import { useOrgTheme } from '../../contexts';
-import { H2, H3, Body, Caption, Card, Button, ShiftCard, HolidayCard } from '../../components/ui';
+import { H2, H3, Body, Caption, Button, HolidayCard, DashboardHeader, ShiftCard } from '../../components/ui';
 import { useGetHomeQuery } from '../../store/api/workerApi';
 import { useGetUnreadCountQuery } from '../../store/api/notificationsApi';
 import type { ShiftCardData, HolidayCardData } from '../../components/ui';
@@ -130,12 +130,8 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
       >
 
         {/* Header */}
-        <View className="flex-row justify-between items-center px-5 pt-4 pb-3">
-          <View>
-            <Body color="secondary" className="mb-0.5">{homeData?.greeting ?? t('home.greeting')},</Body>
-            <H2>{homeData?.worker.firstName || worker?.fullName || 'Worker'}</H2>
-          </View>
-          <View className="flex-row items-center gap-3">
+        <DashboardHeader
+          rightAction={
             <TouchableOpacity
               className="w-11 h-11 rounded-full border border-light-border-light dark:border-dark-border-light items-center justify-center"
               onPress={() => navigation.getParent()?.navigate('Notifications')}
@@ -164,7 +160,13 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
                 </View>
               )}
             </TouchableOpacity>
-          </View>
+          }
+        />
+
+        {/* Personal Greeting */}
+        <View className="px-5 pb-3">
+          <Body color="secondary" className="mb-0.5">{homeData?.greeting ?? t('home.greeting')},</Body>
+          <H2>{homeData?.worker.firstName || worker?.fullName || 'Worker'}</H2>
         </View>
 
         {/* THIS WEEK Stats */}
@@ -277,7 +279,11 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             {/* Show appropriate button based on shift state */}
             {!isShiftElapsed(todayShift) && !todayShift.clockedIn && (
               <Button
-                onPress={() => navigation.getParent()?.navigate('ClockIn', { shiftId: todayShift.id })}
+                onPress={() => navigation.getParent()?.navigate('ClockIn', {
+                  shiftId: todayShift.id,
+                  isRecurring: !!todayShift.recurringScheduleId,
+                  recurringScheduleId: todayShift.recurringScheduleId,
+                })}
                 leftIcon={<Ionicons name="log-in-outline" size={20} color="#FFFFFF" />}
               >
                 {t('shifts.clockIn')}
@@ -285,7 +291,11 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
             )}
             {!isShiftElapsed(todayShift) && todayShift.clockedIn && !todayShift.clockedOut && (
               <Button
-                onPress={() => navigation.getParent()?.navigate('ClockIn', { shiftId: todayShift.id })}
+                onPress={() => navigation.getParent()?.navigate('ClockIn', {
+                  shiftId: todayShift.id,
+                  isRecurring: !!todayShift.recurringScheduleId,
+                  recurringScheduleId: todayShift.recurringScheduleId,
+                })}
                 leftIcon={<Ionicons name="log-out-outline" size={20} color="#FFFFFF" />}
               >
                 {t('shifts.clockOut')}
@@ -320,8 +330,27 @@ export function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
           </View>
         )}
 
-        {/* Book Holidays */}
+        {/* Timesheet Summary */}
         <View className="px-5 pt-5">
+          <TouchableOpacity
+            className="flex-row items-center p-4 rounded-2xl"
+            style={{ backgroundColor: `${primaryColor}08`, borderWidth: 1, borderColor: `${primaryColor}20` }}
+            onPress={() => navigation.getParent()?.navigate('Timesheet')}
+            activeOpacity={0.7}
+          >
+            <View className="w-11 h-11 rounded-xl items-center justify-center mr-3.5" style={{ backgroundColor: `${primaryColor}15` }}>
+              <Ionicons name="document-text-outline" size={20} color={primaryColor} />
+            </View>
+            <View className="flex-1">
+              <Body className="font-outfit-semibold">{t('home.stats.hours')} — {String(homeData?.weeklyStats.hoursWorked ?? 0)}h this week</Body>
+              <Caption color="secondary">View full timesheet</Caption>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Book Holidays */}
+        <View className="px-5 pt-3">
           <TouchableOpacity
             className="flex-row items-center p-4 rounded-2xl"
             style={{ backgroundColor: `${primaryColor}08`, borderWidth: 1, borderColor: `${primaryColor}20` }}

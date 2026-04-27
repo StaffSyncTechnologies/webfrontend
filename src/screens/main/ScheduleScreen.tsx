@@ -91,11 +91,15 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
   const { data: scheduleResponse, isLoading, isFetching, refetch } = useGetMyScheduleQuery({ from, to }, { refetchOnMountOrArgChange: true });
 
   // Fetch recurring schedules and schedule change requests
-  const { data: recurringSchedulesResponse, refetch: refetchRecurringSchedules } = useGetMyRecurringSchedulesQuery(undefined, { refetchOnMountOrArgChange: true });
-  const { data: scheduleChangeRequestsResponse } = useGetMyScheduleChangeRequestsQuery(undefined, { refetchOnMountOrArgChange: true });
-  const recurringSchedules = Array.isArray(recurringSchedulesResponse) ? recurringSchedulesResponse : recurringSchedulesResponse?.data || [];
-  const scheduleChangeRequests = Array.isArray(scheduleChangeRequestsResponse) ? scheduleChangeRequestsResponse : scheduleChangeRequestsResponse?.data || [];
+  const { data: recurringSchedules, error: recurringError, isLoading: recurringLoading, refetch: refetchRecurringSchedules } = useGetMyRecurringSchedulesQuery(undefined, { refetchOnMountOrArgChange: true });
+  const { data: scheduleChangeRequests } = useGetMyScheduleChangeRequestsQuery(undefined, { refetchOnMountOrArgChange: true });
 
+  console.log('ScheduleScreen - Recurring schedules data:', {
+    recurringSchedules,
+    recurringSchedulesLength: recurringSchedules?.length || 0,
+    recurringLoading,
+    recurringError,
+  });
 
   // Group shifts by day-of-month
   const shiftsByDay = useMemo(() => {
@@ -359,12 +363,12 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
         {/* Recurring Schedules Section */}
         <View className="px-5 pt-4">
           <H3 className="mb-3">Recurring Schedules</H3>
-          {recurringSchedules.length === 0 ? (
+          {(recurringSchedules || []).length === 0 ? (
             <View className="items-center py-4">
               <Caption color="muted">No recurring schedules</Caption>
             </View>
           ) : (
-            recurringSchedules.map((schedule) => (
+            (recurringSchedules || []).map((schedule) => (
               <TouchableOpacity
                 key={schedule.id}
                 className="mb-3 p-4 bg-white dark:bg-dark-card rounded-lg border border-light-border-light dark:border-dark-border-light"
@@ -404,12 +408,12 @@ export function ScheduleScreen({ navigation }: MainTabScreenProps<'Schedule'>) {
         {/* Schedule Change Requests Section */}
         <View className="px-5 pt-4">
           <H3 className="mb-3">Schedule Change Requests</H3>
-          {scheduleChangeRequests.length === 0 ? (
+          {(scheduleChangeRequests || []).length === 0 ? (
             <View className="items-center py-4">
               <Caption color="muted">No schedule change requests</Caption>
             </View>
           ) : (
-            scheduleChangeRequests.map((request: ScheduleChangeRequest) => (
+            (scheduleChangeRequests || []).map((request: ScheduleChangeRequest) => (
               <View key={request.id} className="mb-3 p-4 bg-white dark:bg-dark-card rounded-lg border border-light-border-light dark:border-dark-border-light">
                 <Body className="font-outfit-semibold mb-1">{request.recurringSchedule.title}</Body>
                 {request.workerNote && (

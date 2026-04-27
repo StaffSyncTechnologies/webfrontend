@@ -33,8 +33,10 @@ export function OrgThemeProvider({ children }: { children: ReactNode }) {
   const secondaryColor = orgTheme?.secondaryColor || defaultSecondaryColor;
 
   const setOrgTheme = useCallback((theme: OrgTheme) => {
+    console.log('Setting org theme:', theme);
     setOrgThemeState(theme);
     AsyncStorage.setItem(ORG_THEME_KEY, JSON.stringify(theme));
+    console.log('Org theme saved to AsyncStorage');
   }, []);
 
   const clearOrgTheme = useCallback(() => {
@@ -44,11 +46,20 @@ export function OrgThemeProvider({ children }: { children: ReactNode }) {
 
   const loadOrgTheme = useCallback(async () => {
     try {
+      console.log('Loading org theme from AsyncStorage...');
       const stored = await AsyncStorage.getItem(ORG_THEME_KEY);
+      console.log('Stored theme data:', stored);
       if (stored) {
-        setOrgThemeState(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        console.log('Parsed theme:', parsed);
+        setOrgThemeState(parsed);
+        console.log('Org theme loaded successfully');
+      } else {
+        console.log('No stored theme found');
       }
-    } catch {}
+    } catch (error) {
+      console.log('Error loading org theme:', error);
+    }
   }, []);
 
   return (

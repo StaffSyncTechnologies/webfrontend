@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
-import { ShiftDetailsScreen, ShiftConfirmedScreen, ClockInScreen, PayslipDetailScreen, HolidaysScreen, RequestHolidayScreen, HolidayRequestSubmittedScreen, HolidayDetailScreen, PrivacyPolicyScreen, ChatListScreen, ChatScreen, AppearanceScreen, NotificationSettingsScreen, SkillsCertificateScreen, ProfileDetailsScreen, RightToWorkScreen, LanguageScreen, NotificationsScreen } from '../screens';
+import { ShiftDetailsScreen, ShiftConfirmedScreen, ClockInScreen, PayslipDetailScreen, HolidaysScreen, RequestHolidayScreen, HolidayRequestSubmittedScreen, HolidayDetailScreen, PrivacyPolicyScreen, ChatListScreen, ChatScreen, AppearanceScreen, NotificationSettingsScreen, SkillsCertificateScreen, ProfileDetailsScreen, RightToWorkScreen, LanguageScreen, NotificationsScreen, TimesheetScreen, ScheduleChangeRequestScreen } from '../screens';
 import { ChangePasswordScreen } from '../screens/ChangePasswordScreen';
 import { SubscriptionExpiredScreen } from '../screens/SubscriptionExpiredScreen';
 import { RTWBlockerModal } from '../components/RTWBlockerModal';
@@ -166,6 +166,16 @@ export function RootNavigator({ isAuthenticated = false }: RootNavigatorProps) {
       <Stack.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="Timesheet"
+        component={TimesheetScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="ScheduleChangeRequest"
+        component={ScheduleChangeRequestScreen}
         options={{ animation: 'slide_from_right', presentation: 'card' }}
       />
     </Stack.Navigator>

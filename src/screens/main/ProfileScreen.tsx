@@ -1,22 +1,26 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, Alert, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabScreenProps } from '../../types/navigation';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { useAuth } from '../../hooks/useAuth';
-import { H2, H3, Body, Caption } from '../../components/ui';
+import { H2, H3, Body, Caption, TabScreenHeader } from '../../components/ui';
+import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage';
 import { useGetMeQuery } from '../../store/api/authApi';
-import { useGetMyRTWQuery } from '../../store/api/workerApi';
+import { useGetMyRTWQuery, useDeleteMyAccountMutation } from '../../store/api/workerApi';
+import { API_BASE } from '../../services/endpoints';
 
 import { useTranslation } from 'react-i18next';
 
 interface MenuItem {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
-  route: string;
+  route?: string;
   subtitle?: string;
   subtitleColor?: string;
+  onPress?: () => void;
+  destructive?: boolean;
 }
 
 interface MenuSection {
@@ -43,18 +47,72 @@ function getRTWSubtitle(status?: string, expiresAt?: string | null): { subtitle:
 
 export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
   const insets = useSafeAreaInsets();
-  const worker = useAppSelector((state) => state.auth.worker);
+  const isDark = useColorScheme() === 'dark';
+  const workerData = useAppSelector((state) => state.auth.worker);
   const { logout } = useAuth();
-  const { data: profile } = useGetMeQuery();
+  const { data: profile, refetch: refetchMe } = useGetMeQuery();
   const { data: rtw } = useGetMyRTWQuery();
   const { t } = useTranslation();
+  const [deleteMyAccount, { isLoading: isDeleting }] = useDeleteMyAccountMutation();
 
-  const displayName = profile?.data?.fullName || worker?.fullName || 'Worker';
-  const employeeId = profile?.data?.id ? profile.data.id.slice(-8).toUpperCase() : '--------';
-  const profilePicUrl = worker?.profilePicUrl || null;
+  // Use fresh data from API if available, fallback to Redux store
+  const worker = profile?.data || workerData;
+
+  const displayName = profile?.data?.fullName || workerData?.fullName || 'Worker';
+  const employeeId = profile?.data?.id && typeof profile.data.id === 'string' 
+    ? profile.data.id.slice(-8).toUpperCase() 
+    : workerData?.id && typeof workerData.id === 'string'
+      ? workerData.id.slice(-8).toUpperCase()
+      : '--------';
+  const profilePicUrl = worker?.profilePicUrl && typeof worker.profilePicUrl === 'string'
+    ? (worker.profilePicUrl.startsWith('http') 
+        ? worker.profilePicUrl 
+        : `${API_BASE}${worker.profilePicUrl}`)
+    : null;
+
+  // Force refetch on component mount to get latest data
+  React.useEffect(() => {
+    refetchMe();
+  }, [refetchMe]);
+
+  // Check if current user has profile picture
+  React.useEffect(() => {
+    if (worker?.email && !worker?.profilePicUrl) {
+      refetchMe();
+    }
+  }, [worker, refetchMe]);
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMyAccount().unwrap();
+              // Logout after successful deletion
+              logout();
+            } catch (error: any) {
+              Alert.alert(
+                'Deletion Failed',
+                error?.data?.message || 'Failed to delete account. Please try again.'
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const rtwData = rtw?.data;
@@ -86,6 +144,12 @@ export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
         { icon: 'document-text-outline', label: t('profile.termsCondition'), route: 'PrivacyPolicy' },
       ],
     },
+    {
+      title: 'Danger Zone',
+      items: [
+        { icon: 'trash-outline', label: 'Delete Account', onPress: handleDeleteAccount, destructive: true },
+      ],
+    },
   ];
 
 
@@ -94,16 +158,21 @@ export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="items-center py-4">
-          <H2>{t('profile.title')}</H2>
-        </View>
+        <TabScreenHeader
+          title={t('profile.title')}
+          subtitle="Manage your account and settings"
+          showOrgBranding={true}
+        />
 
         {/* Avatar + Name */}
         <View className="flex-row items-center px-5 pb-5">
           <View className="relative mr-4">
             <View className="w-16 h-16 rounded-full bg-gray-300 items-center justify-center overflow-hidden">
               {profilePicUrl ? (
-                <Image source={{ uri: profilePicUrl }} className="w-16 h-16" />
+                <Image 
+                  source={{ uri: profilePicUrl }} 
+                  className="w-16 h-16" 
+                />
               ) : (
                 <Ionicons name="person" size={28} color="#6B7280" />
               )}
@@ -127,21 +196,26 @@ export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
               <TouchableOpacity
                 key={index}
                 className="flex-row items-center py-3.5"
-                onPress={() => navigation.getParent()?.navigate(item.route as any)}
+                onPress={item.onPress || (() => navigation.getParent()?.navigate(item.route as any))}
                 activeOpacity={0.6}
+                disabled={isDeleting}
               >
-                <View className="w-9 h-9 rounded-full items-center justify-center mr-3" style={{ backgroundColor: '#F3F4F6' }}>
-                  <Ionicons name={item.icon} size={18} color="#374151" />
+                <View className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${item.destructive ? 'bg-red-100 dark:bg-red-900/30' : ''}`} style={{ backgroundColor: item.destructive ? undefined : (isDark ? '#2D2D44' : '#F3F4F6') }}>
+                  <Ionicons name={item.icon} size={18} color={item.destructive ? '#DC2626' : (isDark ? '#E5E7EB' : '#374151')} />
                 </View>
                 <View className="flex-1">
-                  <Body>{item.label}</Body>
+                  <Body style={{ color: item.destructive ? '#DC2626' : undefined }}>{item.label}</Body>
                   {item.subtitle && (
                     <Caption className="font-outfit-semibold" style={{ color: item.subtitleColor || '#6B7280' }}>
                       {item.subtitle}
                     </Caption>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                {item.destructive ? (
+                  <Ionicons name="chevron-forward" size={18} color="#DC2626" />
+                ) : (
+                  <Ionicons name="chevron-forward" size={18} color={isDark ? '#6B6B80' : '#9CA3AF'} />
+                )}
               </TouchableOpacity>
             ))}
           </View>

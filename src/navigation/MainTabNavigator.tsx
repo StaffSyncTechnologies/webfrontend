@@ -61,11 +61,13 @@ export function MainTabNavigator() {
           options={{
             tabBarIcon: ({ focused }) => (
               <View style={styles.tabIconContainer}>
-                <Ionicons
-                  name={focused ? tab.iconFilled : tab.iconOutline}
-                  size={22}
-                  color={focused ? primaryColor : '#9CA3AF'}
-                />
+                <View style={styles.iconWrapper}>
+                  <Ionicons
+                    name={focused ? tab.iconFilled : tab.iconOutline}
+                    size={22}
+                    color={focused ? primaryColor : '#9CA3AF'}
+                  />
+                </View>
                 <Text style={[styles.tabLabel, focused && { color: primaryColor, fontWeight: '700' }]}>
                   {tab.label}
                 </Text>
@@ -96,6 +98,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 56,
+  },
+  iconWrapper: {
+    position: 'relative',
   },
   tabLabel: {
     fontSize: 10,

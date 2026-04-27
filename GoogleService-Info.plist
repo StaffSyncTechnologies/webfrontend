@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBe2RDc0o2M6uRyL2wgrks9X17CYpyfsiE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>185671754262</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.staffsynctech.worker</string>
+	<key>PROJECT_ID</key>
+	<string>staffsync-bd55b</string>
+	<key>STORAGE_BUCKET</key>
+	<string>staffsync-bd55b.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:185671754262:ios:49a44269eeb966768d4b37</string>
+</dict>
+</plist>

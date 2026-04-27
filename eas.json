@@ -21,16 +21,17 @@
       "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release",
-        "distribution": "store"
+        "distribution": "store",
+        "credentialsSource": "local"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "oluwasuyibabayomi@gmail.com",
-        "appleTeamId": "VX57T796G5",
-        "ascAppId": "YOUR_APP_STORE_APP_ID"
+       "appleId": "info@staffsynctech.co.uk",
+       "appleTeamId": "HJAT84G2DZ",
+       "ascAppId": "6762914137"
       }
     }
   }

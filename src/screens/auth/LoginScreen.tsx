@@ -14,12 +14,24 @@ type Props = AuthStackScreenProps<'Login'>;
 export function LoginScreen({ navigation }: Props) {
   const toast = useToast();
   const { t } = useTranslation();
-  const { primaryColor, orgTheme, setOrgTheme } = useOrgTheme();
+  const { primaryColor, orgTheme, setOrgTheme, loadOrgTheme } = useOrgTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [login, { isLoading }] = useWorkerPasswordLoginMutation();
+  const [logoError, setLogoError] = useState(false);
+
+  // Debug logo URL and organization theme
+  console.log('orgTheme.logoUrl:', orgTheme?.logoUrl);
+  console.log('Full orgTheme:', orgTheme);
+  console.log('orgTheme exists:', !!orgTheme);
+
+  const handleTestThemeLoad = async () => {
+    console.log('Manual theme load test...');
+    await loadOrgTheme();
+    console.log('Theme load test completed');
+  };
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -40,16 +52,26 @@ export function LoginScreen({ navigation }: Props) {
 
     try {
       const result = await login({ email: email.trim(), password }).unwrap();
+      console.log('Login result:', result);
+      console.log('Worker data:', result.data?.worker);
+      console.log('Organization data:', result.data?.worker?.organization);
+      
       if (result.success && result.data?.token) {
         const org = result.data.worker?.organization;
+        console.log('Org variable:', org);
+        console.log('org.logoUrl raw:', org?.logoUrl);
+        console.log('buildFileUrl result:', buildFileUrl(org?.logoUrl));
+        
         if (org) {
-          setOrgTheme({
+          const themeData = {
             organizationId: org.id,
             organizationName: org.name,
             logoUrl: buildFileUrl(org.logoUrl),
             primaryColor: org.primaryColor || '#000035',
             secondaryColor: org.secondaryColor,
-          });
+          };
+          console.log('Setting orgTheme with:', themeData);
+          setOrgTheme(themeData);
         }
         toast.success('Login successful');
 
@@ -63,9 +85,34 @@ export function LoginScreen({ navigation }: Props) {
       }
     } catch (err: any) {
       console.error('Login error:', JSON.stringify(err, null, 2));
-      const message = err?.data?.error || err?.data?.message || err?.message || 'Invalid email or password';
-      toast.error(message);
-      setErrors({ password: message });
+      
+      // Extract the actual error message from backend response
+      let errorMessage = 'Invalid email or password';
+      
+      if (err?.status === 401 && err?.data?.error) {
+        // Backend error format: { status: 401, data: { success: false, error: "Specific message", code: "ERROR_CODE" } }
+        errorMessage = err.data.error;
+        
+        // Set specific field errors based on error code
+        if (err.data.code === 'USER_NOT_FOUND') {
+          setErrors({ email: errorMessage });
+        } else if (err.data.code === 'INCORRECT_PASSWORD') {
+          setErrors({ password: errorMessage });
+        } else {
+          setErrors({ password: errorMessage });
+        }
+      } else if (err?.data?.error) {
+        errorMessage = err.data.error;
+        setErrors({ password: errorMessage });
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+        setErrors({ password: errorMessage });
+      } else if (err?.message) {
+        errorMessage = err.message;
+        setErrors({ password: errorMessage });
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -74,11 +121,12 @@ export function LoginScreen({ navigation }: Props) {
       {/* Top Section */}
       <View className="flex-1 justify-start pt-8">
         {/* Agency Logo (falls back to StaffSync logo) */}
-        {orgTheme?.logoUrl ? (
+        {orgTheme?.logoUrl && !logoError ? (
           <Image
-            source={{ uri: orgTheme.logoUrl }}
+            source={{ uri: `${orgTheme.logoUrl}?t=${Date.now()}` }}
             className="w-16 h-16 rounded-xl mb-6"
             resizeMode="contain"
+            onError={() => setLogoError(true)}
           />
         ) : (
           <Image
