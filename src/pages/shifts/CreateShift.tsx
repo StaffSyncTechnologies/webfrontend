@@ -228,6 +228,7 @@ export function CreateShift() {
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
+  const [shiftStatus, setShiftStatus] = useState<'OPEN' | 'DRAFT'>('OPEN');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
@@ -274,6 +275,7 @@ export function CreateShift() {
       setSelectedSkillIds(duplicateShift.requiredSkills?.map((rs: any) => rs.skillId) || []);
       setNotes(duplicateShift.notes || '');
       setPriority(duplicateShift.priority || 'NORMAL');
+      setShiftStatus((duplicateShift.status === 'DRAFT' ? 'DRAFT' : 'OPEN') as 'OPEN' | 'DRAFT');
     }
   }, [duplicateShift]);
 
@@ -370,8 +372,8 @@ export function CreateShift() {
         title: title.trim(),
         clientCompanyId: clientCompanyId || undefined,
         siteLocation: siteLocation || undefined,
-        siteLat: coordinates?.lat,  // 🚀 Frontend geocoded coordinates
-        siteLng: coordinates?.lng,  // 🚀 Frontend geocoded coordinates
+        siteLat: coordinates?.lat,
+        siteLng: coordinates?.lng,
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
         workersNeeded,
@@ -379,7 +381,8 @@ export function CreateShift() {
         requiredSkills: selectedSkillIds.length > 0 ? selectedSkillIds.map(id => ({ skillId: id })) : undefined,
         notes: notes || undefined,
         priority,
-      }).unwrap();
+        status: shiftStatus,
+      } as any).unwrap();
 
       setSuccess('Shift created successfully!');
       setTimeout(() => navigate('/shifts'), 1500);
@@ -410,7 +413,7 @@ export function CreateShift() {
 
       <FormCard>
         <FormTitle>{duplicateId ? 'Duplicate Shift' : 'Create New Shift'}</FormTitle>
-        <FormSubtitle>Fill in the details below to broadcast this opportunity to your worker pool.</FormSubtitle>
+        <FormSubtitle>Fill in the details below. Choose <strong>Open Shift</strong> to let workers browse and claim it, or <strong>Draft</strong> to assign workers manually later.</FormSubtitle>
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -447,6 +450,37 @@ export function CreateShift() {
             </StyledSelect>
           </FormGroup>
         </FormRow>
+
+        {/* Shift Type Toggle */}
+        <Box sx={{ mb: 3 }}>
+          <Label>Shift Type</Label>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {(['OPEN', 'DRAFT'] as const).map((s) => (
+              <Box
+                key={s}
+                onClick={() => setShiftStatus(s)}
+                sx={{
+                  flex: 1,
+                  p: 2,
+                  border: `2px solid ${shiftStatus === s ? colors.primary.navy : '#E5E7EB'}`,
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  backgroundColor: shiftStatus === s ? '#F0F4FF' : '#FAFAFA',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Box sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, color: shiftStatus === s ? colors.primary.navy : '#374151', mb: 0.5 }}>
+                  {s === 'OPEN' ? '🟢 Open Shift' : '📋 Draft'}
+                </Box>
+                <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: '#6B7280' }}>
+                  {s === 'OPEN'
+                    ? 'Visible to workers — they can browse and claim it'
+                    : 'Hidden from workers — assign specific workers manually'}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
 
         <FormRow>
           <FormGroup>

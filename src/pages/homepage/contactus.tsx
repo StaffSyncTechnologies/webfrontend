@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Box, styled, TextField } from '@mui/material';
-import { ArrowForward } from '@mui/icons-material';
+import { Box, styled, TextField, CircularProgress, Alert } from '@mui/material';
+import { ArrowForward, CheckCircleOutline } from '@mui/icons-material';
+import axios from 'axios';
 import { colors } from '../../utilities/colors';
 import PhoneInput from '../../components/controls/PhoneInput';
+import { API_BASE_URL, CONTACT } from '../../services/endpoints';
 
 const Section = styled(Box)({
   padding: '80px 48px',
@@ -167,19 +169,54 @@ const ContactUs = () => {
     lastName: '',
     email: '',
     phone: '',
+    subject: '',
     message: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setError(null);
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    setError(null);
+
+    if (!formData.firstName.trim()) {
+      setError('Please enter your first name.');
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!formData.message.trim() || formData.message.trim().length < 10) {
+      setError('Please enter a message (at least 10 characters).');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post(`${API_BASE_URL}${CONTACT.SEND}`, formData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      setSuccess(true);
+      setFormData({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '' });
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -188,72 +225,165 @@ const ContactUs = () => {
         <FormSection>
           <Title>Contact Us</Title>
           <Subtitle>Our friendly team would love to hear from you.</Subtitle>
-          
-          <form onSubmit={handleSubmit}>
-            <FormRow>
-              <Box>
-                <Label>First Name</Label>
+
+          {success ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px',
+                padding: '48px 32px',
+                border: '1px solid #D1FAE5',
+                borderRadius: '12px',
+                backgroundColor: '#F0FDF4',
+                textAlign: 'center',
+              }}
+            >
+              <CheckCircleOutline sx={{ fontSize: 56, color: '#16A34A' }} />
+              <Box
+                component="h3"
+                sx={{
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: '22px',
+                  fontWeight: 700,
+                  color: '#15803D',
+                  margin: 0,
+                }}
+              >
+                Message Sent!
+              </Box>
+              <Box
+                component="p"
+                sx={{
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: '15px',
+                  color: '#166534',
+                  margin: 0,
+                  lineHeight: 1.6,
+                }}
+              >
+                Thank you for reaching out. We've received your message and will get back to you within 1 business day.
+                A confirmation has been sent to your email.
+              </Box>
+              <Box
+                component="button"
+                onClick={() => setSuccess(false)}
+                sx={{
+                  marginTop: '8px',
+                  padding: '10px 24px',
+                  backgroundColor: '#16A34A',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: '#15803D' },
+                }}
+              >
+                Send Another Message
+              </Box>
+            </Box>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate>
+              {error && (
+                <Alert severity="error" sx={{ marginBottom: '20px', borderRadius: '8px', fontFamily: "'Outfit', sans-serif" }}>
+                  {error}
+                </Alert>
+              )}
+
+              <FormRow>
+                <Box>
+                  <Label>First Name <span>*</span></Label>
+                  <StyledInput
+                    name="firstName"
+                    placeholder="Enter your first name"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    variant="outlined"
+                    disabled={loading}
+                  />
+                </Box>
+                <Box>
+                  <Label>Last Name</Label>
+                  <StyledInput
+                    name="lastName"
+                    placeholder="Enter your last name"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    variant="outlined"
+                    disabled={loading}
+                  />
+                </Box>
+              </FormRow>
+
+              <FormGroup>
+                <Label>Email Address <span>*</span></Label>
                 <StyledInput
-                  name="firstName"
-                  placeholder="Enter your first name"
-                  value={formData.firstName}
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={formData.email}
                   onChange={handleChange}
                   variant="outlined"
+                  disabled={loading}
                 />
-              </Box>
-              <Box>
-                <Label>Last Name</Label>
+              </FormGroup>
+
+              <FormGroup>
+                <Label>Phone Number</Label>
+                <PhoneInput
+                  name="phone"
+                  value={formData.phone}
+                  onChange={(value) => { setError(null); setFormData({ ...formData, phone: value }); }}
+                  placeholder="Enter your phone number"
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label>Subject</Label>
                 <StyledInput
-                  name="lastName"
-                  placeholder="Enter your last name"
-                  value={formData.lastName}
+                  name="subject"
+                  placeholder="What is your enquiry about?"
+                  value={formData.subject}
                   onChange={handleChange}
                   variant="outlined"
+                  disabled={loading}
                 />
-              </Box>
-            </FormRow>
+              </FormGroup>
 
-            <FormGroup>
-              <Label>Email Address<span>*</span></Label>
-              <StyledInput
-                name="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={formData.email}
-                onChange={handleChange}
-                variant="outlined"
-                required
-              />
-            </FormGroup>
+              <FormGroup>
+                <Label>Message <span>*</span></Label>
+                <StyledTextArea
+                  name="message"
+                  placeholder="Tell us how we can help you..."
+                  value={formData.message}
+                  onChange={handleChange}
+                  variant="outlined"
+                  multiline
+                  rows={4}
+                  disabled={loading}
+                />
+              </FormGroup>
 
-            <FormGroup>
-              <Label>Phone Number</Label>
-              <PhoneInput
-                name="phone"
-                value={formData.phone}
-                onChange={(value) => setFormData({ ...formData, phone: value })}
-                placeholder="Enter phone number"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Message</Label>
-              <StyledTextArea
-                name="message"
-                placeholder="Enter your company address"
-                value={formData.message}
-                onChange={handleChange}
-                variant="outlined"
-                multiline
-                rows={4}
-              />
-            </FormGroup>
-
-            <SubmitButton type="submit">
-              Send Message
-              <ArrowForward />
-            </SubmitButton>
-          </form>
+              <SubmitButton type="submit" disabled={loading} style={{ opacity: loading ? 0.8 : 1 }}>
+                {loading ? (
+                  <>
+                    <CircularProgress size={18} sx={{ color: '#fff' }} />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Message
+                    <ArrowForward />
+                  </>
+                )}
+              </SubmitButton>
+            </form>
+          )}
         </FormSection>
 
         <ImageSection>
@@ -267,4 +397,4 @@ const ContactUs = () => {
   );
 };
 
-export default ContactUs
+export default ContactUs;

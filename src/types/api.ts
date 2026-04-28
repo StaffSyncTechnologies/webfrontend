@@ -260,7 +260,7 @@ export interface Shift {
   endAt: string;
   workersNeeded: number;
   payRate: number;
-  status: 'OPEN' | 'FILLED' | 'CANCELLED' | 'COMPLETED' | 'IN_PROGRESS';
+  status: 'DRAFT' | 'OPEN' | 'FILLED' | 'CANCELLED' | 'COMPLETED' | 'IN_PROGRESS';
   assignedWorkers?: Worker[];
   createdBy: string;
   createdAt: string;

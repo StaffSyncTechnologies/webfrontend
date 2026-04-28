@@ -213,6 +213,7 @@ export function EditShift() {
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
+  const [shiftStatus, setShiftStatus] = useState<'OPEN' | 'DRAFT'>('OPEN');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -259,6 +260,7 @@ export function EditShift() {
       setSelectedSkillIds(shift.requiredSkills?.map((rs) => rs.skillId) || []);
       setNotes(shift.notes || '');
       setPriority(shift.priority || 'NORMAL');
+      setShiftStatus((shift.status === 'DRAFT' ? 'DRAFT' : 'OPEN') as 'OPEN' | 'DRAFT');
       
       // Parse date and time from startAt/endAt
       const startDate = new Date(shift.startAt);
@@ -358,14 +360,15 @@ export function EditShift() {
           title: title.trim(),
           clientCompanyId: clientCompanyId || undefined,
           siteLocation: siteLocation || undefined,
-          siteLat: coordinates?.lat,  // 🚀 Frontend geocoded coordinates
-          siteLng: coordinates?.lng,  // 🚀 Frontend geocoded coordinates
+          siteLat: coordinates?.lat,
+          siteLng: coordinates?.lng,
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
           workersNeeded,
           payRate: payRate ? parseFloat(payRate) : undefined,
           notes: notes || undefined,
           priority,
+          status: shiftStatus,
         },
       }).unwrap();
 
@@ -420,7 +423,7 @@ export function EditShift() {
 
       <FormCard>
         <FormTitle>Edit Shift</FormTitle>
-        <FormSubtitle>Update the shift details below.</FormSubtitle>
+        <FormSubtitle>Update the shift details. Change <strong>Shift Type</strong> to make a draft shift visible to workers, or pull an open shift back to draft.</FormSubtitle>
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -457,6 +460,37 @@ export function EditShift() {
             </StyledSelect>
           </FormGroup>
         </FormRow>
+
+        {/* Shift Type Toggle */}
+        <Box sx={{ mb: 3 }}>
+          <Label>Shift Type</Label>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {(['OPEN', 'DRAFT'] as const).map((s) => (
+              <Box
+                key={s}
+                onClick={() => setShiftStatus(s)}
+                sx={{
+                  flex: 1,
+                  p: 2,
+                  border: `2px solid ${shiftStatus === s ? colors.primary.navy : '#E5E7EB'}`,
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  backgroundColor: shiftStatus === s ? '#F0F4FF' : '#FAFAFA',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Box sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, color: shiftStatus === s ? colors.primary.navy : '#374151', mb: 0.5 }}>
+                  {s === 'OPEN' ? '🟢 Open Shift' : '📋 Draft'}
+                </Box>
+                <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: '#6B7280' }}>
+                  {s === 'OPEN'
+                    ? 'Visible to workers — they can browse and claim it'
+                    : 'Hidden from workers — assign specific workers manually'}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
 
         <FormRow>
           <FormGroup>

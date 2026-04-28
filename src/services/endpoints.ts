@@ -112,6 +112,11 @@ export const NOTIFICATIONS = {
   MARK_ALL_READ: '/notifications/read-all',
 } as const;
 
+// Contact form (public)
+export const CONTACT = {
+  SEND: '/contact',
+} as const;
+
 // Recurring Schedule endpoints
 export const RECURRING_SCHEDULES = {
   LIST: '/recurring-schedules',

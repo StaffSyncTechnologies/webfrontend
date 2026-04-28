@@ -15,7 +15,7 @@ export interface Shift {
   breakMinutes?: number;
   hourlyRate?: number;
   payRate?: number;
-  status: 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   workersNeeded?: number;
   role?: string;
   notes?: string;

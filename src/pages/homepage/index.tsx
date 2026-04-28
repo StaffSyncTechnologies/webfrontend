@@ -15,6 +15,7 @@ import CTA from "./cta"
 import { useDocumentTitle } from "../../hooks"
 import AboutUs from './aboutUs'
 import Features from './features'
+import ContactUs from './contactus'
 
 const Homepage = () => {
     useDocumentTitle('Home');
@@ -46,6 +47,7 @@ const Homepage = () => {
                 <TrustCompliance />
                 <Pricing />
                 <Founder />
+                <ContactUs />
                 <CTA />
                 <Footer />
             </Box>
