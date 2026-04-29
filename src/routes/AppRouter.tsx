@@ -95,11 +95,7 @@ export function AppRouter() {
           />
           <Route
             path="/contact-us"
-            element={
-              <PublicRoute>
-                <ContactUsPage />
-              </PublicRoute>
-            }
+            element={<ContactUsPage />}
           />
           <Route
             path="/watch-demo"

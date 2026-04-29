@@ -212,7 +212,7 @@ const productLinks = [
 const companyLinks = [
   { label: 'About us', href: '#about' },
   { label: 'Careers', href: '#careers' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'Contact', href: '/contact-us' },
 ];
 
 const legalLinks = [
