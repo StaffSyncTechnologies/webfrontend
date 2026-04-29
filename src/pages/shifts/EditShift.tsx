@@ -340,6 +340,12 @@ export function EditShift() {
       const startAt = new Date(`${date}T${startTime}:00`);
       const endAt = new Date(`${date}T${endTime}:00`);
       
+      // Validate that end time is after start time
+      if (endAt.getTime() === startAt.getTime()) {
+        setError('End time must be after start time');
+        return;
+      }
+      
       if (endAt <= startAt) {
         endAt.setDate(endAt.getDate() + 1);
       }
