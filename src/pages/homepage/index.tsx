@@ -10,7 +10,6 @@ import ProductPreview from "./productpreview"
 import WhoItsFor from "./whoitsfor"
 import TrustCompliance from "./trustcompliance"
 import Pricing from "./pricing"
-import Founder from "./founder"
 import CTA from "./cta"
 import { useDocumentTitle } from "../../hooks"
 import AboutUs from './aboutUs'
@@ -46,7 +45,6 @@ const Homepage = () => {
                 <WhoItsFor />
                 <TrustCompliance />
                 <Pricing />
-                <Founder />
                 <ContactUs />
                 <CTA />
                 <Footer />

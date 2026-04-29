@@ -123,7 +123,7 @@ const navLinks = [
   { label: 'How it works', href: '#how-it-works' },
   { label: 'Pricing', href: '#pricing' },
   // { label: 'Testimonial', href: '#testimonial' },
-  { label: 'Contact Us', href: '/contact-us' },
+  { label: 'Contact Us', href: '#contact-us' },
 ];
 
 const Header = () => {
