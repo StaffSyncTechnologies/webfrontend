@@ -5,6 +5,7 @@ import { Close, Android, Apple } from '@mui/icons-material';
 import { colors } from '../utilities/colors';
 
 const PlayStoreLink = 'https://play.google.com/store/apps/details?id=com.staffsync.worker';
+const AppStoreLink = 'https://apps.apple.com/us/app/staffsync-worker/id6762914137';
 
 const DownloadModal = styled(Modal)({
   '& .MuiBackdrop-root': {
@@ -68,15 +69,11 @@ const GooglePlayButton = styled(StoreButton)({
   },
 });
 
-const ComingSoonButton = styled(StoreButton)({
-  backgroundColor: '#f8f9fa',
-  color: '#6c757d',
-  border: '1px solid #dee2e6',
-  cursor: 'not-allowed',
+const AppleStoreButton = styled(StoreButton)({
+  backgroundColor: '#000000',
+  color: 'white',
   '&:hover': {
-    backgroundColor: '#f8f9fa',
-    transform: 'none',
-    boxShadow: 'none',
+    backgroundColor: '#1a1a1a',
   },
 });
 
@@ -150,10 +147,14 @@ export function AppDownload({ open, onClose }: AppDownloadProps) {
             Download on Google Play
           </GooglePlayButton>
 
-          <ComingSoonButton as="div">
+          <AppleStoreButton
+            href={AppStoreLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Apple sx={{ fontSize: '20px' }} />
-            Coming Soon to App Store
-          </ComingSoonButton>
+            Download on App Store
+          </AppleStoreButton>
 
           <Button
             variant="outlined"
@@ -282,14 +283,19 @@ export function AppDownloadSection() {
               Get it on Google Play
             </GooglePlayButton>
 
-            <ComingSoonButton as="div" sx={{ width: '200px' }}>
+            <AppleStoreButton
+              href={AppStoreLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ width: '200px' }}
+            >
               <Apple sx={{ fontSize: '20px' }} />
-              Coming Soon to App Store
-            </ComingSoonButton>
+              Download on App Store
+            </AppleStoreButton>
           </DownloadButtons>
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Available for Android devices
+            Available for Android and iOS devices
           </Typography>
         </Box>
       </Box>
