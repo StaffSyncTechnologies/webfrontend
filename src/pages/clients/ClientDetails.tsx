@@ -597,6 +597,7 @@ export function ClientDetails() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<WeekData | null>(null);
@@ -1117,7 +1118,10 @@ export function ClientDetails() {
               <PaginationText>Rows per page</PaginationText>
               <Select
                 value={rowsPerPage}
-                onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
                 size="small"
                 sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}
               >
@@ -1128,9 +1132,33 @@ export function ClientDetails() {
             </Box>
             <PaginationText>Showing 10 out of 100 items</PaginationText>
             <PaginationControls>
-              <PageButton disabled><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
-              <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>1</PageButton>
-              <PageButton><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
+              <PageButton disabled={currentPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
+              {Array.from({ length: Math.min(10, 5) }, (_, i) => {
+                let pageNum;
+                if (10 <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= 10 - 2) {
+                  pageNum = 10 - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <PageButton
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    style={{ 
+                      backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                      color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                      border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                    }}
+                  >
+                    {pageNum}
+                  </PageButton>
+                );
+              })}
+              <PageButton disabled={currentPage >= 10} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
             </PaginationControls>
           </PaginationRow>
         )}

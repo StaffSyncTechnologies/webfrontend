@@ -534,7 +534,41 @@ export function ShiftCoordinatorDashboard() {
           <PaginationInfo>Showing {activities.length} out of {pagination.total} items</PaginationInfo>
           <PaginationControls>
             <IconButton size="small" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><KeyboardArrowDown sx={{ transform: 'rotate(90deg)' }} /></IconButton>
-            <Box sx={{ width: 28, height: 28, borderRadius: '4px', backgroundColor: colors.primary.navy, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Outfit', sans-serif", fontSize: '13px' }}>{currentPage}</Box>
+            {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (pagination.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= pagination.totalPages - 2) {
+                pageNum = pagination.totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <Box
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  sx={{ 
+                    width: 28, 
+                    height: 28, 
+                    borderRadius: '4px', 
+                    backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                    border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: currentPage === pageNum ? colors.primary.navy : '#F9FAFB' }
+                  }}
+                >
+                  {pageNum}
+                </Box>
+              );
+            })}
             <IconButton size="small" disabled={currentPage >= pagination.totalPages} onClick={() => setCurrentPage(p => p + 1)}><KeyboardArrowDown sx={{ transform: 'rotate(-90deg)' }} /></IconButton>
           </PaginationControls>
         </Pagination>

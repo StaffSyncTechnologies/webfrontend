@@ -1225,7 +1225,10 @@ export function SettingsPage() {
       <PaginationRow>
         <Box display="flex" alignItems="center" gap="8px">
           <PaginationText>Rows per page</PaginationText>
-          <Select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} size="small" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}>
+          <Select value={rowsPerPage} onChange={(e) => {
+            setRowsPerPage(Number(e.target.value));
+            setCurrentPage(1);
+          }} size="small" sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}>
             <MenuItem value={8}>08</MenuItem>
             <MenuItem value={10}>10</MenuItem>
             <MenuItem value={25}>25</MenuItem>
@@ -1233,9 +1236,33 @@ export function SettingsPage() {
         </Box>
         <PaginationText>Showing 10 out of 100 items</PaginationText>
         <PaginationControls>
-          <PageButton disabled><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
-          <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>1</PageButton>
-          <PageButton><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
+          <PageButton disabled={currentPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
+          {Array.from({ length: Math.min(10, 5) }, (_, i) => {
+            let pageNum;
+            if (10 <= 5) {
+              pageNum = i + 1;
+            } else if (currentPage <= 3) {
+              pageNum = i + 1;
+            } else if (currentPage >= 10 - 2) {
+              pageNum = 10 - 4 + i;
+            } else {
+              pageNum = currentPage - 2 + i;
+            }
+            return (
+              <PageButton
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                style={{ 
+                  backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                  color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                  border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                }}
+              >
+                {pageNum}
+              </PageButton>
+            );
+          })}
+          <PageButton disabled={currentPage >= 10} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
         </PaginationControls>
       </PaginationRow>
     </TableCard>
@@ -1878,7 +1905,31 @@ export function SettingsPage() {
           </PaginationText>
           <PaginationControls>
             <PageButton disabled={historyPage <= 1} onClick={() => setHistoryPage(p => Math.max(1, p - 1))}><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
-            <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>{historyPage}</PageButton>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (historyPage <= 3) {
+                pageNum = i + 1;
+              } else if (historyPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = historyPage - 2 + i;
+              }
+              return (
+                <PageButton
+                  key={pageNum}
+                  onClick={() => setHistoryPage(pageNum)}
+                  style={{ 
+                    backgroundColor: historyPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: historyPage === pageNum ? 'white' : colors.primary.navy,
+                    border: historyPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                  }}
+                >
+                  {pageNum}
+                </PageButton>
+              );
+            })}
             <PageButton disabled={historyPage >= totalPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
           </PaginationControls>
         </PaginationRow>

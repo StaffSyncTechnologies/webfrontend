@@ -274,6 +274,7 @@ export function ClientShiftsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuShiftId, setMenuShiftId] = useState<string | null>(null);
 
@@ -286,7 +287,7 @@ export function ClientShiftsPage() {
   const [cancelShift, { isLoading: cancelling }] = useCancelClientShiftMutation();
 
   // Process shifts data
-  const shifts = useMemo(() => {
+  const allShifts = useMemo(() => {
     const data = Array.isArray(shiftsData) ? shiftsData : [];
     return data.map((shift: any) => ({
       id: shift.id,
@@ -304,12 +305,24 @@ export function ClientShiftsPage() {
     }));
   }, [shiftsData]);
 
+  // Paginated shifts
+  const shifts = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return allShifts.slice(startIndex, endIndex);
+  }, [allShifts, currentPage, rowsPerPage]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(allShifts.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage + 1;
+  const endIndex = Math.min(currentPage * rowsPerPage, allShifts.length);
+
   // Calculate stats from shifts data
   const stats = useMemo(() => {
-    const totalShifts = shifts.length;
-    const activeShifts = shifts.filter(s => s.status === 'ACTIVE').length;
-    const completedShifts = shifts.filter(s => s.status === 'COMPLETED').length;
-    const pendingShifts = shifts.filter(s => s.status === 'PENDING').length;
+    const totalShifts = allShifts.length;
+    const activeShifts = allShifts.filter(s => s.status === 'ACTIVE').length;
+    const completedShifts = allShifts.filter(s => s.status === 'COMPLETED').length;
+    const pendingShifts = allShifts.filter(s => s.status === 'PENDING').length;
     
     return {
       totalShifts,
@@ -317,7 +330,7 @@ export function ClientShiftsPage() {
       completedShifts,
       pendingShifts,
     };
-  }, [shifts]);
+  }, [allShifts]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, shiftId: string) => {
     setMenuAnchor(event.currentTarget);
@@ -554,7 +567,10 @@ export function ClientShiftsPage() {
             <PaginationText>Rows per page</PaginationText>
             <Select
               value={rowsPerPage}
-              onChange={(e) => setRowsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               size="small"
               sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}
             >
@@ -564,11 +580,45 @@ export function ClientShiftsPage() {
               <MenuItem value={25}>25</MenuItem>
             </Select>
           </Box>
-          <PaginationText>Showing {Math.min(rowsPerPage, shifts.length)} out of {shifts.length} items</PaginationText>
+          <PaginationText>Showing {allShifts.length > 0 ? `${startIndex}-${endIndex}` : 0} out of {allShifts.length} items</PaginationText>
           <PaginationControls>
-            <PageButton disabled><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
-            <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>1</PageButton>
-            <PageButton disabled={shifts.length <= rowsPerPage}><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
+            <PageButton 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            >
+              <ChevronLeft sx={{ fontSize: 18 }} />
+            </PageButton>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <PageButton
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  style={{ 
+                    backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                    border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                  }}
+                >
+                  {pageNum}
+                </PageButton>
+              );
+            })}
+            <PageButton 
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            >
+              <ChevronRight sx={{ fontSize: 18 }} />
+            </PageButton>
           </PaginationControls>
         </Pagination>
       </TableCard>
