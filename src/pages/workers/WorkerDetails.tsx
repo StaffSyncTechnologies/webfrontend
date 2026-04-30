@@ -1043,18 +1043,26 @@ export function WorkerDetails() {
         ) : (
           <ProfileRow>
             <ProfileLeft>
-              <Avatar 
-                src={worker.avatar || undefined}
-                alt={worker.name}
-                sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
-                imgProps={{ 
-                  onError: (e: any) => {
-                    e.target.style.display = 'none';
-                  }
-                }}
-              >
-                {worker.name.charAt(0).toUpperCase()}
-              </Avatar>
+              {worker.avatar ? (
+                <Avatar 
+                  src={worker.avatar}
+                  alt={worker.name}
+                  sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
+                  imgProps={{ 
+                    onError: (e: any) => {
+                      e.target.style.display = 'none';
+                    }
+                  }}
+                >
+                  {worker.name.charAt(0).toUpperCase()}
+                </Avatar>
+              ) : (
+                <Avatar 
+                  sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
+                >
+                  {worker.name.charAt(0).toUpperCase()}
+                </Avatar>
+              )}
               <ProfileInfo>
                 <ProfileName>
                   <h3>{worker.name}</h3>
