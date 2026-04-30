@@ -46,7 +46,7 @@ import { BillingPage } from '../pages/settings';
 import { CreateShift, ShiftDetails, EditShift } from '../pages/shifts';
 import { WorkerDetails } from '../pages/workers';
 import { ClientDetails, ClientTimesheetPage } from '../pages/clients';
-import { TimesheetDetails } from '../pages/timesheet';
+import { TimesheetDetails, OngoingShiftsPage } from '../pages/timesheet';
 import { ManagerDetails } from '../pages/hr-management';
 import { PayslipDetail } from '../pages/payroll';
 import { HolidayDetails } from '../pages/holiday';
@@ -266,6 +266,17 @@ export function AppRouter() {
                 <RoleBasedRoute
                   clientComponent={<ClientTimesheetsPage />}
                   adminComponent={<TimesheetPage />}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/timesheet/ongoing"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute
+                  clientComponent={<ClientTimesheetsPage />}
+                  adminComponent={<OngoingShiftsPage />}
                 />
               </ProtectedRoute>
             }

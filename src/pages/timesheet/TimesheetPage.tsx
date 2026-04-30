@@ -15,6 +15,7 @@ import {
   Visibility,
   Check,
   Block,
+  AccessTime,
 } from '@mui/icons-material';
 import {
   Box,
@@ -497,6 +498,14 @@ export function TimesheetPage() {
           <PageTitle>Timesheet</PageTitle>
           <PageSubtitle>Review attendance, approve hours, and resolve exceptions</PageSubtitle>
         </TitleSection>
+        <Button
+          variant="outlined"
+          startIcon={<AccessTime />}
+          onClick={() => navigate('/timesheet/ongoing')}
+          sx={{ borderColor: '#00AFEF', color: '#00AFEF', '&:hover': { borderColor: '#0099D6', color: '#0099D6' } }}
+        >
+          View Ongoing Shifts
+        </Button>
       </HeaderRow>
 
       <GridCols4>

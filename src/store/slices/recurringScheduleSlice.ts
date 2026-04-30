@@ -18,10 +18,18 @@ export interface RecurringSchedule {
   payRate?: number | null;
   breakMinutes: number;
   days: ScheduleDay[];
-  generatedUpTo?: string | null;
-  clientCompany?: { id: string; name: string };
-  location?: { id: string; name: string };
+  clientCompany?: { id: string; name: string } | null;
+  location?: { id: string; name: string } | null;
   createdAt: string;
+  updatedAt: string;
+  isOnHoliday?: boolean;
+  holidayInfo?: {
+    workerId: string;
+    startDate: string;
+    endDate: string;
+    title: string;
+    status: string;
+  } | null;
   creator?: { id: string; fullName: string };
   approver?: { id: string; fullName: string };
 }
