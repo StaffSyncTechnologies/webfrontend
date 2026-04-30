@@ -554,6 +554,11 @@ export function WorkerDetails() {
     const postcode = w?.workerProfile?.postcode || '';
     const location = address && postcode ? `${address}, ${postcode}` : address || postcode || 'Not specified';
     
+    // Convert relative avatar URL to full URL
+    const avatarUrl = w?.profilePicUrl 
+      ? (w.profilePicUrl.startsWith('http') ? w.profilePicUrl : `${import.meta.env.VITE_BASE_URL}${w.profilePicUrl}`)
+      : '';
+    
     return {
       id: w?.id || '',
       fullName: w?.fullName || '',
@@ -562,7 +567,7 @@ export function WorkerDetails() {
       phone: w?.phone || '',
       workerId: `#WK-${w?.id?.slice(-6).toUpperCase() || '000000'}`,
       location: location,
-      avatar: w?.profilePicUrl || '',
+      avatar: avatarUrl,
       verified: w?.verified || false,
     };
   }, [workerData]);
@@ -1043,18 +1048,26 @@ export function WorkerDetails() {
         ) : (
           <ProfileRow>
             <ProfileLeft>
-              <Avatar 
-                src={worker.avatar || undefined}
-                alt={worker.name}
-                sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
-                imgProps={{ 
-                  onError: (e: any) => {
-                    e.target.style.display = 'none';
-                  }
-                }}
-              >
-                {worker.name.charAt(0).toUpperCase()}
-              </Avatar>
+              {worker.avatar ? (
+                <Avatar 
+                  src={worker.avatar}
+                  alt={worker.name}
+                  sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
+                  imgProps={{ 
+                    onError: (e: any) => {
+                      e.target.style.display = 'none';
+                    }
+                  }}
+                >
+                  {worker.name.charAt(0).toUpperCase()}
+                </Avatar>
+              ) : (
+                <Avatar 
+                  sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
+                >
+                  {worker.name.charAt(0).toUpperCase()}
+                </Avatar>
+              )}
               <ProfileInfo>
                 <ProfileName>
                   <h3>{worker.name}</h3>
