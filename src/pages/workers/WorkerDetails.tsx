@@ -554,6 +554,11 @@ export function WorkerDetails() {
     const postcode = w?.workerProfile?.postcode || '';
     const location = address && postcode ? `${address}, ${postcode}` : address || postcode || 'Not specified';
     
+    // Convert relative avatar URL to full URL
+    const avatarUrl = w?.profilePicUrl 
+      ? (w.profilePicUrl.startsWith('http') ? w.profilePicUrl : `https://dev.staffsynctech.co.uk${w.profilePicUrl}`)
+      : '';
+    
     return {
       id: w?.id || '',
       fullName: w?.fullName || '',
@@ -562,7 +567,7 @@ export function WorkerDetails() {
       phone: w?.phone || '',
       workerId: `#WK-${w?.id?.slice(-6).toUpperCase() || '000000'}`,
       location: location,
-      avatar: w?.profilePicUrl || '',
+      avatar: avatarUrl,
       verified: w?.verified || false,
     };
   }, [workerData]);
