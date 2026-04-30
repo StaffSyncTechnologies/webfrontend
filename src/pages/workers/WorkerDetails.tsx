@@ -550,6 +550,10 @@ export function WorkerDetails() {
   // Extract worker info
   const worker = useMemo(() => {
     const w = (workerData as any)?.data || workerData;
+    const address = w?.workerProfile?.address || '';
+    const postcode = w?.workerProfile?.postcode || '';
+    const location = address && postcode ? `${address}, ${postcode}` : address || postcode || 'Not specified';
+    
     return {
       id: w?.id || '',
       fullName: w?.fullName || '',
@@ -557,7 +561,7 @@ export function WorkerDetails() {
       email: w?.email || '',
       phone: w?.phone || '',
       workerId: `#WK-${w?.id?.slice(-6).toUpperCase() || '000000'}`,
-      location: w?.workerProfile?.address || 'Not specified',
+      location: location,
       avatar: w?.profilePicUrl || '',
       verified: w?.verified || false,
     };
@@ -1040,10 +1044,16 @@ export function WorkerDetails() {
           <ProfileRow>
             <ProfileLeft>
               <Avatar 
-                src={worker.avatar} 
-                sx={{ width: 80, height: 80, bgcolor: '#E5E7EB', fontSize: 28 }}
+                src={worker.avatar || undefined}
+                alt={worker.name}
+                sx={{ width: 80, height: 80, bgcolor: colors.primary.navy, fontSize: 28, color: '#fff' }}
+                imgProps={{ 
+                  onError: (e: any) => {
+                    e.target.style.display = 'none';
+                  }
+                }}
               >
-                {worker.name.charAt(0)}
+                {worker.name.charAt(0).toUpperCase()}
               </Avatar>
               <ProfileInfo>
                 <ProfileName>
