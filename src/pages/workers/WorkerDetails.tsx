@@ -556,7 +556,7 @@ export function WorkerDetails() {
     
     // Convert relative avatar URL to full URL
     const avatarUrl = w?.profilePicUrl 
-      ? (w.profilePicUrl.startsWith('http') ? w.profilePicUrl : `https://dev.staffsynctech.co.uk${w.profilePicUrl}`)
+      ? (w.profilePicUrl.startsWith('http') ? w.profilePicUrl : `${import.meta.env.VITE_BASE_URL}${w.profilePicUrl}`)
       : '';
     
     return {
