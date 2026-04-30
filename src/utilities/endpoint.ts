@@ -145,6 +145,8 @@ export const ATTENDANCE = {
   CLOCK_OUT: (shiftId: string) => `${API_BASE}/attendance/${shiftId}/clock-out`,
   APPROVE: (attendanceId: string) => `${API_BASE}/attendance/${attendanceId}/approve`,
   FLAG: (attendanceId: string) => `${API_BASE}/attendance/${attendanceId}/flag`,
+  ONGOING_SHIFTS: `${API_BASE}/attendance/ongoing-shifts`,
+  ADMIN_CLOCK_OUT: (attendanceId: string) => `${API_BASE}/attendance/${attendanceId}/admin-clock-out`,
 } as const;
 
 // Payroll/Payslip endpoints

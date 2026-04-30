@@ -656,70 +656,99 @@ function RecurringScheduleContent() {
           {schedulesArray.length === 0 ? (
             <Alert severity="info">No schedules yet. Create one to get started.</Alert>
           ) : (
-            <Grid container spacing={3}>
-              {schedulesArray.map(schedule => (
-                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={schedule.id}>
-                  <StyledCard>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <WorkerAvatar name={schedule.worker.fullName} />
-                          <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{schedule.worker.fullName}</Typography>
-                            <Typography variant="caption" color="text.secondary">{schedule.worker.email}</Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{schedule.role || 'No role'}</Typography>
-                          </Box>
-                        </Box>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                          <StatusPill status={schedule.status} />
-                        </Box>
-                      </Box>
-                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{schedule.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">From {new Date(schedule.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</Typography>
-                      {schedule.clientCompany && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                          Client: {schedule.clientCompany.name}
-                        </Typography>
-                      )}
-                      <DayChips days={schedule.days} />
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                        <Typography variant="body2"><strong>{weeklyHours(schedule.days)}h</strong>/week</Typography>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          {schedule.status === 'ACTIVE' && (
-                            <>
-                              <IconButton size="small" onClick={() => handlePauseSchedule(schedule.id)} title="Pause">
-                                <PauseIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleEndSchedule(schedule.id)} title="End">
-                                <StopIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </>
-                          )}
-                          {schedule.status === 'PAUSED' && (
-                            <>
-                              <IconButton size="small" color="success" onClick={() => handleResumeSchedule(schedule.id)} title="Resume">
-                                <PlayArrowIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </>
-                          )}
-                          {(schedule.status === 'PENDING_APPROVAL' || schedule.status === 'ENDED') && (
-                            <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          )}
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </StyledCard>
-                </Grid>
-              ))}
-            </Grid>
+            <>
+              {(() => {
+                // Group schedules by client company
+                const groupedSchedules = schedulesArray.reduce((acc, schedule) => {
+                  const clientName = schedule.clientCompany?.name || 'Uncategorized';
+                  if (!acc[clientName]) {
+                    acc[clientName] = [];
+                  }
+                  acc[clientName].push(schedule);
+                  return acc;
+                }, {} as Record<string, typeof schedulesArray>);
+
+                return Object.entries(groupedSchedules).map(([clientName, clientSchedules]) => (
+                  <Box key={clientName} sx={{ mb: 4 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: colors.primary.blue }}>
+                      {clientName}
+                      <Typography variant="caption" sx={{ ml: 2, color: '#64748b', fontWeight: 400 }}>
+                        ({clientSchedules.length} schedule{clientSchedules.length !== 1 ? 's' : ''})
+                      </Typography>
+                    </Typography>
+                    <Grid container spacing={3}>
+                      {clientSchedules.map(schedule => (
+                        <Grid size={{ xs: 12, md: 6, lg: 4 }} key={schedule.id}>
+                          <StyledCard>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <WorkerAvatar name={schedule.worker.fullName} />
+                                  <Box>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{schedule.worker.fullName}</Typography>
+                                    <Typography variant="caption" color="text.secondary">{schedule.worker.email}</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{schedule.role || 'No role'}</Typography>
+                                  </Box>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                  <StatusPill status={schedule.status} />
+                                </Box>
+                              </Box>
+                              {schedule.isOnHoliday && schedule.holidayInfo && (
+                                <Alert severity="warning" sx={{ mb: 2, py: 1, fontSize: '13px' }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                    🏖️ On Holiday: {schedule.holidayInfo.title}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ display: 'block' }}>
+                                    {new Date(schedule.holidayInfo.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {new Date(schedule.holidayInfo.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </Typography>
+                                </Alert>
+                              )}
+                              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{schedule.title}</Typography>
+                              <Typography variant="caption" color="text.secondary">From {new Date(schedule.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</Typography>
+                              <DayChips days={schedule.days} />
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                                <Typography variant="body2"><strong>{weeklyHours(schedule.days)}h</strong>/week</Typography>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  {schedule.status === 'ACTIVE' && (
+                                    <>
+                                      <IconButton size="small" onClick={() => handlePauseSchedule(schedule.id)} title="Pause">
+                                        <PauseIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton size="small" color="error" onClick={() => handleEndSchedule(schedule.id)} title="End">
+                                        <StopIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </>
+                                  )}
+                                  {schedule.status === 'PAUSED' && (
+                                    <>
+                                      <IconButton size="small" color="success" onClick={() => handleResumeSchedule(schedule.id)} title="Resume">
+                                        <PlayArrowIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </>
+                                  )}
+                                  {(schedule.status === 'PENDING_APPROVAL' || schedule.status === 'ENDED') && (
+                                    <IconButton size="small" color="error" onClick={() => handleDeleteSchedule(schedule.id)} title="Delete">
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  )}
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </StyledCard>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+                ));
+              })()}
+            </>
           )}
         </Box>
       )}

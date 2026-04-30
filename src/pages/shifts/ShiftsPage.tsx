@@ -340,7 +340,8 @@ const formatTime = (date: string | Date) => {
   return new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 };
 
-const getShiftStatus = (shift: Shift): 'open' | 'completed' | 'in_progress' | 'cancelled' => {
+const getShiftStatus = (shift: Shift): 'open' | 'completed' | 'in_progress' | 'cancelled' | 'draft' => {
+  if (shift.status === 'DRAFT') return 'draft';
   if (shift.status === 'CANCELLED') return 'cancelled';
   if (shift.status === 'COMPLETED') return 'completed';
   if (shift.status === 'IN_PROGRESS') return 'in_progress';
@@ -628,8 +629,8 @@ export function ShiftsPage() {
                         </WorkerProgress>
                       </Td>
                       <Td>
-                        <StatusBadge status={status === 'cancelled' ? 'open' : status}>
-                          {status === 'completed' ? 'Completed' : status === 'open' ? 'Open' : status === 'cancelled' ? 'Cancelled' : 'In Progress'}
+                        <StatusBadge status={status === 'cancelled' || status === 'draft' ? 'open' : status}>
+                          {status === 'completed' ? 'Completed' : status === 'open' ? 'Open' : status === 'cancelled' ? 'Cancelled' : status === 'draft' ? 'Draft' : 'In Progress'}
                         </StatusBadge>
                       </Td>
                       <Td>

@@ -14,7 +14,7 @@ export const attendanceApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Attendance', 'AttendanceFlag'],
+  tagTypes: ['Attendance', 'AttendanceFlag', 'OngoingShifts'],
   endpoints: (builder) => ({
     getMyStatus: builder.query<any, void>({
       query: () => ({ url: ATTENDANCE.MY_STATUS }),
@@ -35,6 +35,18 @@ export const attendanceApi = createApi({
     getShiftAttendance: builder.query<Attendance[], string>({
       query: (shiftId) => ({ url: ATTENDANCE.SHIFT_ATTENDANCE(shiftId) }),
       providesTags: ['Attendance'],
+    }),
+    getOngoingShifts: builder.query<{ shifts: any[] }, void>({
+      query: () => ({ url: ATTENDANCE.ONGOING_SHIFTS }),
+      providesTags: ['OngoingShifts'],
+    }),
+    adminClockOut: builder.mutation<any, { attendanceId: string; reason: string }>({
+      query: ({ attendanceId, reason }) => ({
+        url: ATTENDANCE.ADMIN_CLOCK_OUT(attendanceId),
+        method: 'POST',
+        body: { reason },
+      }),
+      invalidatesTags: ['OngoingShifts', 'Attendance'],
     }),
     clockIn: builder.mutation<Attendance, { shiftId: string; latitude: number; longitude: number }>({
       query: ({ shiftId, latitude, longitude }) => ({
@@ -73,6 +85,8 @@ export const {
   useGetFlaggedAttendanceQuery,
   useGetDailyTimesheetQuery,
   useGetShiftAttendanceQuery,
+  useGetOngoingShiftsQuery,
+  useAdminClockOutMutation,
   useClockInMutation,
   useClockOutMutation,
   useApproveAttendanceMutation,
