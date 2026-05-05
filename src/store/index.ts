@@ -28,6 +28,7 @@ import toastReducer from './slices/toastSlice';
 import { inviteRequestApi } from './slices/inviteRequestSlice';
 import { matchingApi } from './api/matchingApi';
 import { recurringScheduleApi } from './slices/recurringScheduleSlice';
+import { rotaApi } from './api/rotaApi';
 
 // Redux persist configuration for auth
 const persistConfig = {
@@ -93,6 +94,7 @@ const rootReducer = combineReducers({
   [inviteRequestApi.reducerPath]: inviteRequestApi.reducer,
   [matchingApi.reducerPath]: matchingApi.reducer,
   [recurringScheduleApi.reducerPath]: recurringScheduleApi.reducer,
+  [rotaApi.reducerPath]: rotaApi.reducer,
 });
 
 export const store = configureStore({
@@ -128,7 +130,8 @@ export const store = configureStore({
       bankAccountApi.middleware,
       inviteRequestApi.middleware,
       matchingApi.middleware,
-      recurringScheduleApi.middleware
+      recurringScheduleApi.middleware,
+      rotaApi.middleware
     ),
 });
 
