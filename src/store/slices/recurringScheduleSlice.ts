@@ -60,7 +60,8 @@ export interface ScheduleChangeRequest {
 }
 
 export interface CreateScheduleData {
-  workerId: string;
+  workerId?: string;
+  workerIds?: string[];
   title: string;
   clientCompanyId?: string;
   locationId?: string;
@@ -118,8 +119,8 @@ export const recurringScheduleApi = createApi({
       providesTags: (result, error, id) => [{ type: 'RecurringSchedule', id }],
     }),
 
-    // Create schedule
-    createSchedule: builder.mutation<RecurringSchedule, CreateScheduleData>({
+    // Create schedule (supports multiple workers)
+    createSchedule: builder.mutation<RecurringSchedule[], CreateScheduleData>({
       query: (data) => ({ url: RECURRING_SCHEDULES.CREATE, method: 'POST', body: data }),
       invalidatesTags: ['RecurringSchedule'],
     }),

@@ -191,6 +191,17 @@ export const hrApi = createApi({
       transformResponse: (response: any) => response?.data ?? response,
       invalidatesTags: ['Manager', 'ManagedWorkers', 'ManagerStats'],
     }),
+
+    // Invite new staff member
+    inviteStaff: builder.mutation<{ staff: Manager; inviteCode: string }, { fullName: string; email: string; phone?: string; role: 'OPS_MANAGER' | 'SHIFT_COORDINATOR' | 'COMPLIANCE_OFFICER' }>({
+      query: (data) => ({
+        url: HR.INVITE_STAFF,
+        method: 'POST',
+        data,
+      }),
+      transformResponse: (response: any) => response?.data ?? response,
+      invalidatesTags: ['Manager', 'ManagerStats'],
+    }),
   }),
 });
 
@@ -205,4 +216,5 @@ export const {
   useGetUnassignedWorkersQuery,
   useAssignWorkersMutation,
   useUnassignWorkersMutation,
+  useInviteStaffMutation,
 } = hrApi;

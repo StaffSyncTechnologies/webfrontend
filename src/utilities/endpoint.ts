@@ -184,6 +184,7 @@ export const HR = {
   GET_MANAGER: (managerId: string) => `${API_BASE}/hr/managers/${managerId}`,
   UPDATE_MANAGER_STATUS: (managerId: string) => `${API_BASE}/hr/managers/${managerId}/status`,
   DELETE_MANAGER: (managerId: string) => `${API_BASE}/hr/managers/${managerId}`,
+  INVITE_STAFF: `${API_BASE}/hr/invite`,
   STAFF_WORKER_COUNTS: `${API_BASE}/hr/staff/worker-counts`,
   UNASSIGNED_WORKERS: `${API_BASE}/hr/workers/unassigned`,
   MY_TEAM: `${API_BASE}/hr/workers/my-team`,

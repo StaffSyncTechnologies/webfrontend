@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer, PageTitle } from '../../components/layout';
-import { Box, styled, Button, Card, CardContent, Typography, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, Grid, Tabs, Tab, Badge, Alert, CircularProgress, IconButton, createTheme, ThemeProvider } from '@mui/material';
+import { Box, styled, Button, Card, CardContent, Typography, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, Grid, Tabs, Tab, Badge, Alert, CircularProgress, IconButton, Checkbox, createTheme, ThemeProvider } from '@mui/material';
 import { Close as CloseIcon, Add as AddIcon, Pause as PauseIcon, PlayArrow as PlayArrowIcon, Stop as StopIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { colors } from '../../utilities/colors';
 import {
@@ -126,7 +126,7 @@ function NewScheduleModal({
   clients: Array<{ id: string; name: string; locations?: Array<{ id: string; name: string }> }>;
 }) {
   const [form, setForm] = useState({
-    workerId: '',
+    workerIds: [] as string[],
     clientCompanyId: '',
     locationId: '',
     title: '',
@@ -141,6 +141,7 @@ function NewScheduleModal({
   const [dayTimes, setDayTimes] = useState<Record<string, { startTime: string; endTime: string }>>({});
   const [loading, setLoading] = useState(false);
   const [workerSearch, setWorkerSearch] = useState('');
+  const [selectedWorkers, setSelectedWorkers] = useState<Set<string>>(new Set());
 
   const toggleDay = (d: string) => {
     setSelectedDays(prev => {
@@ -160,13 +161,31 @@ function NewScheduleModal({
     setDayTimes(prev => ({ ...prev, [day]: { ...prev[day], [field]: val } }));
   };
 
+  const toggleWorker = (workerId: string) => {
+    setSelectedWorkers(prev => {
+      const next = new Set(prev);
+      if (next.has(workerId)) {
+        next.delete(workerId);
+      } else {
+        next.add(workerId);
+      }
+      return next;
+    });
+  };
+
+  // Sync selectedWorkers Set with form.workerIds array
+  React.useEffect(() => {
+    setForm(f => ({ ...f, workerIds: Array.from(selectedWorkers) }));
+  }, [selectedWorkers]);
+
   const handleSave = async () => {
-    if (!form.title || selectedDays.length === 0 || !form.startDate || !form.workerId) return;
+    if (!form.title || selectedDays.length === 0 || !form.startDate || form.workerIds.length === 0) return;
 
     setLoading(true);
     const days = selectedDays.map(d => ({ dayOfWeek: d as any, ...dayTimes[d] }));
     const data: CreateScheduleData = {
       ...form,
+      workerIds: form.workerIds,
       days,
       payRate: form.payRate ? parseFloat(form.payRate) : undefined,
       breakMinutes: parseInt(form.breakMinutes),
@@ -180,7 +199,7 @@ function NewScheduleModal({
 
     // Reset form
     setForm({
-      workerId: '',
+      workerIds: [],
       clientCompanyId: '',
       locationId: '',
       title: '',
@@ -193,6 +212,7 @@ function NewScheduleModal({
     });
     setSelectedDays([]);
     setDayTimes({});
+    setSelectedWorkers(new Set());
   };
 
   const totalHrs = selectedDays.reduce((t, d) => {
@@ -219,9 +239,18 @@ function NewScheduleModal({
       </DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
         <Box sx={{ mb: 2 }}>
-          <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
-            Worker
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Workers
+            </Typography>
+            {selectedWorkers.size > 0 && (
+              <Chip
+                label={`${selectedWorkers.size} selected`}
+                size="small"
+                sx={{ bgcolor: '#10B981', color: 'white', fontWeight: 600 }}
+              />
+            )}
+          </Box>
           <TextField
             fullWidth
             size="small"
@@ -230,21 +259,62 @@ function NewScheduleModal({
             onChange={e => setWorkerSearch(e.target.value)}
             sx={{ mb: 1 }}
           />
-          <Select
-            fullWidth
-            size="small"
-            value={form.workerId}
-            onChange={e => setForm(f => ({ ...f, workerId: e.target.value }))}
-            displayEmpty
-          >
-            <MenuItem value="">Select worker…</MenuItem>
-            {filteredWorkers.map(worker => (
-              <MenuItem key={worker.id} value={worker.id}>
-                {worker.fullName}
-                {worker.email && ` (${worker.email})`}
-              </MenuItem>
-            ))}
-          </Select>
+          <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '8px' }}>
+            {filteredWorkers.length === 0 ? (
+              <Box sx={{ p: 3, textAlign: 'center', color: '#9CA3AF' }}>
+                <Typography variant="body2">No workers found</Typography>
+              </Box>
+            ) : (
+              filteredWorkers.map(worker => {
+                const isSelected = selectedWorkers.has(worker.id);
+                return (
+                  <Box
+                    key={worker.id}
+                    onClick={() => toggleWorker(worker.id)}
+                    sx={{
+                      p: 2,
+                      borderBottom: '1px solid rgba(0,0,0,0.08)',
+                      cursor: 'pointer',
+                      bgcolor: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
+                      '&:last-child': { borderBottom: 'none' },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Checkbox
+                        checked={isSelected}
+                        size="small"
+                        sx={{ p: 0 }}
+                      />
+                      <WorkerAvatar name={worker.fullName} size={32} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{worker.fullName}</Typography>
+                        {worker.email && (
+                          <Typography variant="caption" color="text.secondary">{worker.email}</Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              })
+            )}
+          </Box>
+          {selectedWorkers.size > 0 && (
+            <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {Array.from(selectedWorkers).map(workerId => {
+                const worker = workers.find(w => w.id === workerId);
+                return worker ? (
+                  <Chip
+                    key={worker.id}
+                    label={worker.fullName}
+                    onDelete={() => toggleWorker(worker.id)}
+                    size="small"
+                    sx={{ bgcolor: '#6366f1', color: 'white' }}
+                  />
+                ) : null;
+              })}
+            </Box>
+          )}
         </Box>
 
         <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -451,7 +521,12 @@ function NewScheduleModal({
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ bgcolor: '#00AFEF', '&:hover': { bgcolor: '#0099D6' } }}>
+        <Button 
+          variant="contained" 
+          onClick={handleSave} 
+          disabled={loading || !form.title || selectedDays.length === 0 || !form.startDate || form.workerIds.length === 0} 
+          sx={{ bgcolor: '#00AFEF', '&:hover': { bgcolor: '#0099D6' } }}
+        >
           {loading ? <CircularProgress size={20} /> : 'Create Schedule'}
         </Button>
       </DialogActions>
