@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, TextInput as RNTextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useToast, useOrgTheme } from '../../contexts';
+import { useToast, useOrgTheme, useTheme } from '../../contexts';
 import { useForgotPasswordMutation, useResetPasswordWithOtpMutation } from '../../store/api/authApi';
 import { Container, Input, Button, H1, H2, Body } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const toast = useToast();
   const { t } = useTranslation();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -219,7 +220,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       <View className="flex-1 justify-start pt-4">
         {/* Back Button */}
         <TouchableOpacity onPress={handleBack} className="mb-6">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
 
         {/* ── Step 1: Email ── */}

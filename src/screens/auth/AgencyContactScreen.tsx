@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Image, Linking, ScrollView, Platform, Modal, Alert, TextInput, ActivityIndicator, KeyboardAvoidingView, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Image, Linking, ScrollView, Platform, Modal, Alert, ActivityIndicator, KeyboardAvoidingView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WebView } from 'react-native-webview';
-import { H1, H2, Body, Caption, Card, Divider } from '../../components/ui';
+import { H1, H2, Body, Caption, Card, Divider, Input } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts';
 import { brandColors } from '../../constants/colors';
@@ -62,20 +62,49 @@ export function AgencyContactScreen({ navigation, route }: Props) {
 
   const logoUri = buildFileUrl(agency.logoUrl);
 
-  const handleEmail = () => {
+  const handleEmail = async () => {
     if (!agency.email) return;
-    Linking.openURL(`mailto:${agency.email}?subject=${encodeURIComponent(t('agencyContact.emailSubject'))}`);
+    const emailUrl = `mailto:${agency.email}?subject=${encodeURIComponent(t('agencyContact.emailSubject'))}`;
+    try {
+      const canOpen = await Linking.canOpenURL(emailUrl);
+      if (canOpen) {
+        await Linking.openURL(emailUrl);
+      } else {
+        Alert.alert('Error', 'Unable to open email client. Please send an email manually to: ' + agency.email);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to open email client. Please send an email manually to: ' + agency.email);
+    }
   };
 
-  const handleCall = () => {
+  const handleCall = async () => {
     if (!agency.phone) return;
-    Linking.openURL(`tel:${agency.phone}`);
+    const phoneUrl = `tel:${agency.phone}`;
+    try {
+      const canOpen = await Linking.canOpenURL(phoneUrl);
+      if (canOpen) {
+        await Linking.openURL(phoneUrl);
+      } else {
+        Alert.alert('Error', 'Unable to make phone call. Please dial manually: ' + agency.phone);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to make phone call. Please dial manually: ' + agency.phone);
+    }
   };
 
-  const handleWebsite = () => {
+  const handleWebsite = async () => {
     if (!agency.website) return;
     const url = agency.website.startsWith('http') ? agency.website : `https://${agency.website}`;
-    Linking.openURL(url);
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Unable to open website. Please visit manually: ' + url);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to open website. Please visit manually: ' + url);
+    }
   };
 
   const handleOpenMaps = () => {
@@ -310,7 +339,7 @@ L.marker([${agency.latitude},${agency.longitude}]).addTo(map);
               <View
                 style={[s.modalSheet, {
                   backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF',
-                  paddingBottom: insets.bottom + 24,
+                  paddingBottom: insets.bottom + 8,
                 }]}
               >
                 {/* Handle */}
@@ -347,49 +376,35 @@ L.marker([${agency.latitude},${agency.longitude}]).addTo(map);
                 </View>
 
                 {/* Form fields */}
-                <Caption color="secondary" className="mb-1.5 font-outfit-semibold">{t('inviteRequest.fullName')} *</Caption>
-                <TextInput
+                <Input
+                  label={t('inviteRequest.fullName')}
+                  required
+                  placeholder={t('inviteRequest.fullNamePlaceholder')}
                   value={reqFullName}
                   onChangeText={setReqFullName}
-                  placeholder={t('inviteRequest.fullNamePlaceholder')}
-                  placeholderTextColor={isDark ? '#6B6B80' : '#9CA3AF'}
                   autoCapitalize="words"
-                  style={[s.modalInput, {
-                    backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB',
-                    borderColor: isDark ? '#2D2D44' : '#E5E7EB',
-                    color: isDark ? '#FFFFFF' : '#111827',
-                  }]}
+                  containerClassName="mb-3"
                 />
 
-                <Caption color="secondary" className="mb-1.5 font-outfit-semibold">{t('inviteRequest.email')} *</Caption>
-                <TextInput
+                <Input
+                  label={t('inviteRequest.email')}
+                  required
+                  placeholder={t('inviteRequest.emailPlaceholder')}
                   value={reqEmail}
                   onChangeText={setReqEmail}
-                  placeholder={t('inviteRequest.emailPlaceholder')}
-                  placeholderTextColor={isDark ? '#6B6B80' : '#9CA3AF'}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  style={[s.modalInput, {
-                    backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB',
-                    borderColor: isDark ? '#2D2D44' : '#E5E7EB',
-                    color: isDark ? '#FFFFFF' : '#111827',
-                  }]}
+                  containerClassName="mb-3"
                 />
 
-                <Caption color="secondary" className="mb-1.5 font-outfit-semibold">{t('inviteRequest.phone')}</Caption>
-                <TextInput
+                <Input
+                  label={t('inviteRequest.phone')}
+                  placeholder={t('inviteRequest.phonePlaceholder')}
                   value={reqPhone}
                   onChangeText={setReqPhone}
-                  placeholder={t('inviteRequest.phonePlaceholder')}
-                  placeholderTextColor={isDark ? '#6B6B80' : '#9CA3AF'}
                   keyboardType="phone-pad"
-                  style={[s.modalInput, {
-                    marginBottom: 20,
-                    backgroundColor: isDark ? '#0D0D1A' : '#F9FAFB',
-                    borderColor: isDark ? '#2D2D44' : '#E5E7EB',
-                    color: isDark ? '#FFFFFF' : '#111827',
-                  }]}
+                  containerClassName="mb-5"
                 />
 
                 <TouchableOpacity

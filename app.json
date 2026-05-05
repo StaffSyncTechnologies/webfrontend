@@ -3,7 +3,7 @@
     "name": "StaffSync Worker",
     "slug": "staffsync-worker",
     "scheme": "staffsync-worker",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -54,9 +54,7 @@
           }
         }
       ],
-      "expo-asset",
-      "@react-native-firebase/app",
-      "./plugins/withFirebasePodfile"
+      "expo-asset"
     ],
     "ios": {
       "supportsTablet": true,
@@ -89,7 +87,8 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.VIBRATE",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "blockedPermissions": [
         "android.permission.READ_MEDIA_IMAGES",

@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { useToast } from '../contexts/ToastContext';
 import { useLocation } from '../hooks/useLocation';
 import { isWithinGeofence, formatDistance, DEFAULT_GEOFENCE_RADIUS } from '../utils/geofence';
@@ -29,6 +29,7 @@ function padZero(n: number) {
 export function ClockInScreen({ route, navigation }: RootStackScreenProps<'ClockIn'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const { shiftId, isRecurring } = route.params;
   const [rotaShiftId, setRotaShiftId] = useState<string | null>(null);
 
@@ -36,12 +37,15 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
 
   const [clockState, setClockState] = useState<ClockState>('idle');
   const [seconds, setSeconds] = useState(0);
+  const [secondsToEnd, setSecondsToEnd] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isRestored, setIsRestored] = useState(false);
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
   const [geofenceStatus, setGeofenceStatus] = useState<{ within: boolean; distance?: number } | null>(null);
+  const [isAutoClockingOut, setIsAutoClockingOut] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimestampRef = useRef<number | null>(null);
+  const autoClockOutFiredRef = useRef(false);
 
   const { warning } = useToast();
   const { getCurrentLocation, latitude, longitude, isLoading: locationLoading } = useLocation();
@@ -206,9 +210,35 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
     return () => sub.remove();
   }, [clockState]);
 
-  // Tick the timer every second while clocked in
+  // Auto clock-out when the shift end time is reached
+  const triggerAutoClockOut = useCallback(async () => {
+    if (autoClockOutFiredRef.current || isAutoClockingOut || clockState !== 'clocked_in') return;
+    autoClockOutFiredRef.current = true;
+    setIsAutoClockingOut(true);
+    try {
+      const location = await getCurrentLocation();
+      await clockOutMutation({
+        shiftId,
+        lat: location?.latitude,
+        lng: location?.longitude,
+      }).unwrap();
+      setClockState('clocked_out');
+      await AsyncStorage.removeItem(CLOCK_STORAGE_KEY);
+    } catch (error: any) {
+      const code = error?.data?.code || error?.code;
+      if (code === 'ALREADY_CLOCKED_OUT') {
+        setClockState('clocked_out');
+        await AsyncStorage.removeItem(CLOCK_STORAGE_KEY);
+      }
+    } finally {
+      setIsAutoClockingOut(false);
+    }
+  }, [clockState, isAutoClockingOut, shiftId, getCurrentLocation, clockOutMutation]);
+
+  // Tick the timer every second while clocked in; also track time-to-shift-end
   useEffect(() => {
     if (clockState === 'clocked_in') {
+      const shiftEndMs = shift ? new Date(shift.endAt).getTime() : null;
       intervalRef.current = setInterval(() => {
         if (startTimestampRef.current) {
           const elapsed = Math.floor((Date.now() - startTimestampRef.current) / 1000);
@@ -216,14 +246,23 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
         } else {
           setSeconds((prev) => prev + 1);
         }
+        if (shiftEndMs !== null) {
+          const remaining = Math.floor((shiftEndMs - Date.now()) / 1000);
+          setSecondsToEnd(remaining);
+          if (remaining <= 0) {
+            triggerAutoClockOut();
+          }
+        }
       }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setSecondsToEnd(null);
+      autoClockOutFiredRef.current = false;
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [clockState]);
+  }, [clockState, shift, triggerAutoClockOut]);
 
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -231,6 +270,12 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
 
   const isOutsideGeofence = geofenceStatus !== null && !geofenceStatus.within;
   const isShiftExpired = shift ? new Date(shift.endAt) < new Date() : false;
+
+  // Helpers for shift-end countdown display
+  const shiftEndsWarning = secondsToEnd !== null && secondsToEnd > 0 && secondsToEnd <= 600; // < 10 min
+  const shiftEndedOnDevice = secondsToEnd !== null && secondsToEnd <= 0;
+  const countdownMins = secondsToEnd !== null ? Math.floor(Math.abs(secondsToEnd) / 60) : 0;
+  const countdownSecs = secondsToEnd !== null ? Math.abs(secondsToEnd) % 60 : 0;
 
   const handleButtonPress = () => {
     // Check if shift has expired
@@ -304,6 +349,9 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
         } else if (errorCode === 'TOO_EARLY') {
           errorTitle = 'Too Early to Clock In';
           errorMessage = error?.data?.message || 'You can clock in closer to the shift start time.';
+        } else if (errorCode === 'CLOCK_IN_WINDOW_CLOSED') {
+          errorTitle = 'Clock-In Window Closed';
+          errorMessage = error?.data?.message || 'The 15-minute clock-in window has passed. Please contact your manager.';
         } else if (errorCode === 'SHIFT_ENDED') {
           errorTitle = 'Shift Ended';
           errorMessage = 'This shift has already ended and cannot be started.';
@@ -427,7 +475,7 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
       <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
         <View className="flex-row items-center justify-between px-5 py-4">
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={24} color="#000035" />
+            <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
           </TouchableOpacity>
           <H2>Clock-Out</H2>
           <TouchableOpacity>
@@ -517,7 +565,7 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <H2>{headerTitle}</H2>
         <TouchableOpacity>
@@ -571,6 +619,41 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
 
         <View className="h-px bg-light-border-light dark:bg-dark-border-light mx-5" />
 
+        {/* Shift-end warning / auto clock-out banner */}
+        {clockState === 'clocked_in' && (shiftEndsWarning || shiftEndedOnDevice) && (
+          <View
+            className="mx-5 mb-3 px-4 py-3 rounded-xl flex-row items-center gap-3"
+            style={{
+              backgroundColor: shiftEndedOnDevice ? '#FEF2F2' : '#FFFBEB',
+              borderWidth: 1,
+              borderColor: shiftEndedOnDevice ? '#FECACA' : '#FDE68A',
+            }}
+          >
+            <Ionicons
+              name={shiftEndedOnDevice ? 'alert-circle' : 'warning-outline'}
+              size={20}
+              color={shiftEndedOnDevice ? '#DC2626' : '#D97706'}
+            />
+            <View className="flex-1">
+              <Body
+                className="font-outfit-semibold text-sm"
+                style={{ color: shiftEndedOnDevice ? '#DC2626' : '#B45309' }}
+              >
+                {shiftEndedOnDevice
+                  ? isAutoClockingOut
+                    ? 'Clocking you out…'
+                    : 'Shift ended — clocking out now'
+                  : `Shift ends in ${padZero(countdownMins)}:${padZero(countdownSecs)}`}
+              </Body>
+              {shiftEndedOnDevice && (
+                <Caption style={{ color: '#DC2626', fontSize: 11, marginTop: 2 }}>
+                  You will be automatically clocked out at shift end time.
+                </Caption>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Shift Timer */}
         <View className="items-center py-6 mx-5">
           <View className="w-full rounded-2xl border border-light-border-light dark:border-dark-border-light py-5 items-center">
@@ -589,18 +672,20 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
         <View className="items-center py-4">
           <TouchableOpacity
             onPress={handleButtonPress}
-            disabled={isClockingIn || isClockingOut || isOutsideGeofence}
+            disabled={isClockingIn || isClockingOut || isAutoClockingOut || isOutsideGeofence || shiftEndedOnDevice}
             activeOpacity={0.8}
             className="items-center justify-center"
             style={{
               width: 180,
               height: 180,
               borderRadius: 90,
-              backgroundColor: isOutsideGeofence || isClockingIn || isClockingOut ? '#9CA3AF' : primaryColor || '#38BDF8',
-              opacity: isOutsideGeofence || isClockingIn || isClockingOut ? 0.6 : 1,
+              backgroundColor: isOutsideGeofence || isClockingIn || isClockingOut || isAutoClockingOut || shiftEndedOnDevice
+                ? '#9CA3AF'
+                : primaryColor || '#38BDF8',
+              opacity: isOutsideGeofence || isClockingIn || isClockingOut || isAutoClockingOut || shiftEndedOnDevice ? 0.6 : 1,
             }}
           >
-            {(isClockingIn || isClockingOut) ? (
+            {(isClockingIn || isClockingOut || isAutoClockingOut) ? (
               <ActivityIndicator size="large" color="#FFFFFF" />
             ) : (
               <Ionicons
@@ -610,12 +695,14 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
               />
             )}
             <Body className="font-outfit-bold mt-1" style={{ color: '#FFFFFF', fontSize: 18 }}>
-              {isClockingIn || isClockingOut
+              {isClockingIn || isClockingOut || isAutoClockingOut
                 ? 'PROCESSING...'
                 : isOutsideGeofence
-                ? 'OUT OF RANGE' 
-                : clockState === 'clocked_in' 
-                ? 'CLOCK OUT' 
+                ? 'OUT OF RANGE'
+                : shiftEndedOnDevice
+                ? 'SHIFT ENDED'
+                : clockState === 'clocked_in'
+                ? 'CLOCK OUT'
                 : 'CLOCK IN'
               }
             </Body>

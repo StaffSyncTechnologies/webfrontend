@@ -204,7 +204,7 @@ export function ProfileScreen({ navigation }: MainTabScreenProps<'Profile'>) {
                   <Ionicons name={item.icon} size={18} color={item.destructive ? '#DC2626' : (isDark ? '#E5E7EB' : '#374151')} />
                 </View>
                 <View className="flex-1">
-                  <Body style={{ color: item.destructive ? '#DC2626' : undefined }}>{item.label}</Body>
+                  <Body color={item.destructive ? undefined : 'primary'} style={item.destructive ? { color: '#DC2626' } : undefined}>{item.label}</Body>
                   {item.subtitle && (
                     <Caption className="font-outfit-semibold" style={{ color: item.subtitleColor || '#6B7280' }}>
                       {item.subtitle}

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme, useToast } from '../contexts';
-import { H2, H3, Body, Caption, Button } from '../components/ui';
+import { useOrgTheme, useToast, useTheme } from '../contexts';
+import { H2, H3, Body, Caption, Button, Input, DatePickerModal } from '../components/ui';
 import { useGetMyRTWQuery, useSubmitMyRTWMutation } from '../store/api/workerApi';
 
 type RTWStatus = 'NOT_STARTED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
@@ -24,7 +24,8 @@ function formatDate(iso?: string | null): string {
 
 export function RightToWorkScreen({ navigation }: RootStackScreenProps<'RightToWork'>) {
   const insets = useSafeAreaInsets();
-  const { primaryColor, secondaryColor } = useOrgTheme();
+  const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const toast = useToast();
 
   const { data: rtwRes, isLoading } = useGetMyRTWQuery();
@@ -36,6 +37,8 @@ export function RightToWorkScreen({ navigation }: RootStackScreenProps<'RightToW
 
   const [shareCode, setShareCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [dobDate, setDobDate] = useState<Date | undefined>();
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const canSubmit = status !== 'APPROVED' && status !== 'PENDING';
 
   const handleSubmit = async () => {
@@ -43,28 +46,15 @@ export function RightToWorkScreen({ navigation }: RootStackScreenProps<'RightToW
       toast.error('Please enter your share code');
       return;
     }
-    if (!dateOfBirth.trim()) {
+    if (!dobDate) {
       toast.error('Please enter your date of birth');
-      return;
-    }
-
-    // Parse DD/MM/YYYY to ISO
-    const parts = dateOfBirth.split('/');
-    if (parts.length !== 3) {
-      toast.error('Date of birth must be in DD/MM/YYYY format');
-      return;
-    }
-    const [dd, mm, yyyy] = parts;
-    const dob = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
-    if (isNaN(dob.getTime())) {
-      toast.error('Invalid date of birth');
       return;
     }
 
     try {
       const result = await submitRTW({
         shareCode: shareCode.trim(),
-        dateOfBirth: dob.toISOString().split('T')[0],
+        dateOfBirth: dobDate.toISOString().split('T')[0],
       }).unwrap();
 
       if (result.data?.verificationResult?.verified) {
@@ -90,7 +80,7 @@ export function RightToWorkScreen({ navigation }: RootStackScreenProps<'RightToW
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Right to Work</H2>
@@ -161,42 +151,43 @@ export function RightToWorkScreen({ navigation }: RootStackScreenProps<'RightToW
             </Caption>
 
             {/* Share Code */}
-            <Body className="font-outfit-semibold mb-2">
-              Share Code<Body style={{ color: '#DC2626' }}>*</Body>
-            </Body>
-            <View
-              className="flex-row items-center px-4 py-3.5 rounded-xl mb-4"
-              style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-            >
-              <TextInput
-                className="flex-1 font-outfit text-base"
-                value={shareCode}
-                onChangeText={setShareCode}
-                placeholder="e.g. W123 456 789"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="characters"
-              />
-              <Ionicons name="key-outline" size={18} color="#6B7280" />
-            </View>
+            <Input
+              label="Share Code"
+              required
+              value={shareCode}
+              onChangeText={setShareCode}
+              placeholder="e.g. W123 456 789"
+              autoCapitalize="characters"
+              rightIcon={<Ionicons name="key-outline" size={18} color="#6B7280" />}
+              containerClassName="mb-4"
+            />
 
             {/* Date of Birth */}
-            <Body className="font-outfit-semibold mb-2">
-              Date of Birth<Body style={{ color: '#DC2626' }}>*</Body>
-            </Body>
-            <View
-              className="flex-row items-center px-4 py-3.5 rounded-xl mb-4"
-              style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-            >
-              <TextInput
-                className="flex-1 font-outfit text-base"
-                value={dateOfBirth}
-                onChangeText={setDateOfBirth}
-                placeholder="DD/MM/YYYY"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="numbers-and-punctuation"
-              />
-              <Ionicons name="calendar-outline" size={18} color="#6B7280" />
-            </View>
+            <Input
+              label="Date of Birth"
+              required
+              value={dateOfBirth}
+              onPressIn={() => setShowDatePicker(true)}
+              editable={false}
+              placeholder="DD/MM/YYYY"
+              rightIcon={<Ionicons name="calendar-outline" size={18} color="#6B7280" />}
+              containerClassName="mb-4"
+            />
+
+            <DatePickerModal
+              visible={showDatePicker}
+              onClose={() => setShowDatePicker(false)}
+              onConfirm={(date) => {
+                const dd = date.getDate().toString().padStart(2, '0');
+                const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+                const yyyy = date.getFullYear();
+                setDobDate(date);
+                setDateOfBirth(`${dd}/${mm}/${yyyy}`);
+                setShowDatePicker(false);
+              }}
+              initialDate={dobDate || new Date(2000, 0, 1)}
+              maximumDate={new Date()}
+            />
 
             {/* Info Box */}
             <View className="flex-row items-start p-3 rounded-xl mb-4" style={{ backgroundColor: '#EFF6FF' }}>

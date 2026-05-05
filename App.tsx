@@ -56,7 +56,7 @@ const DarkNavigationTheme = {
 
 function AppContent() {
   const { isDark } = useTheme();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, userType } = useAppSelector((state) => state.auth);
   const [showSplash, setShowSplash] = useState(true);
   const [appReady, setAppReady] = useState(false);
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
@@ -145,7 +145,7 @@ function AppContent() {
     <NavigationContainer ref={navigationRef} theme={isDark ? DarkNavigationTheme : LightNavigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1 }}>
-        <RootNavigator isAuthenticated={isAuthenticated} />
+        <RootNavigator isAuthenticated={isAuthenticated} userRole={userType || 'worker'} />
         <NetworkStatusBanner />
       </View>
     </NavigationContainer>

@@ -14,10 +14,10 @@ export function VerificationSuccessScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const handleGoToDashboard = () => {
-    // Navigate to main app
+    // Navigate to main app (worker flow)
     navigation.getParent()?.reset({
       index: 0,
-      routes: [{ name: 'Main' }],
+      routes: [{ name: 'WorkerMain' }],
     });
   };
 

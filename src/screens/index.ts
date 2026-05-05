@@ -20,3 +20,6 @@ export { LanguageScreen } from './LanguageScreen';
 export { NotificationsScreen } from './NotificationsScreen';
 export { TimesheetScreen } from './main/TimesheetScreen';
 export { ScheduleChangeRequestScreen } from './ScheduleChangeRequestScreen';
+export { ShiftSwapScreen } from './ShiftSwapScreen';
+//Admin
+export { default as WorkerDetailsScreen } from './admin/worker/WorkerDetailsScreen';

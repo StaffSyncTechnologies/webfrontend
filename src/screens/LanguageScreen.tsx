@@ -4,13 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { H2, Body, Caption } from '../components/ui';
 import { LANGUAGES, changeLanguage } from '../i18n';
 
 export function LanguageScreen({ navigation }: RootStackScreenProps<'Language'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
 
@@ -23,7 +24,7 @@ export function LanguageScreen({ navigation }: RootStackScreenProps<'Language'>)
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>{t('language.title')}</H2>

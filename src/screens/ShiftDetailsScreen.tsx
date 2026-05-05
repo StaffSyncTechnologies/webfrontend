@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 're
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { H2, H3, Body, Caption, Button } from '../components/ui';
 import { useGetByIdQuery, useAcceptShiftMutation, useDeclineShiftMutation } from '../store/api/shiftsApi';
 import { useSelector } from 'react-redux';
@@ -30,9 +30,10 @@ function calcTotalHours(start: string, end: string, breakMins?: number): number 
 
 export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'ShiftDetails'>) {
   const insets = useSafeAreaInsets();
-  const { shiftId } = route.params;
   const { primaryColor } = useOrgTheme();
-  const userId = useSelector((state: RootState) => state.auth.worker?.id);
+  const { isDark } = useTheme();
+  const { shiftId } = route.params;
+  const userId = useSelector((state: RootState) => state?.auth.worker?.id);
 
   const { data: shiftResponse, isLoading, isError } = useGetByIdQuery(shiftId);
   const [acceptShift, { isLoading: accepting }] = useAcceptShiftMutation();
@@ -149,7 +150,7 @@ export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Shift Details</H2>
@@ -308,13 +309,23 @@ export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'
         </View>
       )}
 
-      {/* Already accepted */}
+      {/* Already accepted — show Shift Accepted + Request Swap (for future shifts) */}
       {(assignmentStatus === 'ACCEPTED' || actionDone === 'accepted') && !canAct && (
         <View className="absolute bottom-0 left-0 right-0 px-5 pb-8 pt-3 bg-light-background-primary dark:bg-dark-background-primary border-t border-light-border-light dark:border-dark-border-light">
-          <View className="flex-row items-center justify-center py-3">
-            <Ionicons name="checkmark-circle" size={24} color="#16A34A" />
+          <View className="flex-row items-center justify-center py-2">
+            <Ionicons name="checkmark-circle" size={22} color="#16A34A" />
             <Body className="ml-2 font-outfit-semibold" style={{ color: '#16A34A' }}>Shift Accepted</Body>
           </View>
+          {shift && new Date(shift.startAt) > new Date() && (
+            <TouchableOpacity
+              className="flex-row items-center justify-center py-3 mt-1 rounded-xl border border-light-border-light dark:border-dark-border-light"
+              onPress={() => navigation.navigate('ShiftSwap', { shiftId })}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="swap-horizontal-outline" size={18} color="#6B7280" />
+              <Body className="ml-2 font-outfit-semibold" color="secondary">Request Swap / Give Away</Body>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>

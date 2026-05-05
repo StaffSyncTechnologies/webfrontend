@@ -15,7 +15,7 @@ export interface Shift {
   breakMinutes?: number;
   hourlyRate?: number;
   payRate?: number;
-  status: 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'OPEN' | 'FILLED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   workersNeeded?: number;
   role?: string;
   notes?: string;
@@ -33,6 +33,9 @@ export interface Shift {
   };
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   createdAt: string;
+  isGiveAway?: boolean;
+  swapRequestId?: string | null;
+  originalOwner?: { id: string; fullName: string } | null;
   assignments?: Array<{
     id: string;
     workerId: string;
@@ -118,6 +121,14 @@ export const shiftsApi = baseApi.injectEndpoints({
       query: (params) => ({ url: SHIFTS.LIST, params }),
       providesTags: ['Shifts'],
     }),
+    getOpenShifts: builder.query<{ success: boolean; data: Shift[] }, void>({
+      query: () => SHIFTS.OPEN,
+      providesTags: ['Shifts'],
+    }),
+    claimShift: builder.mutation<{ success: boolean; message: string }, string>({
+      query: (shiftId) => ({ url: SHIFTS.CLAIM(shiftId), method: 'POST' }),
+      invalidatesTags: ['Shifts'],
+    }),
     getMyShiftHistory: builder.query<{ success: boolean; data: Shift[] }, void>({
       query: () => SHIFTS.MY_HISTORY,
       providesTags: ['Shifts'],
@@ -174,6 +185,8 @@ export const shiftsApi = baseApi.injectEndpoints({
 
 export const {
   useGetShiftsQuery,
+  useGetOpenShiftsQuery,
+  useClaimShiftMutation,
   useGetMyShiftHistoryQuery,
   useGetByIdQuery,
   useAcceptShiftMutation,

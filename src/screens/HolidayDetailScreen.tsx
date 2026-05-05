@@ -1,54 +1,100 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { H2, H3, Body, Caption, Button } from '../components/ui';
-
-interface RequestLogEntry {
-  status: string;
-  date: string;
-  isActive: boolean;
-}
+import { useGetHolidayDetailQuery, useCancelHolidayRequestMutation } from '../store/api/workerApi';
 
 export function HolidayDetailScreen({ route, navigation }: RootStackScreenProps<'HolidayDetail'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const { holidayId } = route.params;
 
-  const holiday = {
-    title: 'Summer Break',
-    dateRange: 'Oct 14 - Oct 16 2026',
-    duration: '3 days',
-    status: 'pending' as const,
-    leavePeriod: 'Mon, Oct 14 - Tue Oct 16 2026',
-    leaveType: 'Annual leave',
-    leaveDuration: '3 days',
-    reason: 'Summer vacation to spend time with family.',
-    requestedOn: 'Mon, Oct 01',
-    approvedBy: 'Nill',
-  };
+  const { data: holidayResponse, isLoading, refetch } = useGetHolidayDetailQuery(holidayId);
+  const [cancelHolidayRequest, { isLoading: isCancelling }] = useCancelHolidayRequestMutation();
 
-  const requestLog: RequestLogEntry[] = [
-    { status: 'In review\nMon, 02 Oct 2026 by Sarah Joe', date: '', isActive: true },
-    { status: 'Submitted\nMon, 01 Oct 2026 by you', date: '', isActive: false },
-  ];
+  const holiday = holidayResponse?.data;
 
   const STATUS_CONFIG = {
-    approved: { label: 'APPROVED', bg: '#DCFCE7', text: '#16A34A' },
-    pending: { label: 'PENDING', bg: '#FEF3C7', text: '#D97706' },
-    denied: { label: 'DENIED', bg: '#FEE2E2', text: '#DC2626' },
+    APPROVED: { label: 'APPROVED', bg: '#DCFCE7', text: '#16A34A' },
+    PENDING: { label: 'PENDING', bg: '#FEF3C7', text: '#D97706' },
+    DENIED: { label: 'DENIED', bg: '#FEE2E2', text: '#DC2626' },
+    CANCELLED: { label: 'CANCELLED', bg: '#F3F4F6', text: '#6B7280' },
   };
 
-  const config = STATUS_CONFIG[holiday.status];
+  const config = STATUS_CONFIG[holiday?.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.PENDING;
+
+  const handleCancel = async () => {
+    Alert.alert(
+      'Cancel Holiday Request',
+      'Are you sure you want to cancel this holiday request?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelHolidayRequest(holidayId).unwrap();
+              refetch();
+              Alert.alert('Success', 'Holiday request cancelled successfully');
+              navigation.goBack();
+            } catch (error: any) {
+              Alert.alert('Error', error?.data?.message || 'Failed to cancel request');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-light-background-primary dark:bg-dark-background-primary">
+        <ActivityIndicator size="large" color={primaryColor} />
+      </View>
+    );
+  }
+
+  if (!holiday) {
+    return (
+      <View className="flex-1 items-center justify-center bg-light-background-primary dark:bg-dark-background-primary px-5">
+        <Body color="secondary">Holiday request not found</Body>
+        <Button onPress={() => navigation.goBack()} className="mt-4">
+          Go Back
+        </Button>
+      </View>
+    );
+  }
+
+  const requestLog = holiday?.logs || [];
+  const canCancel = holiday?.status === 'PENDING' || holiday?.status === 'APPROVED';
 
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Holiday Details</H2>
@@ -71,13 +117,13 @@ export function HolidayDetailScreen({ route, navigation }: RootStackScreenProps<
         {/* Date Range */}
         <View className="flex-row items-center gap-1.5 px-5 mb-5">
           <Ionicons name="time-outline" size={16} color="#6B7280" />
-          <Body color="secondary">{holiday.dateRange} • {holiday.duration}</Body>
+          <Body color="secondary">{formatDate(holiday.startDate)} - {formatDate(holiday.endDate)} • {holiday.totalDays} days</Body>
         </View>
 
         {/* Leave Period Card */}
         <View className="mx-5 mb-4 p-4 rounded-2xl" style={{ borderWidth: 1, borderColor: '#E2E8F0' }}>
           <Caption color="secondary" className="mb-1.5">Leave Period</Caption>
-          <H3 className="mb-1">{holiday.leavePeriod}</H3>
+          <H3 className="mb-1">{formatDate(holiday.startDate)} - {formatDate(holiday.endDate)}</H3>
           <Body color="secondary">{holiday.leaveType}</Body>
         </View>
 
@@ -90,22 +136,22 @@ export function HolidayDetailScreen({ route, navigation }: RootStackScreenProps<
 
           <View className="flex-row items-center justify-between mb-3">
             <Body color="secondary">Leave duration</Body>
-            <Body className="font-outfit-semibold">{holiday.leaveDuration}</Body>
+            <Body className="font-outfit-semibold">{holiday.totalDays} days ({holiday.totalHours} hours)</Body>
           </View>
 
           <View className="flex-row items-start justify-between mb-3">
             <Body color="secondary" className="mr-4">Reason</Body>
-            <Body className="font-outfit-semibold text-right flex-1">{holiday.reason}</Body>
+            <Body className="font-outfit-semibold text-right flex-1">{holiday.reason || 'N/A'}</Body>
           </View>
 
           <View className="flex-row items-center justify-between mb-3">
             <Body color="secondary">Requested on</Body>
-            <Body className="font-outfit-semibold">{holiday.requestedOn}</Body>
+            <Body className="font-outfit-semibold">{formatDateTime(holiday.createdAt)}</Body>
           </View>
 
           <View className="flex-row items-center justify-between">
             <Body color="secondary">Approved by</Body>
-            <Body className="font-outfit-semibold">{holiday.approvedBy}</Body>
+            <Body className="font-outfit-semibold">{holiday.reviewedBy?.fullName || 'N/A'}</Body>
           </View>
         </View>
 
@@ -116,47 +162,45 @@ export function HolidayDetailScreen({ route, navigation }: RootStackScreenProps<
         <View className="px-5 py-4">
           <H3 className="mb-4">Request Log</H3>
 
-          {requestLog.map((entry, index) => {
-            const lines = entry.status.split('\n');
-            return (
-              <View key={index} className="flex-row mb-4">
-                {/* Timeline Dot + Line */}
-                <View className="items-center mr-3 pt-1">
-                  <View
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: entry.isActive ? (primaryColor || '#3B82F6') : '#D1D5DB' }}
-                  />
-                  {index < requestLog.length - 1 && (
-                    <View className="w-0.5 flex-1 mt-1" style={{ backgroundColor: '#E5E7EB' }} />
-                  )}
-                </View>
-
-                {/* Log Content */}
-                <View className="flex-1 pb-2">
-                  <Caption
-                    className="font-outfit-semibold"
-                    style={{ color: entry.isActive ? '#374151' : '#9CA3AF' }}
-                  >
-                    {lines[0]}
-                  </Caption>
-                  {lines[1] && (
-                    <Caption color="secondary">{lines[1]}</Caption>
-                  )}
-                </View>
+          {requestLog.map((entry: any, index: number) => (
+            <View key={entry.id || index} className="flex-row mb-4">
+              {/* Timeline Dot + Line */}
+              <View className="items-center mr-3 pt-1">
+                <View
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: index === 0 ? (primaryColor || '#3B82F6') : '#D1D5DB' }}
+                />
+                {index < requestLog.length - 1 && (
+                  <View className="w-0.5 flex-1 mt-1" style={{ backgroundColor: '#E5E7EB' }} />
+                )}
               </View>
-            );
-          })}
+
+              {/* Log Content */}
+              <View className="flex-1 pb-2">
+                <Caption
+                  className="font-outfit-semibold"
+                  style={{ color: index === 0 ? '#374151' : '#9CA3AF' }}
+                >
+                  {entry.action}
+                </Caption>
+                <Caption color="secondary">{entry.performedBy} • {formatDateTime(entry.createdAt)}</Caption>
+                {entry.note && <Caption color="muted" className="mt-1">{entry.note}</Caption>}
+              </View>
+            </View>
+          ))}
         </View>
 
         <View className="h-24" />
       </ScrollView>
 
       {/* Cancel Request Button */}
-      <View className="absolute bottom-0 left-0 right-0 px-5 pb-8 pt-3 bg-light-background-primary dark:bg-dark-background-primary">
-        <Button onPress={() => navigation.goBack()}>
-          Cancel request
-        </Button>
-      </View>
+      {canCancel && (
+        <View className="absolute bottom-0 left-0 right-0 px-5 pb-8 pt-3 bg-light-background-primary dark:bg-dark-background-primary">
+          <Button onPress={handleCancel} disabled={isCancelling}>
+            {isCancelling ? 'Cancelling...' : 'Cancel request'}
+          </Button>
+        </View>
+      )}
     </View>
   );
 }

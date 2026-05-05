@@ -310,8 +310,12 @@ export const workerApi = baseApi.injectEndpoints({
     }),
 
     // Holidays
-    getMyHolidayRequests: builder.query<{ success: boolean; data: HolidayRequest[] }, void>({
+    getMyHolidayRequests: builder.query<{ success: boolean; data: { summary: any; upcomingHolidays: any[]; holidayRequests: any[] } }, void>({
       query: () => HOLIDAYS.MY_REQUESTS,
+      providesTags: ['Holidays'],
+    }),
+    getHolidayDetail: builder.query<{ success: boolean; data: any }, string>({
+      query: (id) => HOLIDAYS.DETAIL(id),
       providesTags: ['Holidays'],
     }),
     requestHoliday: builder.mutation<{ success: boolean }, Omit<HolidayRequest, 'id' | 'status'>>({
@@ -351,6 +355,16 @@ export const workerApi = baseApi.injectEndpoints({
     deleteMyAccount: builder.mutation<{ success: boolean; message: string }, void>({
       query: () => ({ url: '/users/me', method: 'DELETE' }),
     }),
+
+    // Workers for swap selection
+    getWorkersForSwap: builder.query<{ success: boolean; data: Array<{ id: string; fullName: string; email: string }> }, void>({
+      query: () => WORKER.FOR_SWAP,
+    }),
+
+    // Worker shifts for swap selection
+    getWorkerShiftsForSwap: builder.query<{ success: boolean; data: any[] }, string>({
+      query: (workerId) => WORKER.SHIFTS_FOR_SWAP(workerId),
+    }),
   }),
 });
 
@@ -374,10 +388,13 @@ export const {
   useGetPayslipDetailQuery,
   useGetPayslipHtmlQuery,
   useGetMyHolidayRequestsQuery,
+  useGetHolidayDetailQuery,
   useRequestHolidayMutation,
   useCancelHolidayRequestMutation,
   useGetMyRecurringSchedulesQuery,
   useCreateScheduleChangeRequestMutation,
   useGetMyScheduleChangeRequestsQuery,
   useDeleteMyAccountMutation,
+  useGetWorkersForSwapQuery,
+  useGetWorkerShiftsForSwapQuery,
 } = workerApi;

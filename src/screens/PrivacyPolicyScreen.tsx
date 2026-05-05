@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
 import { H2, Body } from '../components/ui';
+import { useOrgTheme, useTheme } from '../contexts';
 
 const LOREM = `Lorem ipsum dolor sit amet consectetur. Felis est cursus maecenas sit placerat sit viverra sit. Egestas eu nascetur tempus ipsum etiam egestas nibh neque duis. Id condimentum vestibulum nunc sagittis tempus diam elementum. Ullamcorper urna lobortis sed aliquet tellus. Amet viverra vulputate suspendisse vitae nisi a eget urna enim. Imperdiet sagittis non sit at ullamcorper nullam feugiat. Sit tincidunt dolor adipiscing condimentum pretium pellentesque. Ut accumsan nisi platea non vitae turpis. Pellentesque purus mattis nulla ac pulvinar. Lacinia id sed tempor pellentesque mauris ut senectus. Fermentum molestie ullamcorper libero adipiscing dapibus integer suspendisse at. Et sit mattis neque erat lorem. Ornare pellentesque nulla sed sed sapien id quam sodales. Varius fames proin ac nulla mi aliquam bibendum.
 
@@ -13,13 +14,15 @@ Penatibus dictum diam eget et leo odio sollicitudin. Ut amet viverra vulputate s
 
 export function PrivacyPolicyScreen({ navigation }: RootStackScreenProps<'PrivacyPolicy'>) {
   const insets = useSafeAreaInsets();
+  const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
 
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : primaryColor} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Privacy & Policy</H2>

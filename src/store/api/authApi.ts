@@ -11,6 +11,34 @@ export interface WorkerPasswordLoginRequest {
   password: string;
 }
 
+export interface AdminLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface Admin {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  role: string;
+  lastLoginAt?: Date;
+  organizationId: string;
+  organizationName?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  organization?: {
+    id: string;
+    name: string;
+    deploymentMode: string;
+    logoUrl?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    onboardingComplete?: boolean;
+  };
+}
+
 export interface WorkerVerifyOtpRequest {
   email: string;
   code: string;
@@ -76,7 +104,13 @@ export interface AuthResponse {
   message: string;
   data?: {
     token: string;
-    worker: Worker;
+    worker?: Worker;
+    user?: Admin;
+    admin?: Admin;
+    organization?: any;
+    permissions?: string[];
+    dashboardRoute?: string;
+    features?: any;
     requiresOtp?: boolean;
     onboardingComplete?: boolean;
   };
@@ -131,6 +165,15 @@ export const authApi = baseApi.injectEndpoints({
     workerPasswordLogin: builder.mutation<AuthResponse, WorkerPasswordLoginRequest>({
       query: (body) => ({
         url: AUTH.WORKER_PASSWORD_LOGIN,
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // Admin/Agency login
+    adminLogin: builder.mutation<AuthResponse, AdminLoginRequest>({
+      query: (body) => ({
+        url: AUTH.STAFF_LOGIN,
         method: 'POST',
         body,
       }),
@@ -269,6 +312,7 @@ export const {
   useValidateInviteCodeMutation,
   useWorkerLoginMutation,
   useWorkerPasswordLoginMutation,
+  useAdminLoginMutation,
   useWorkerVerifyOtpMutation,
   useWorkerRegisterMutation,
   useWorkerSaveProfileMutation,

@@ -1,4 +1,5 @@
 export { LanguageSelectScreen } from './LanguageSelectScreen';
+export { ChooseAccountTypeScreen } from './ChooseAccountypeScreen';
 export { InviteCodeScreen } from './InviteCodeScreen';
 export { AgencyConfirmScreen } from './AgencyConfirmScreen';
 export { NearbyAgenciesScreen } from './NearbyAgenciesScreen';

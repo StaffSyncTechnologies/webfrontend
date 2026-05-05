@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme, useToast } from '../contexts';
-import { H2, Body, Caption, Button } from '../components/ui';
+import { useOrgTheme, useToast, useTheme } from '../contexts';
+import { H2, Body, Caption, Button, Input, DatePickerModal } from '../components/ui';
 import { AuthenticatedImage } from '../components/ui/AuthenticatedImage';
 import { useGetMeQuery, useUpdateMeMutation, useWorkerUploadProfilePicMutation } from '../store/api/authApi';
 import { API_BASE_URL, API_BASE } from '../services/endpoints';
@@ -30,7 +30,8 @@ function parseDisplayDate(str: string): string | null {
 
 export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'ProfileDetails'>) {
   const insets = useSafeAreaInsets();
-  const { secondaryColor, primaryColor } = useOrgTheme();
+  const { primaryColor, secondaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const toast = useToast();
   const { data: meResponse, isLoading: loadingProfile, refetch: refetchMe } = useGetMeQuery();
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
@@ -40,6 +41,8 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
+  const [dobDate, setDobDate] = useState<Date | undefined>();
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [postcode, setPostcode] = useState('');
@@ -50,7 +53,11 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
       setFullName(profile.fullName || '');
       setEmail(profile.email || '');
       setPhone(profile.phone || '');
-      setDob(formatDateForDisplay(profile.workerProfile?.dateOfBirth));
+      const dobIso = profile.workerProfile?.dateOfBirth;
+      setDob(formatDateForDisplay(dobIso));
+      if (dobIso) {
+        setDobDate(new Date(dobIso));
+      }
       setAddress(profile.workerProfile?.address || '');
       setPostcode(profile.workerProfile?.postcode || '');
       setProfilePicUrl(profile.profilePicUrl 
@@ -71,8 +78,7 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
       const body: any = { fullName, phone };
       if (address) body.address = address;
       if (postcode) body.postcode = postcode;
-      const parsedDate = parseDisplayDate(dob);
-      if (parsedDate) body.dateOfBirth = parsedDate;
+      if (dobDate) body.dateOfBirth = dobDate.toISOString();
 
       await updateMe(body).unwrap();
       toast.success('Profile updated');
@@ -127,7 +133,7 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Profile Details</H2>
@@ -156,110 +162,85 @@ export function ProfileDetailsScreen({ navigation }: RootStackScreenProps<'Profi
 
         <View className="px-5">
           {/* Full Name */}
-          <Body className="font-outfit-semibold mb-2">
-            Full Name<Body style={{ color: '#DC2626' }}>*</Body>
-          </Body>
-          <View
-            className="flex-row items-center px-4 py-3.5 rounded-xl mb-5"
-            style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-          >
-            <TextInput
-              className="flex-1 font-outfit text-base"
-              value={fullName}
-              onChangeText={setFullName}
-              placeholderTextColor="#9CA3AF"
-              placeholder="Enter full name"
-            />
-            <Ionicons name="create-outline" size={18} color="#9CA3AF" />
-          </View>
+          <Input
+            label="Full Name"
+            required
+            value={fullName}
+            onChangeText={setFullName}
+            placeholder="Enter full name"
+            rightIcon={<Ionicons name="create-outline" size={18} color="#9CA3AF" />}
+            containerClassName="mb-5"
+          />
 
           {/* Email (read-only) */}
-          <Body className="font-outfit-semibold mb-2">Email</Body>
-          <View
-            className="flex-row items-center px-4 py-3.5 rounded-xl mb-5"
-            style={{ borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#F9FAFB' }}
-          >
-            <TextInput
-              className="flex-1 font-outfit text-base"
-              value={email}
-              editable={false}
-              style={{ color: '#6B7280' }}
-            />
-            <Ionicons name="lock-closed-outline" size={18} color="#D1D5DB" />
-          </View>
+          <Input
+            label="Email"
+            value={email}
+            editable={false}
+            rightIcon={<Ionicons name="lock-closed-outline" size={18} color="#D1D5DB" />}
+            containerClassName="mb-5"
+          />
 
           {/* Date of Birth */}
-          <Body className="font-outfit-semibold mb-2">
-            Date of Birth<Body style={{ color: '#DC2626' }}>*</Body>
-          </Body>
-          <View
-            className="flex-row items-center px-4 py-3.5 rounded-xl mb-5"
-            style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-          >
-            <TextInput
-              className="flex-1 font-outfit text-base"
-              value={dob}
-              onChangeText={setDob}
-              placeholderTextColor="#9CA3AF"
-              placeholder="DD/MM/YYYY"
-              keyboardType="numbers-and-punctuation"
-            />
-            <Ionicons name="calendar-outline" size={18} color="#6B7280" />
-          </View>
+          <Input
+            label="Date of Birth"
+            required
+            value={dob}
+            onPressIn={() => setShowDatePicker(true)}
+            editable={false}
+            placeholder="DD/MM/YYYY"
+            rightIcon={<Ionicons name="calendar-outline" size={18} color="#6B7280" />}
+            containerClassName="mb-5"
+          />
+
+          <DatePickerModal
+            visible={showDatePicker}
+            onClose={() => setShowDatePicker(false)}
+            onConfirm={(date) => {
+              const dd = date.getDate().toString().padStart(2, '0');
+              const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+              const yyyy = date.getFullYear();
+              setDobDate(date);
+              setDob(`${dd}/${mm}/${yyyy}`);
+              setShowDatePicker(false);
+            }}
+            initialDate={dobDate || new Date(2000, 0, 1)}
+            maximumDate={new Date()}
+          />
 
           {/* Phone Number */}
-          <Body className="font-outfit-semibold mb-2">
-            Phone Number<Body style={{ color: '#DC2626' }}>*</Body>
-          </Body>
-          <View
-            className="flex-row items-center px-4 py-3.5 rounded-xl mb-5"
-            style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-          >
-            <TextInput
-              className="flex-1 font-outfit text-base"
-              value={phone}
-              onChangeText={setPhone}
-              placeholderTextColor="#9CA3AF"
-              placeholder="Enter phone number"
-              keyboardType="phone-pad"
-            />
-            <Ionicons name="create-outline" size={18} color="#9CA3AF" />
-          </View>
+          <Input
+            label="Phone Number"
+            required
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter phone number"
+            keyboardType="phone-pad"
+            rightIcon={<Ionicons name="create-outline" size={18} color="#9CA3AF" />}
+            containerClassName="mb-5"
+          />
 
           {/* Residential Address */}
-          <Body className="font-outfit-semibold mb-2">
-            Residential Address<Body style={{ color: '#DC2626' }}>*</Body>
-          </Body>
-          <View
-            className="flex-row items-center px-4 py-3.5 rounded-xl mb-5"
-            style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-          >
-            <TextInput
-              className="flex-1 font-outfit text-base"
-              value={address}
-              onChangeText={setAddress}
-              placeholderTextColor="#9CA3AF"
-              placeholder="Enter address"
-            />
-            <Ionicons name="create-outline" size={18} color="#9CA3AF" />
-          </View>
+          <Input
+            label="Residential Address"
+            required
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Enter address"
+            rightIcon={<Ionicons name="create-outline" size={18} color="#9CA3AF" />}
+            containerClassName="mb-5"
+          />
 
           {/* Postcode */}
-          <Body className="font-outfit-semibold mb-2">Postcode</Body>
-          <View
-            className="flex-row items-center px-4 py-3.5 rounded-xl mb-5"
-            style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-          >
-            <TextInput
-              className="flex-1 font-outfit text-base"
-              value={postcode}
-              onChangeText={setPostcode}
-              placeholderTextColor="#9CA3AF"
-              placeholder="Enter postcode"
-              autoCapitalize="characters"
-            />
-            <Ionicons name="create-outline" size={18} color="#9CA3AF" />
-          </View>
+          <Input
+            label="Postcode"
+            value={postcode}
+            onChangeText={setPostcode}
+            placeholder="Enter postcode"
+            autoCapitalize="characters"
+            rightIcon={<Ionicons name="create-outline" size={18} color="#9CA3AF" />}
+            containerClassName="mb-5"
+          />
         </View>
 
         <View className="h-24" />

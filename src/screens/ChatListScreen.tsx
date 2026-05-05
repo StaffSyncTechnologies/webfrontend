@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { H2, Body, Caption } from '../components/ui';
 import { useGetMyRoomsQuery, useWorkerGetOrCreateRoomMutation } from '../store/api/chatApi';
 import type { ChatRoom } from '../store/api/chatApi';
@@ -31,7 +31,9 @@ function getInitials(name: string) {
 
 export function ChatListScreen({ navigation }: RootStackScreenProps<'ChatList'>) {
   const insets = useSafeAreaInsets();
-  const { primaryColor, secondaryColor } = useOrgTheme();
+  const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
+  const { secondaryColor } = useOrgTheme();
   const currentUserId = useAppSelector((state) => state.auth.worker?.id);
   const { data: roomsData, isLoading, refetch } = useGetMyRoomsQuery();
   const [getOrCreateRoom, { isLoading: isCreatingRoom }] = useWorkerGetOrCreateRoomMutation();
@@ -73,7 +75,7 @@ export function ChatListScreen({ navigation }: RootStackScreenProps<'ChatList'>)
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Messages</H2>

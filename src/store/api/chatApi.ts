@@ -61,6 +61,20 @@ export const chatApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // HR/Admin: get or create a room with a specific worker
+    hrCreateRoom: builder.mutation<ApiResponse<ChatRoom>, { workerId: string }>({
+      query: ({ workerId }) => ({
+        url: CHAT.ROOMS,
+        method: 'POST',
+        body: { workerId },
+      }),
+    }),
+
+    // Get workers assigned to this HR/Admin for chat
+    getAssignedChatWorkers: builder.query<ApiResponse<{ id: string; fullName: string; email: string; profilePicUrl: string | null }[]>, void>({
+      query: () => CHAT.ASSIGNED_WORKERS,
+    }),
+
     // Get all chat rooms for the current user
     getMyRooms: builder.query<ApiResponse<ChatRoom[]>, void>({
       query: () => CHAT.ROOMS,
@@ -129,6 +143,8 @@ export const chatApi = baseApi.injectEndpoints({
 
 export const {
   useWorkerGetOrCreateRoomMutation,
+  useHrCreateRoomMutation,
+  useGetAssignedChatWorkersQuery,
   useGetMyRoomsQuery,
   useGetRoomMessagesQuery,
   useMarkMessagesAsReadMutation,

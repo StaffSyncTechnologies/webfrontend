@@ -18,6 +18,18 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
   const token = useAppSelector((state) => state.auth.token);
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [hasJoinedRoom, setHasJoinedRoom] = useState(false);
+
+  // Use refs to prevent useEffect from running when callbacks change
+  const onNewMessageRef = useRef(onNewMessage);
+  const onTypingRef = useRef(onTyping);
+  const onMessagesReadRef = useRef(onMessagesRead);
+
+  useEffect(() => {
+    onNewMessageRef.current = onNewMessage;
+    onTypingRef.current = onTyping;
+    onMessagesReadRef.current = onMessagesRead;
+  }, [onNewMessage, onTyping, onMessagesRead]);
 
   // Initialize socket connection
   useEffect(() => {
@@ -33,16 +45,16 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
 
     socket.on('connect', () => {
       setIsConnected(true);
-      console.log('🔌 Socket connected');
+      console.log('✅ Socket connected');
     });
 
     socket.on('disconnect', () => {
       setIsConnected(false);
-      console.log('🔌 Socket disconnected');
+      console.log('❌ Socket disconnected');
     });
 
     socket.on('connect_error', (err) => {
-      console.log('🔌 Socket connection error:', err.message);
+      console.log('❌ Socket connection error:', err.message);
     });
 
     socketRef.current = socket;
@@ -57,9 +69,20 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
   // Join/leave room and set up room-specific listeners
   useEffect(() => {
     const socket = socketRef.current;
-    if (!socket || !isConnected || !roomId) return;
+    console.log('🔌 Room join useEffect:', { hasSocket: !!socket, isConnected, roomId });
+    if (!socket || !isConnected || !roomId) {
+      console.log('⏳ Skipping room join - missing prerequisites');
+      return;
+    }
 
+    console.log('📤 Emitting chat:join for room:', roomId);
+    setHasJoinedRoom(false);
     socket.emit('chat:join', { roomId });
+
+    const handleJoined = (data: { roomId: string }) => {
+      console.log('✅ Received chat:joined event for room:', data.roomId);
+      setHasJoinedRoom(true);
+    };
 
     const handleMessage = (message: any) => {
       // Transform backend message format to frontend ChatMessage interface
@@ -79,28 +102,31 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
         },
         attachments: message.attachments || []
       };
-      onNewMessage?.(transformedMessage);
+      onNewMessageRef.current?.(transformedMessage);
     };
 
     const handleTyping = (data: { userId: string; isTyping: boolean }) => {
-      onTyping?.(data);
+      onTypingRef.current?.(data);
     };
 
     const handleRead = (data: { roomId: string; readBy: string }) => {
-      onMessagesRead?.(data);
+      onMessagesReadRef.current?.(data);
     };
 
+    socket.on('chat:joined', handleJoined);
     socket.on('chat:message', handleMessage);
     socket.on('chat:typing', handleTyping);
     socket.on('chat:messages_read', handleRead);
 
     return () => {
       socket.emit('chat:leave', { roomId });
+      setHasJoinedRoom(false);
+      socket.off('chat:joined', handleJoined);
       socket.off('chat:message', handleMessage);
       socket.off('chat:typing', handleTyping);
       socket.off('chat:messages_read', handleRead);
     };
-  }, [roomId, isConnected, onNewMessage, onTyping, onMessagesRead]);
+  }, [roomId, isConnected]);
 
   const sendMessage = useCallback((content: string) => {
     if (!socketRef.current || !roomId) return;
@@ -123,6 +149,7 @@ export function useSocket({ roomId, onNewMessage, onTyping, onMessagesRead }: Us
 
   return {
     isConnected,
+    hasJoinedRoom,
     sendMessage,
     sendTyping,
     markAsRead,

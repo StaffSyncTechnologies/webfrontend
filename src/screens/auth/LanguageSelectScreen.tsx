@@ -21,7 +21,7 @@ export function LanguageSelectScreen({ navigation }: Props) {
 
   const handleContinue = async () => {
     await AsyncStorage.setItem(HAS_LAUNCHED_KEY, 'true');
-    navigation.navigate('InviteCode');
+    navigation.navigate('ChooseAccountType');
   };
 
   return (

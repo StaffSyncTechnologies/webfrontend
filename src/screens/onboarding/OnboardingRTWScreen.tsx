@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOrgTheme } from '../../contexts';
-import { Button, Input, H1, Body, StepHeader } from '../../components/ui';
+import { Button, Input, H1, Body, StepHeader, DatePickerModal } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
 import { useWorkerVerifyRTWMutation } from '../../store';
 import { useAppSelector } from '../../store/hooks';
@@ -16,6 +16,8 @@ export function OnboardingRTWScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const [shareCode, setShareCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [dobDate, setDobDate] = useState<Date | undefined>();
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [verifyRTW, { isLoading: isSubmitting }] = useWorkerVerifyRTWMutation();
   const worker = useAppSelector((state) => state.auth.worker);
@@ -35,7 +37,7 @@ export function OnboardingRTWScreen({ navigation }: Props) {
       await verifyRTW({
         email: worker?.email || '',
         shareCode: shareCode.trim().replace(/[-\s]/g, ''),
-        dateOfBirth: dateOfBirth.trim(),
+        dateOfBirth: dobDate ? dobDate.toISOString().split('T')[0] : '',
       }).unwrap();
       navigation.navigate('VerificationSuccess');
     } catch (err: any) {
@@ -107,7 +109,8 @@ export function OnboardingRTWScreen({ navigation }: Props) {
               label={t('onboarding.dateOfBirth')}
               placeholder="dd/mm/yy"
               value={dateOfBirth}
-              onChangeText={(t) => { setDateOfBirth(t); setErrors({ ...errors, dateOfBirth: '' }); }}
+              onPressIn={() => setShowDatePicker(true)}
+              editable={false}
               error={errors.dateOfBirth}
             />
             <View className="flex-row items-center mt-1.5">
@@ -115,6 +118,22 @@ export function OnboardingRTWScreen({ navigation }: Props) {
               <Body className="text-xs" color="muted">{t('onboarding.dobHint')}</Body>
             </View>
           </View>
+
+          <DatePickerModal
+            visible={showDatePicker}
+            onClose={() => setShowDatePicker(false)}
+            onConfirm={(date) => {
+              const dd = date.getDate().toString().padStart(2, '0');
+              const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+              const yyyy = date.getFullYear();
+              setDobDate(date);
+              setDateOfBirth(`${dd}/${mm}/${yyyy}`);
+              setErrors({ ...errors, dateOfBirth: '' });
+              setShowDatePicker(false);
+            }}
+            initialDate={dobDate || new Date(2000, 0, 1)}
+            maximumDate={new Date()}
+          />
         </View>
       </View>
 

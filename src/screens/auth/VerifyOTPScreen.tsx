@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useToast, useOrgTheme } from '../../contexts';
+import { useToast, useOrgTheme, useTheme } from '../../contexts';
 import { useWorkerVerifyOtpMutation, useWorkerLoginMutation } from '../../store';
 import { Button, H1, Body, Label } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ export function VerifyOTPScreen({ route, navigation }: Props) {
   const toast = useToast();
   const { t } = useTranslation();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState(60);
@@ -77,7 +78,24 @@ export function VerifyOTPScreen({ route, navigation }: Props) {
       }
     } catch (err: any) {
       console.error('verifyOtp error:', JSON.stringify(err, null, 2));
-      toast.error(err?.data?.error || err?.data?.message || err?.error || err?.message || 'Invalid OTP');
+      
+      // Extract the actual error message from backend response
+      let errorMessage = 'Invalid OTP';
+      
+      if (err?.status === 401 && err?.data?.error) {
+        // Backend error format: { status: 401, data: { success: false, error: "Invalid or expired OTP", code: "INVALID_OTP" } }
+        errorMessage = err.data.error;
+      } else if (err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.error) {
+        errorMessage = err.error;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     }
@@ -91,7 +109,24 @@ export function VerifyOTPScreen({ route, navigation }: Props) {
       toast.success('Code resent to your email');
     } catch (err: any) {
       console.error('resendOtp error:', JSON.stringify(err, null, 2));
-      toast.error(err?.data?.error || err?.data?.message || err?.error || err?.message || 'Failed to resend');
+      
+      // Extract the actual error message from backend response
+      let errorMessage = 'Failed to resend';
+      
+      if (err?.status === 401 && err?.data?.error) {
+        // Backend error format: { status: 401, data: { success: false, error: "Invalid email", code: "INVALID_EMAIL" } }
+        errorMessage = err.data.error;
+      } else if (err?.data?.error) {
+        errorMessage = err.data.error;
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.error) {
+        errorMessage = err.error;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -137,8 +172,8 @@ export function VerifyOTPScreen({ route, navigation }: Props) {
                   height: 56, 
                   borderRadius: 12,
                   borderWidth: 1.5,
-                  borderColor: digit ? primaryColor : '#D1D5DB',
-                  color: '#1F2937',
+                  borderColor: digit ? primaryColor : (isDark ? '#4B5563' : '#D1D5DB'),
+                  color: isDark ? '#FFFFFF' : '#1F2937',
                   fontSize: 22,
                   fontWeight: '600',
                   textAlign: 'center',
@@ -149,7 +184,7 @@ export function VerifyOTPScreen({ route, navigation }: Props) {
                 keyboardType="number-pad"
                 maxLength={6}
                 selectTextOnFocus
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={isDark ? '#9CA3AF' : '#9CA3AF'}
               />
             ))}
           </View>

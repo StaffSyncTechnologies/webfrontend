@@ -1,3 +1,5 @@
+import { PaginatedCardList } from '..';
+
 export { Button } from './Button';
 export { Input } from './Input';
 export { Card } from './Card';
@@ -16,3 +18,5 @@ export { ShiftCard } from './ShiftCard';
 export { HolidayCard } from './HolidayCard';
 export type { HolidayCardData, HolidayStatus } from './HolidayCard';
 export type { ShiftCardData } from './ShiftCard';
+export {PaginatedCardList} from './PaginatedCardList'
+export type {PaginatedCardListProps,FilterOption} from './PaginatedCardList'

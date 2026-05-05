@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
-import { H2, H3, Body, Caption, Button } from '../components/ui';
+import { useOrgTheme, useTheme } from '../contexts';
+import { H2, H3, Body, Caption, Button, Input } from '../components/ui';
 import { useGetMyRecurringSchedulesQuery, useCreateScheduleChangeRequestMutation, RecurringSchedule } from '../store/api/workerApi';
 
 const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -15,6 +15,7 @@ const DAY_INDEX_MAP: Record<string, number> = { MON: 0, TUE: 1, WED: 2, THU: 3, 
 export function ScheduleChangeRequestScreen({ navigation }: RootStackScreenProps<'ScheduleChangeRequest'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
 
   const { data: recurringSchedulesResponse } = useGetMyRecurringSchedulesQuery();
   const recurringSchedules = recurringSchedulesResponse || [];
@@ -90,7 +91,7 @@ export function ScheduleChangeRequestScreen({ navigation }: RootStackScreenProps
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Request Schedule Change</H2>
@@ -207,20 +208,20 @@ export function ScheduleChangeRequestScreen({ navigation }: RootStackScreenProps
                 <View className="flex-row gap-2">
                   <View className="flex-1">
                     <Caption className="mb-1">Start Time</Caption>
-                    <TextInput
-                      className="px-3 py-2 bg-white rounded-lg border border-gray-200"
+                    <Input
+                      placeholder="06:00"
                       value={dayTimes[dayIndex]?.startTime || '06:00'}
                       onChangeText={(value) => updateTime(dayIndex, 'startTime', value)}
-                      style={{ color: '#000000' }}
+                      containerClassName="mb-0"
                     />
                   </View>
                   <View className="flex-1">
                     <Caption className="mb-1">End Time</Caption>
-                    <TextInput
-                      className="px-3 py-2 bg-white rounded-lg border border-gray-200"
+                    <Input
+                      placeholder="14:00"
                       value={dayTimes[dayIndex]?.endTime || '14:00'}
                       onChangeText={(value) => updateTime(dayIndex, 'endTime', value)}
-                      style={{ color: '#000000' }}
+                      containerClassName="mb-0"
                     />
                   </View>
                 </View>
@@ -230,24 +231,15 @@ export function ScheduleChangeRequestScreen({ navigation }: RootStackScreenProps
         )}
 
         {/* Note */}
-        <Body className="font-outfit-semibold mb-2">
-          Note (optional)
-        </Body>
-        <View
-          className="px-4 pt-3.5 pb-16 rounded-xl mb-6"
-          style={{ borderWidth: 1, borderColor: '#E2E8F0' }}
-        >
-          <TextInput
-            className="font-outfit text-base"
-            placeholder="Add a note for your manager"
-            placeholderTextColor="#9CA3AF"
-            value={workerNote}
-            onChangeText={setWorkerNote}
-            multiline
-            textAlignVertical="top"
-            style={{ color: '#000000' }}
-          />
-        </View>
+        <Input
+          label="Note (optional)"
+          placeholder="Add a note for your manager"
+          value={workerNote}
+          onChangeText={setWorkerNote}
+          multiline
+          numberOfLines={4}
+          containerClassName="mb-6"
+        />
 
         <View className="h-10" />
       </ScrollView>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Image } from 'react-native';
+import { View, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import * as Location from 'expo-location';
-import { Container, H1, H2, Body, Caption, Card } from '../../components/ui';
+import { Container, H1, H2, Body, Caption, Card, Input } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts';
 import { brandColors } from '../../constants/colors';
@@ -197,28 +197,15 @@ export function NearbyAgenciesScreen({ navigation }: Props) {
         >
           {/* City search */}
           <View className="mb-4">
-            <Caption color="secondary" className="mb-1.5 font-outfit-semibold">
-              {t('nearbyAgencies.filterByCity')}
-            </Caption>
-            <TextInput
+            <Input
+              label={t('nearbyAgencies.filterByCity')}
+              placeholder={t('nearbyAgencies.cityPlaceholder')}
               value={citySearch}
               onChangeText={setCitySearch}
-              placeholder={t('nearbyAgencies.cityPlaceholder')}
-              placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
               autoCorrect={false}
               autoCapitalize="none"
               returnKeyType="search"
-              clearButtonMode="while-editing"
-              style={{
-                height: 42,
-                borderRadius: 10,
-                paddingHorizontal: 14,
-                fontSize: 15,
-                backgroundColor: isDark ? '#111827' : '#FFFFFF',
-                borderWidth: 1,
-                borderColor: isDark ? '#374151' : '#D1D5DB',
-                color: isDark ? '#F9FAFB' : '#111827',
-              }}
+              containerClassName="mb-4"
             />
           </View>
 

@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert } f
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme, useToast } from '../contexts';
+import { useOrgTheme, useTheme, useToast } from '../contexts';
 import { H2, H3, Body, Caption, Button } from '../components/ui';
 import {
   useGetMySkillsQuery,
@@ -43,6 +43,7 @@ function formatDocDate(iso?: string): string {
 export function SkillsCertificateScreen({ navigation }: RootStackScreenProps<'SkillsCertificate'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor, secondaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const toast = useToast();
 
   // Skills data
@@ -135,7 +136,7 @@ export function SkillsCertificateScreen({ navigation }: RootStackScreenProps<'Sk
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Skills and Certificate</H2>

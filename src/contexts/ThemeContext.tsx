@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeMode = 'light' | 'dark' | 'system';
@@ -87,15 +87,32 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       .then((savedMode) => {
         if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
           setThemeModeState(savedMode as ThemeMode);
+          
+          // Apply the saved theme to NativeWind
+          if (savedMode === 'dark') {
+            Appearance.setColorScheme('dark');
+          } else if (savedMode === 'light') {
+            Appearance.setColorScheme('light');
+          }
+          // For 'system', don't force a color scheme
         }
       })
       .finally(() => setIsLoaded(true));
   }, []);
 
-  // Save theme preference
+  // Save theme preference and apply it
   const setThemeMode = (mode: ThemeMode) => {
     setThemeModeState(mode);
     AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
+    
+    // Apply the theme to NativeWind
+    if (mode === 'dark') {
+      Appearance.setColorScheme('dark');
+    } else if (mode === 'light') {
+      Appearance.setColorScheme('light');
+    } else {
+      // Use system default - don't force a color scheme
+    }
   };
 
   // Resolve actual theme based on mode
@@ -106,6 +123,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   const isDark = theme === 'dark';
   const colors = isDark ? darkColors : lightColors;
+
+  // Debug logging
+  console.log('Theme Context:', { themeMode, systemColorScheme, theme, isDark });
 
   if (!isLoaded) {
     return null; // Or a loading spinner

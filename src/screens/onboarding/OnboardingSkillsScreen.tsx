@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useOrgTheme } from '../../contexts';
+import { useOrgTheme, useTheme } from '../../contexts';
 import { Button, H1, Body, StepHeader } from '../../components/ui';
 import { API_BASE_URL } from '../../services/endpoints';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +43,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function OnboardingSkillsScreen({ navigation }: Props) {
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [categories, setCategories] = useState<SkillCategory[]>([]);
@@ -138,13 +139,13 @@ export function OnboardingSkillsScreen({ navigation }: Props) {
                       },
                       isSelected
                         ? { backgroundColor: primaryColor, borderColor: primaryColor }
-                        : { backgroundColor: 'transparent', borderColor: '#D1D5DB' },
+                        : { backgroundColor: 'transparent', borderColor: isDark ? '#4B5563' : '#D1D5DB' },
                     ]}
                   >
                     <View className="flex-row items-center">
                       <Body
                         className="text-sm"
-                        style={{ color: isSelected ? '#FFFFFF' : '#374151' }}
+                        style={{ color: isSelected ? '#FFFFFF' : (isDark ? '#E5E7EB' : '#374151') }}
                       >
                         {skill.name}
                       </Body>

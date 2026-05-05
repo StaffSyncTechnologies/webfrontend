@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { H2, Body, Caption, Button } from '../components/ui';
 import { useChangePasswordMutation } from '../store/api/authApi';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 export function ChangePasswordScreen({ navigation }: RootStackScreenProps<'ChangePassword'>) {
   const insets = useSafeAreaInsets();
   const { orgTheme, primaryColor, secondaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const { t } = useTranslation();
   const [changePassword, { isLoading }] = useChangePasswordMutation();
 
@@ -87,7 +88,7 @@ export function ChangePasswordScreen({ navigation }: RootStackScreenProps<'Chang
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color={primaryColor || '#000035'} />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : (primaryColor || '#000035')} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>{t('changePassword.title')}</H2>

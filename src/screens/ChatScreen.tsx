@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, ScrollView, TouchableOpacity, TextInput,
+  View, ScrollView, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator,
   Modal, TouchableWithoutFeedback, Alert, Image
 } from 'react-native';
@@ -16,9 +16,9 @@ import {
   setAudioModeAsync,
 } from 'expo-audio';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { useAppSelector } from '../store/hooks';
-import { H2, Body, Caption } from '../components/ui';
+import { H2, Body, Caption, Input } from '../components/ui';
 import {
   useWorkerGetOrCreateRoomMutation,
   useGetRoomMessagesQuery,
@@ -64,11 +64,12 @@ function transformMessage(message: any): ChatMessage {
 }
 
 export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const { primaryColor, secondaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const colorScheme = useColorScheme();
   const currentUserId = useAppSelector((state) => state?.auth.worker?.id);
   const scrollRef = useRef<ScrollView>(null);
-  const insets = useSafeAreaInsets();
 
   const [inputText, setInputText] = useState('');
   const [roomId, setRoomId] = useState<string | undefined>(route.params?.roomId);
@@ -404,9 +405,9 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
   return (
     <View className="flex-1 bg-light-background-primary dark:bg-dark-background-primary" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="flex-row items-center px-5 py-3" style={{ borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
+      <View className="flex-row items-center px-5 py-3" style={{ borderBottomWidth: 1, borderBottomColor: isDark ? '#2D2D44' : '#E2E8F0' }}>
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="w-10 h-10 rounded-full bg-gray-300 items-center justify-center mr-3 overflow-hidden">
           <Ionicons name="person" size={20} color="#6B7280" />
@@ -427,7 +428,7 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 60 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -20 : 0}
       >
         {/* Messages */}
         <ScrollView
@@ -465,7 +466,7 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
                     <View style={{ maxWidth: '75%', flexShrink: 1 }}>
                       <View
                         style={{
-                          backgroundColor: isMe ? (secondaryColor || '#38BDF8') : '#F3F4F6',
+                          backgroundColor: isMe ? (secondaryColor || '#38BDF8') : (isDark ? '#2D2D44' : '#F3F4F6'),
                           borderRadius: 16,
                           borderBottomRightRadius: isMe ? 4 : 16,
                           borderBottomLeftRadius: isMe ? 16 : 4,
@@ -476,7 +477,7 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
                       >
                         {/* Text */}
                         {msg.messageType === 'TEXT' && msg.content && (
-                          <Body style={{ color: isMe ? '#FFFFFF' : '#1F2937' }}>
+                          <Body style={{ color: isMe ? '#1F2937' : (isDark ? '#E5E7EB' : '#1F2937') }}>
                             {msg.content}
                           </Body>
                         )}
@@ -499,19 +500,19 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
                                   width: 200,
                                   height: 150,
                                   borderRadius: 8,
-                                  backgroundColor: '#F3F4F6',
+                                  backgroundColor: isDark ? '#2D2D44' : '#F3F4F6',
                                   justifyContent: 'center',
                                   alignItems: 'center',
                                 }}
                               >
-                                <Ionicons name="image-outline" size={40} color="#9CA3AF" />
-                                <Body style={{ color: '#6B7280', marginTop: 8 }}>
+                                <Ionicons name="image-outline" size={40} color={isDark ? '#6B7280' : '#9CA3AF'} />
+                                <Body style={{ color: isDark ? '#9CA3AF' : '#6B7280', marginTop: 8 }}>
                                   No attachment data
                                 </Body>
                               </View>
                             )}
                             {msg.content && (
-                              <Body style={{ color: isMe ? '#FFFFFF' : '#1F2937', marginTop: 8 }}>
+                              <Body style={{ color: isMe ? '#1F2937' : (isDark ? '#E5E7EB' : '#1F2937'), marginTop: 8 }}>
                                 {msg.content}
                               </Body>
                             )}
@@ -524,13 +525,13 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
                             <Ionicons
                               name="document-text-outline"
                               size={24}
-                              color={isMe ? '#FFFFFF' : '#1F2937'}
+                              color={isMe ? '#1F2937' : (isDark ? '#E5E7EB' : '#1F2937')}
                             />
                             <View style={{ marginLeft: 8, flex: 1 }}>
-                              <Body style={{ color: isMe ? '#FFFFFF' : '#1F2937' }}>
+                              <Body style={{ color: isMe ? '#1F2937' : (isDark ? '#E5E7EB' : '#1F2937') }}>
                                 {msg.attachments[0].fileName}
                               </Body>
-                              <Caption style={{ color: isMe ? '#FFFFFF80' : '#6B7280' }}>
+                              <Caption style={{ color: isMe ? '#6B7280' : (isDark ? '#9CA3AF' : '#6B7280') }}>
                                 {Math.round(msg.attachments[0].fileSize / 1024)} KB
                               </Caption>
                             </View>
@@ -543,13 +544,13 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
                             <Ionicons
                               name="play-circle-outline"
                               size={24}
-                              color={isMe ? '#FFFFFF' : '#1F2937'}
+                              color={isMe ? '#1F2937' : (isDark ? '#E5E7EB' : '#1F2937')}
                             />
                             <View style={{ marginLeft: 8 }}>
-                              <Body style={{ color: isMe ? '#FFFFFF' : '#1F2937' }}>
+                              <Body style={{ color: isMe ? '#1F2937' : (isDark ? '#E5E7EB' : '#1F2937') }}>
                                 Voice Message
                               </Body>
-                              <Caption style={{ color: isMe ? '#FFFFFF80' : '#6B7280' }}>
+                              <Caption style={{ color: isMe ? '#6B7280' : (isDark ? '#9CA3AF' : '#6B7280') }}>
                                 {msg.attachments[0].duration}s
                               </Caption>
                             </View>
@@ -593,7 +594,7 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
 
           {localMessages.length === 0 && !isLoadingMessages && (
             <View className="flex-1 items-center justify-center py-12">
-              <Ionicons name="chatbubbles-outline" size={48} color="#D1D5DB" />
+              <Ionicons name="chatbubbles-outline" size={48} color={isDark ? '#4B5563' : '#D1D5DB'} />
               <Body color="secondary" className="mt-3 text-center">
                 No messages yet.{'\n'}Send a message to start the conversation.
               </Body>
@@ -605,38 +606,38 @@ export const ChatScreen: React.FC<RootStackScreenProps<'Chat'>> = ({ navigation,
         <View
           style={{
             borderTopWidth: 1,
-            borderTopColor: '#E2E8F0',
+            borderTopColor: isDark ? '#2D2D44' : '#E2E8F0',
             paddingHorizontal: 16,
             paddingTop: 12,
             paddingBottom: insets.bottom + 10,
+            backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF',
           }}
         >
           <View className="flex-row items-center bg-light-background-secondary dark:bg-dark-background-secondary rounded-full px-4 py-2">
             <TouchableOpacity className="mr-2">
-              <Ionicons name="happy-outline" size={22} color="#9CA3AF" />
+              <Ionicons name="happy-outline" size={22} color={isDark ? '#6B7280' : '#9CA3AF'} />
             </TouchableOpacity>
-            <TextInput
-              className="flex-1 font-outfit text-base py-1"
-              style={{ color: colorScheme === 'dark' ? '#FFFFFF' : '#000000' }}
+            <Input
               placeholder="Type here..."
-              placeholderTextColor="#9CA3AF"
               value={inputText}
               onChangeText={handleTextChange}
               onSubmitEditing={handleSend}
               returnKeyType="send"
+              containerClassName="mb-0 flex-1"
+              className="py-1"
             />
             <TouchableOpacity className="mr-2" onPress={() => setShowAttachmentMenu(true)}>
-              <Ionicons name="attach-outline" size={22} color="#9CA3AF" />
+              <Ionicons name="attach-outline" size={22} color={isDark ? '#6B7280' : '#9CA3AF'} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSend}
               className="w-9 h-9 rounded-full items-center justify-center"
               style={{
-                backgroundColor: inputText.trim() ? (secondaryColor || '#38BDF8') : '#D1D5DB',
+                backgroundColor: inputText.trim() ? (secondaryColor || '#38BDF8') : (isDark ? '#2D2D44' : '#D1D5DB'),
               }}
               disabled={!inputText.trim()}
             >
-              <Ionicons name="send" size={16} color="#FFFFFF" />
+              <Ionicons name="send" size={16} color={inputText.trim() ? '#1F2937' : (isDark ? '#9CA3AF' : '#6B7280')} />
             </TouchableOpacity>
           </View>
         </View>

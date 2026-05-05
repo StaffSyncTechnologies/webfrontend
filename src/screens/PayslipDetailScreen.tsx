@@ -11,7 +11,7 @@ import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';
-import { useOrgTheme } from '../contexts';
+import { useOrgTheme, useTheme } from '../contexts';
 import { H2, H3, Body, Caption, Button } from '../components/ui';
 import { useGetPayslipDetailQuery, useGetPayslipHtmlQuery } from '../store/api/workerApi';
 
@@ -23,6 +23,7 @@ const fmtDate = (iso: string | undefined) =>
 export function PayslipDetailScreen({ route, navigation }: RootStackScreenProps<'PayslipDetail'>) {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const { payslipId } = route.params;
 
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
@@ -82,7 +83,7 @@ export function PayslipDetailScreen({ route, navigation }: RootStackScreenProps<
       {/* Header */}
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Ionicons name="chevron-back" size={24} color="#000035" />
+          <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#000035'} />
         </TouchableOpacity>
         <View className="flex-1 items-center mr-10">
           <H2>Payslip receipt</H2>

@@ -32,38 +32,42 @@ export interface NearbyAgencyInfo {
 // Auth Stack
 export type AuthStackParamList = {
   LanguageSelect: undefined;
+  ChooseAccountType: undefined;
   InviteCode: undefined;
   AgencyConfirm: { agency: AgencyInfo };
-  Login: { inviteCode?: string };
+  Login: { inviteCode?: string; role?: 'worker' | 'admin' };
+  AgencyLogin: undefined;
   Register: { inviteCode: string; agencyId?: string; agencyName?: string; primaryColor?: string };
   VerifyOTP: { email: string; inviteCode?: string; agencyId?: string };
-  // Onboarding steps (after OTP verification)
+  // Worker Onboarding steps (after OTP verification)
   OnboardingProfile: undefined;
   OnboardingProfilePicture: undefined;
   OnboardingSkills: undefined;
   OnboardingDocuments: undefined;
   OnboardingBankAccount: undefined;
   OnboardingRTW: undefined;
+  // Admin Onboarding
+  AdminOnboarding: undefined;
   VerificationSuccess: undefined;
   ForgotPassword: undefined;
   NearbyAgencies: undefined;
   AgencyContact: { agency: NearbyAgencyInfo };
 };
 
-// Main Tab Navigator
-export type MainTabParamList = {
+// Worker Tab Navigator
+export type WorkerTabParamList = {
   Home: undefined;
   Shifts: undefined;
   Schedule: undefined;
   Payslip: undefined;
-  Notifications: undefined;
   Profile: undefined;
 };
 
-// Root Stack (contains Auth and Main)
+// Root Stack (contains Auth and Role-based Main)
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainTabParamList>;
+  WorkerMain: { adminRole?: string };
+  AdminMain: { adminRole?: string };
   ShiftDetails: { shiftId: string };
   ShiftConfirmed: { shiftTitle: string; date: string; time: string; location: string };
   ClockIn: { shiftId: string; clockedIn?: boolean; isRecurring?: boolean; recurringScheduleId?: string | null };
@@ -76,6 +80,8 @@ export type RootStackParamList = {
   PrivacyPolicy: undefined;
   ChatList: undefined;
   Chat: { roomId?: string; recipientName?: string } | undefined;
+  AdminChatList: undefined;
+  AdminChat: { roomId?: string; recipientName?: string } | undefined;
   Appearance: undefined;
   NotificationSettings: undefined;
   SkillsCertificate: undefined;
@@ -87,7 +93,21 @@ export type RootStackParamList = {
   Documents: undefined;
   PaySlips: undefined;
   Timesheet: undefined;
+  AdminTimesheet: undefined;
+  AdminTimesheetDetail: { attendanceId: string };
+  AdminHoliday: undefined;
+  HR: undefined;
+  AdminShiftDetailsScreen: { shiftId: string };
   ScheduleChangeRequest: undefined;
+  ShiftSwap: { shiftId?: string } | undefined;
+  WorkerDetailsScreen: { workerId: string };
+  AssignSchedule: undefined;
+  RotaBuilder: undefined;
+  More: undefined;
+  InviteRequests: undefined;
+  Reports: undefined;
+  RTW: undefined;
+  ComplianceDashboard: undefined;
 };
 
 // Screen Props Types
@@ -100,9 +120,9 @@ export type AuthStackScreenProps<T extends keyof AuthStackParamList> =
     RootStackScreenProps<keyof RootStackParamList>
   >;
 
-export type MainTabScreenProps<T extends keyof MainTabParamList> = 
+export type WorkerTabScreenProps<T extends keyof WorkerTabParamList> = 
   CompositeScreenProps<
-    BottomTabScreenProps<MainTabParamList, T>,
+    BottomTabScreenProps<WorkerTabParamList, T>,
     RootStackScreenProps<keyof RootStackParamList>
   >;
 

@@ -15,8 +15,10 @@ export interface ShiftCardData {
   month: string;
   day: string;
   payRate?: string;
-  status?: 'urgent' | 'confirmed' | 'open' | 'completed' | 'limited_slot' | 'high_pay';
+  status?: 'urgent' | 'confirmed' | 'open' | 'completed' | 'limited_slot' | 'high_pay' | 'give_away';
   recurringScheduleId?: string;
+  isGiveAway?: boolean;
+  swapRequestId?: string;
 }
 
 interface ShiftCardProps {
@@ -36,6 +38,7 @@ export function ShiftCard({ shift, onPress, onViewDetails, compact = false }: Sh
     completed: { label: 'COMPLETED', bg: '#F3F4F6', text: '#6B7280' },
     limited_slot: { label: 'LIMITED SLOT', bg: '#DCFCE7', text: '#16A34A' },
     high_pay: { label: 'HIGH PAY', bg: '#DCFCE7', text: '#16A34A' },
+    give_away: { label: 'GIVE-AWAY', bg: '#F3E8FF', text: '#7C3AED' },
   };
 
   const statusInfo = shift.status ? statusConfig[shift.status] : null;

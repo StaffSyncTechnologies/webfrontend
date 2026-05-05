@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CommonActions } from '@react-navigation/native';
-import { useToast, useOrgTheme } from '../../contexts';
+import { useToast, useOrgTheme, useTheme } from '../../contexts';
 import { useWorkerPasswordLoginMutation } from '../../store/api/authApi';
 import { Container, Input, Button, H1, Body } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
@@ -11,10 +11,12 @@ import { buildFileUrl } from '../../utils/buildFileUrl';
 
 type Props = AuthStackScreenProps<'Login'>;
 
-export function LoginScreen({ navigation }: Props) {
+export function LoginScreen({ navigation, route }: Props) {
   const toast = useToast();
   const { t } = useTranslation();
   const { primaryColor, orgTheme, setOrgTheme, loadOrgTheme } = useOrgTheme();
+  const { isDark } = useTheme();
+  const { role } = route.params || {};
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -79,7 +81,7 @@ export function LoginScreen({ navigation }: Props) {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: 'Main' }],
+            routes: [{ name: 'WorkerMain' }],
           })
         );
       }
@@ -117,7 +119,7 @@ export function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <Container keyboard padding="lg" className="justify-between">
+    <Container keyboard padding="lg" className="justify-between bg-light-background-primary dark:bg-dark-background-primary">
       {/* Top Section */}
       <View className="flex-1 justify-start pt-8">
         {/* Agency Logo (falls back to StaffSync logo) */}
@@ -137,9 +139,9 @@ export function LoginScreen({ navigation }: Props) {
         )}
 
         {/* Heading */}
-        <H1 className="mb-2">{t('auth.welcomeBack')}</H1>
+        <H1 className="mb-2">{role === 'worker' ? t('auth.workerLogin') : t('auth.welcomeBack')}</H1>
         <Body color="secondary" className="leading-5 mb-8">
-          {t('auth.enterDetailsToLogin')}
+          {role === 'worker' ? t('auth.workerLoginDescription') : t('auth.enterDetailsToLogin')}
         </Body>
 
         {/* Email Input */}
@@ -195,12 +197,18 @@ export function LoginScreen({ navigation }: Props) {
           {t('auth.login')}
         </Button>
 
-        <View className="flex-row justify-center items-center gap-1">
+        <View className="flex-row justify-center items-center gap-1 mb-3">
           <Body color="secondary">{t('auth.dontHaveAccount')}</Body>
           <TouchableOpacity onPress={() => navigation.navigate('InviteCode')}>
-            <Body className="font-outfit-bold" style={{ color: primaryColor }}>{t('auth.register')}</Body>
+            <Body className="font-outfit-bold" style={{ color: primaryColor }}>{t('auth.registerWithInvite')}</Body>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity onPress={() => navigation.navigate('ChooseAccountType')}>
+          <Body className="text-center text-sm" style={{ color: isDark ? '#9CA3AF' : '#6B7280' }}>
+            {t('auth.switchAccountType')}
+          </Body>
+        </TouchableOpacity>
       </View>
     </Container>
   );

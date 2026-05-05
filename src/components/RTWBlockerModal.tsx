@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useOrgTheme } from '../contexts';
 import { useTheme } from '../contexts';
-import { Button, Input, H1, Body } from './ui';
+import { Button, Input, H1, Body, DatePickerModal } from './ui';
 import { useGetMyRTWQuery, useSubmitMyRTWMutation, useWorkerGetOrCreateRoomMutation } from '../store';
 import { useSocket } from '../hooks/useSocket';
 import { useAppSelector } from '../store/hooks';
@@ -16,6 +16,8 @@ export function RTWBlockerModal() {
   const insets = useSafeAreaInsets();
   const [shareCode, setShareCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [dobDate, setDobDate] = useState<Date | undefined>();
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
   const [showChatModal, setShowChatModal] = useState(false);
@@ -37,7 +39,7 @@ export function RTWBlockerModal() {
     });
   };
 
-  const { sendMessage, isConnected } = useSocket({
+  const { sendMessage, isConnected, hasJoinedRoom } = useSocket({
     roomId: chatRoomId,
     onNewMessage,
   });
@@ -45,31 +47,40 @@ export function RTWBlockerModal() {
   // Send RTW context message when chat opens
   const sendRTWContextMessage = () => {
     const contextMessage = `Hi, I need help with my Right to Work verification. My share code (${rtw?.rtwShareCode || 'N/A'}) has been submitted and is currently pending review. Could you please check the status?`;
-    console.log('Attempting to send RTW context message:', {
+    console.log('🚀 Attempting to send RTW context message:', {
       message: contextMessage,
       chatRoomId,
       hasSendMessage: !!sendMessage,
-      isConnected
+      isConnected,
+      hasJoinedRoom
     });
     if (sendMessage && chatRoomId) {
       sendMessage(contextMessage);
-      console.log('RTW context message sent via socket');
+      console.log('✅ RTW context message sent via socket');
     } else {
-      console.error('Cannot send RTW message - missing sendMessage or chatRoomId');
+      console.error('❌ Cannot send RTW message - missing sendMessage or chatRoomId');
     }
   };
 
   useEffect(() => {
-    console.log('RTW Chat useEffect:', { isConnected, chatRoomId, showChatModal });
-    if (isConnected && chatRoomId && showChatModal) {
+    console.log('🔄 RTW Chat useEffect:', { isConnected, hasJoinedRoom, chatRoomId, showChatModal });
+    if (isConnected && hasJoinedRoom && chatRoomId && showChatModal) {
+      console.log('✅ All conditions met, will send RTW context message after delay');
       // Small delay to ensure socket is ready
       const timer = setTimeout(() => {
-        console.log('Triggering RTW context message...');
+        console.log('⏰ Timer triggered, sending RTW context message...');
         sendRTWContextMessage();
       }, 500);
       return () => clearTimeout(timer);
+    } else {
+      console.log('⏳ Waiting for conditions:', {
+        isConnected,
+        hasJoinedRoom,
+        hasChatRoomId: !!chatRoomId,
+        showChatModal
+      });
     }
-  }, [isConnected, chatRoomId, showChatModal]);
+  }, [isConnected, hasJoinedRoom, chatRoomId, showChatModal]);
 
   const rtw = (rtwData as any)?.data || rtwData;
   const rtwStatus = rtw?.rtwStatus || 'NOT_STARTED';
@@ -109,11 +120,12 @@ export function RTWBlockerModal() {
     try {
       await submitRTW({
         shareCode: shareCode.trim().replace(/[-\s]/g, ''),
-        dateOfBirth: dateOfBirth.trim(),
+        dateOfBirth: dobDate ? dobDate.toISOString().split('T')[0] : '',
       }).unwrap();
       setSuccessMsg('Share code submitted! Your RTW is now being reviewed.');
       setShareCode('');
       setDateOfBirth('');
+      setDobDate(undefined);
       setErrors({});
       setTimeout(() => refetch(), 1500);
     } catch (err: any) {
@@ -184,18 +196,21 @@ export function RTWBlockerModal() {
                 <TouchableOpacity
                   onPress={async () => {
                     if (!authToken) {
-                      console.error('No auth token available');
+                      console.error('❌ No auth token available');
                       return;
                     }
+                    console.log('🔍 Creating chat room...');
                     try {
                       const result = await getOrCreateRoom().unwrap();
                       if (result.data) {
+                        console.log('✅ Chat room created successfully:', result.data.id);
                         setChatRoomId(result.data.id);
                         setShowChatModal(true);
-                        console.log('Chat room created:', result.data.id);
+                      } else {
+                        console.error('❌ No room data in response');
                       }
                     } catch (err: any) {
-                      console.error('Failed to get/create chat room:', err);
+                      console.error('❌ Failed to get/create chat room:', err);
                       // Show error to user
                       setErrors({ submit: 'Unable to connect to chat. Please try again.' });
                     }
@@ -358,9 +373,26 @@ export function RTWBlockerModal() {
                 label="Date of Birth (optional)"
                 placeholder="DD/MM/YYYY"
                 value={dateOfBirth}
-                onChangeText={(t) => { setDateOfBirth(t); setErrors({ ...errors, dateOfBirth: '' }); }}
+                onPressIn={() => setShowDatePicker(true)}
+                editable={false}
                 error={errors.dateOfBirth}
                 hint="Must match the date on your RTW check"
+              />
+
+              <DatePickerModal
+                visible={showDatePicker}
+                onClose={() => setShowDatePicker(false)}
+                onConfirm={(date) => {
+                  const dd = date.getDate().toString().padStart(2, '0');
+                  const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+                  const yyyy = date.getFullYear();
+                  setDobDate(date);
+                  setDateOfBirth(`${dd}/${mm}/${yyyy}`);
+                  setErrors({ ...errors, dateOfBirth: '' });
+                  setShowDatePicker(false);
+                }}
+                initialDate={dobDate || new Date(2000, 0, 1)}
+                maximumDate={new Date()}
               />
             </View>
 

@@ -2,18 +2,18 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MainTabParamList } from '../types/navigation';
+import { WorkerTabParamList } from '../types/navigation';
 import { HomeScreen, ShiftsScreen, ScheduleScreen, PayslipScreen, ProfileScreen } from '../screens/main';
-import { useOrgTheme } from '../contexts';
-import { colors } from '../constants/colors';
+import { useOrgTheme, useTheme } from '../contexts';
+import { colors, lightTheme, darkTheme } from '../constants/colors';
 import { useTranslation } from 'react-i18next';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Tab = createBottomTabNavigator<WorkerTabParamList>();
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface TabConfig {
-  name: keyof MainTabParamList;
+  name: keyof WorkerTabParamList;
   component: React.ComponentType<any>;
   iconOutline: IoniconsName;
   iconFilled: IoniconsName;
@@ -36,9 +36,12 @@ const TAB_KEYS: Record<string, string> = {
   Profile: 'tabs.profile',
 };
 
-export function MainTabNavigator() {
+export function WorkerTabNavigator() {
   const { primaryColor } = useOrgTheme();
+  const { isDark } = useTheme();
   const { t } = useTranslation();
+
+  const theme = isDark ? darkTheme : lightTheme;
 
   const tabs: TabConfig[] = tabConfigs.map((tab) => ({
     ...tab,
@@ -50,7 +53,13 @@ export function MainTabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: theme.background.primary,
+            borderTopColor: theme.border.light,
+          },
+        ],
       }}
     >
       {tabs.map((tab) => (
@@ -65,12 +74,10 @@ export function MainTabNavigator() {
                   <Ionicons
                     name={focused ? tab.iconFilled : tab.iconOutline}
                     size={22}
-                    color={focused ? primaryColor : '#9CA3AF'}
+                    color={focused ? primaryColor : theme.text.muted}
                   />
                 </View>
-                <Text style={[styles.tabLabel, focused && { color: primaryColor, fontWeight: '700' }]}>
-                  {tab.label}
-                </Text>
+                <Text style={[styles.tabLabel, { color: focused ? primaryColor : theme.text.muted }, focused && { fontWeight: '700' }]}>{tab.label}</Text>
               </View>
             ),
           }}
@@ -85,9 +92,7 @@ const styles = StyleSheet.create({
     height: 82,
     paddingTop: 8,
     paddingBottom: 26,
-    backgroundColor: colors.background.primary,
     borderTopWidth: 1,
-    borderTopColor: colors.border.light,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -104,10 +109,9 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10,
-    color: '#9CA3AF',
     fontWeight: '500',
     marginTop: 3,
   },
 });
 
-export default MainTabNavigator;
+export default WorkerTabNavigator;
