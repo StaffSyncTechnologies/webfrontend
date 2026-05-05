@@ -265,6 +265,7 @@ export function ClientWorkersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuWorkerId, setMenuWorkerId] = useState<string | null>(null);
 
@@ -274,7 +275,7 @@ export function ClientWorkersPage() {
   const { data: workersData, isLoading: workersLoading } = useGetClientWorkersQuery();
 
   // Process workers data
-  const workers = useMemo(() => {
+  const allWorkers = useMemo(() => {
     const data = Array.isArray(workersData) ? workersData : [];
     return data.map((w: any) => ({
       id: w.id,
@@ -291,12 +292,24 @@ export function ClientWorkersPage() {
     }));
   }, [workersData]);
 
+  // Paginated workers
+  const workers = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return allWorkers.slice(startIndex, endIndex);
+  }, [allWorkers, currentPage, rowsPerPage]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(allWorkers.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage + 1;
+  const endIndex = Math.min(currentPage * rowsPerPage, allWorkers.length);
+
   // Calculate stats from workers data
   const stats = useMemo(() => {
-    const totalWorkers = workers.length;
-    const activeWorkers = workers.filter(w => w.status === 'active').length;
-    const onShift = workers.filter(w => w.status === 'on_shift').length;
-    const available = workers.filter(w => w.availability === 'available').length;
+    const totalWorkers = allWorkers.length;
+    const activeWorkers = allWorkers.filter(w => w.status === 'active').length;
+    const onShift = allWorkers.filter(w => w.status === 'on_shift').length;
+    const available = allWorkers.filter(w => w.availability === 'available').length;
     
     return {
       totalWorkers,
@@ -304,7 +317,7 @@ export function ClientWorkersPage() {
       onShift,
       available,
     };
-  }, [workers]);
+  }, [allWorkers]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, workerId: string) => {
     setMenuAnchor(event.currentTarget);
@@ -529,7 +542,10 @@ export function ClientWorkersPage() {
             <PaginationText>Rows per page</PaginationText>
             <Select
               value={rowsPerPage}
-              onChange={(e) => setRowsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               size="small"
               sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}
             >
@@ -539,11 +555,45 @@ export function ClientWorkersPage() {
               <MenuItem value={25}>25</MenuItem>
             </Select>
           </Box>
-          <PaginationText>Showing {Math.min(rowsPerPage, workers.length)} out of {workers.length} items</PaginationText>
+          <PaginationText>Showing {allWorkers.length > 0 ? `${startIndex}-${endIndex}` : 0} out of {allWorkers.length} items</PaginationText>
           <PaginationControls>
-            <PageButton disabled><ChevronLeft sx={{ fontSize: 18 }} /></PageButton>
-            <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>1</PageButton>
-            <PageButton disabled={workers.length <= rowsPerPage}><ChevronRight sx={{ fontSize: 18 }} /></PageButton>
+            <PageButton 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            >
+              <ChevronLeft sx={{ fontSize: 18 }} />
+            </PageButton>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <PageButton
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  style={{ 
+                    backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                    border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                  }}
+                >
+                  {pageNum}
+                </PageButton>
+              );
+            })}
+            <PageButton 
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            >
+              <ChevronRight sx={{ fontSize: 18 }} />
+            </PageButton>
           </PaginationControls>
         </Pagination>
       </TableCard>

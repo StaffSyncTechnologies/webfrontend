@@ -457,21 +457,43 @@ export function ComplianceOfficerDashboard() {
             <IconButton size="small" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
               <KeyboardArrowDown sx={{ transform: 'rotate(90deg)' }} />
             </IconButton>
-            <Box sx={{ 
-              width: 28, 
-              height: 28, 
-              borderRadius: '4px', 
-              backgroundColor: colors.primary.navy, 
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: '13px',
-            }}>
-              {currentPage}
-            </Box>
-            <IconButton size="small" onClick={() => setCurrentPage(p => p + 1)}>
+            {Array.from({ length: Math.min(Math.ceil(complianceWorkers.length / rowsPerPage), 5) }, (_, i) => {
+              const totalPages = Math.ceil(complianceWorkers.length / rowsPerPage);
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <Box
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  sx={{ 
+                    width: 28, 
+                    height: 28, 
+                    borderRadius: '4px', 
+                    backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                    border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: currentPage === pageNum ? colors.primary.navy : '#F9FAFB' }
+                  }}
+                >
+                  {pageNum}
+                </Box>
+              );
+            })}
+            <IconButton size="small" disabled={currentPage >= Math.ceil(complianceWorkers.length / rowsPerPage)} onClick={() => setCurrentPage(p => p + 1)}>
               <KeyboardArrowDown sx={{ transform: 'rotate(-90deg)' }} />
             </IconButton>
           </PaginationControls>

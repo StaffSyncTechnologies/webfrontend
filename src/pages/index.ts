@@ -12,6 +12,7 @@ export { ShiftsPage } from './shifts';
 export { WorkersPage } from './workers';
 export { ClientsPage } from './clients';
 export { SchedulePage } from './schedule';
+export { RotaPage } from './rota';
 export { PayrollPage } from './payroll';
 export { BankAccountsPage } from './bank-accounts';
 export { HRManagementPage } from './hr-management';

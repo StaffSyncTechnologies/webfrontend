@@ -48,6 +48,7 @@ export const baseApi = createApi({
     'Skills',
     'Notifications',
     'Holidays',
+    'Rota',
   ],
   endpoints: () => ({}),
 });

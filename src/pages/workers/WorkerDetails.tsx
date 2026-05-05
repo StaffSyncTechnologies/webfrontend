@@ -1206,9 +1206,31 @@ export function WorkerDetails() {
             >
               <ChevronLeft sx={{ fontSize: 18 }} />
             </PageButton>
-            <PageButton style={{ backgroundColor: colors.primary.navy, color: 'white', border: 'none' }}>
-              {currentPage}
-            </PageButton>
+            {pagination && Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (pagination.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= pagination.totalPages - 2) {
+                pageNum = pagination.totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <PageButton
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  style={{ 
+                    backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                    border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                  }}
+                >
+                  {pageNum}
+                </PageButton>
+              );
+            })}
             <PageButton 
               disabled={!pagination || currentPage >= pagination.totalPages}
               onClick={() => setCurrentPage(p => p + 1)}

@@ -599,6 +599,7 @@ export function ManagerDetails() {
   const { managerId } = useParams<{ managerId: string }>();
   const [searchTerm, setSearchTerm] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -885,7 +886,10 @@ export function ManagerDetails() {
             <PaginationText>Rows per page</PaginationText>
             <Select
               value={rowsPerPage}
-              onChange={(e) => setRowsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               size="small"
               sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', '& .MuiSelect-select': { padding: '6px 12px' } }}
             >
@@ -895,6 +899,46 @@ export function ManagerDetails() {
             </Select>
           </Box>
           <PaginationText>Showing {managedWorkers.length} worker(s)</PaginationText>
+          <PaginationControls>
+            <PageButton 
+              disabled={currentPage <= 1} 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            >
+              <ChevronLeft sx={{ fontSize: 18 }} />
+            </PageButton>
+            {Array.from({ length: Math.min(Math.ceil(managedWorkers.length / rowsPerPage), 5) }, (_, i) => {
+              const totalPages = Math.ceil(managedWorkers.length / rowsPerPage);
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <PageButton
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  style={{ 
+                    backgroundColor: currentPage === pageNum ? colors.primary.navy : colors.secondary.white, 
+                    color: currentPage === pageNum ? 'white' : colors.primary.navy,
+                    border: currentPage === pageNum ? 'none' : '1px solid #E5E7EB'
+                  }}
+                >
+                  {pageNum}
+                </PageButton>
+              );
+            })}
+            <PageButton 
+              disabled={currentPage >= Math.ceil(managedWorkers.length / rowsPerPage)} 
+              onClick={() => setCurrentPage(p => p + 1)}
+            >
+              <ChevronRight sx={{ fontSize: 18 }} />
+            </PageButton>
+          </PaginationControls>
         </PaginationRow>
       </TableCard>
 

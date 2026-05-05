@@ -333,7 +333,7 @@ export function HRManagementPage() {
 
   // API Hooks
   const { data: stats, isLoading: statsLoading } = useGetManagerStatsQuery();
-  const { data: managersData, isLoading: managersLoading } = useListManagersQuery({
+  const { data: managersData, isLoading: managersLoading, refetch: refetchManagers } = useListManagersQuery({
     page: currentPage,
     limit: rowsPerPage,
     search: searchTerm || undefined,
@@ -629,7 +629,13 @@ export function HRManagementPage() {
       </TableCard>
 
       {/* Invite Team Modal */}
-      <InviteTeamModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <InviteTeamModal 
+        open={inviteOpen} 
+        onClose={() => setInviteOpen(false)} 
+        onSubmit={() => {
+          refetchManagers();
+        }}
+      />
 
       {/* Assign Workers Modal */}
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)}>

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Close } from '@mui/icons-material';
-import { Box, styled, TextField, IconButton, Modal, Select, MenuItem } from '@mui/material';
+import { Box, styled, TextField, IconButton, Modal, Select, MenuItem, CircularProgress } from '@mui/material';
 import { colors } from '../../utilities/colors';
+import { useInviteStaffMutation } from '../../store/slices/hrSlice';
 
 // ============ STYLED COMPONENTS ============
 const ModalOverlay = styled(Box)({
@@ -113,21 +115,55 @@ interface InviteTeamFormData {
   email: string;
   phone: string;
   role: string;
-  permissionAccess: string;
 }
 
 // ============ COMPONENT ============
 export function InviteTeamModal({ open, onClose, onSubmit }: InviteTeamModalProps) {
-  const handleSubmit = () => {
-    // TODO: Add form validation and data collection
-    onSubmit?.({
-      fullName: '',
-      email: '',
-      phone: '',
-      role: '',
-      permissionAccess: '',
-    });
-    onClose();
+  const [formData, setFormData] = useState<InviteTeamFormData>({
+    fullName: '',
+    email: '',
+    phone: '',
+    role: '',
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof InviteTeamFormData, string>>>({});
+  const [inviteStaff, { isLoading }] = useInviteStaffMutation();
+
+  const handleChange = (field: keyof InviteTeamFormData) => (e: React.ChangeEvent<HTMLInputElement | { value: unknown }>) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value as string }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof InviteTeamFormData, string>> = {};
+    
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
+    if (!formData.role) newErrors.role = 'Role is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    try {
+      const result = await inviteStaff({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role as 'OPS_MANAGER' | 'SHIFT_COORDINATOR' | 'COMPLIANCE_OFFICER',
+      }).unwrap();
+
+      onSubmit?.(formData);
+      setFormData({ fullName: '', email: '', phone: '', role: '' });
+      onClose();
+      alert(`Staff member invited successfully! Invite code: ${result.inviteCode}`);
+    } catch (error: any) {
+      console.error('Failed to invite staff:', error);
+      alert(error?.data?.message || 'Failed to invite staff member. Please try again.');
+    }
   };
 
   return (
@@ -139,26 +175,47 @@ export function InviteTeamModal({ open, onClose, onSubmit }: InviteTeamModalProp
           <ModalSubtitle>Invite a new team member for your HR team</ModalSubtitle>
           <FormGroup>
             <Label>Full Name<span className="required">*</span></Label>
-            <StyledInput placeholder="Enter your full name" />
+            <StyledInput 
+              placeholder="Enter full name" 
+              value={formData.fullName}
+              onChange={handleChange('fullName')}
+              error={!!errors.fullName}
+              helperText={errors.fullName}
+            />
           </FormGroup>
           <FormRow>
             <FormGroup>
-              <Label>Email address</Label>
-              <StyledInput placeholder="Enter email address" />
+              <Label>Email address<span className="required">*</span></Label>
+              <StyledInput 
+                placeholder="Enter email address" 
+                value={formData.email}
+                onChange={handleChange('email')}
+                error={!!errors.email}
+                helperText={errors.email}
+              />
             </FormGroup>
             <FormGroup>
               <Label>Phone number</Label>
-              <StyledInput placeholder="Enter phone number" />
+              <StyledInput 
+                placeholder="Enter phone number" 
+                value={formData.phone}
+                onChange={handleChange('phone')}
+              />
             </FormGroup>
           </FormRow>
           <FormRow>
             <FormGroup>
               <Label>Role<span className="required">*</span></Label>
-              <StyledSelect displayEmpty defaultValue="">
+              <StyledSelect 
+                displayEmpty 
+                value={formData.role}
+                onChange={(e) => handleChange('role')(e as React.ChangeEvent<{ value: unknown }>)}
+                error={!!errors.role}
+              >
                 <MenuItem value="" disabled><em>Select role</em></MenuItem>
-                <MenuItem value="ops_manager">OPS Manager</MenuItem>
-                <MenuItem value="shift_coordinator">Shift Coordinator</MenuItem>
-                <MenuItem value="compliance_officer">Compliance Officer</MenuItem>
+                <MenuItem value="OPS_MANAGER">OPS Manager</MenuItem>
+                <MenuItem value="SHIFT_COORDINATOR">Shift Coordinator</MenuItem>
+                <MenuItem value="COMPLIANCE_OFFICER">Compliance Officer</MenuItem>
               </StyledSelect>
             </FormGroup>
             <FormGroup>
@@ -171,7 +228,9 @@ export function InviteTeamModal({ open, onClose, onSubmit }: InviteTeamModalProp
               </StyledSelect>
             </FormGroup>
           </FormRow>
-          <SubmitButton onClick={handleSubmit}>Add Manager</SubmitButton>
+          <SubmitButton onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? <CircularProgress size={20} color="inherit" /> : 'Add Manager'}
+          </SubmitButton>
         </ModalCard>
       </ModalOverlay>
     </Modal>

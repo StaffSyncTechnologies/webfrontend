@@ -12,6 +12,7 @@ import {
   WorkersPage,
   ClientsPage,
   SchedulePage,
+  RotaPage,
   PayrollPage,
   BankAccountsPage,
   HRManagementPage,
@@ -351,6 +352,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <SchedulePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rota"
+            element={
+              <ProtectedRoute>
+                <RotaPage />
               </ProtectedRoute>
             }
           />
