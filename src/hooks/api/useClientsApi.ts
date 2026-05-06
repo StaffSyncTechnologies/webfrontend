@@ -136,3 +136,59 @@ export const useUpdateClient = () => {
     },
   });
 };
+
+// Get workers assigned to a client
+export const useClientWorkers = (clientId: string) => {
+  return useQuery({
+    queryKey: ['client-workers', clientId],
+    queryFn: async () => {
+      const response = await api.get(`/clients/${clientId}/workers`);
+      return response.data.data;
+    },
+    enabled: !!clientId,
+  });
+};
+
+// Get available workers (not assigned to this client)
+export const useAvailableWorkers = (clientId: string) => {
+  return useQuery({
+    queryKey: ['available-workers', clientId],
+    queryFn: async () => {
+      const response = await api.get(`/workers?status=ACTIVE`);
+      return response.data.data?.workers || [];
+    },
+    enabled: !!clientId,
+  });
+};
+
+// Bulk assign workers to client
+export const useBulkAssignWorkers = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ workerIds, clientCompanyId }: { workerIds: string[]; clientCompanyId: string }) => {
+      const response = await api.post('/workers/bulk-assign-client', { workerIds, clientCompanyId });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['client-workers', variables.clientCompanyId] });
+    },
+  });
+};
+
+// Remove worker assignment from client
+export const useRemoveWorkerAssignment = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ workerId, clientCompanyId }: { workerId: string; clientCompanyId: string }) => {
+      const response = await api.delete(`/workers/${workerId}/remove-client`, { 
+        data: { clientCompanyId } 
+      });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['client-workers', variables.clientCompanyId] });
+    },
+  });
+};
