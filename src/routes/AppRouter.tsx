@@ -13,6 +13,7 @@ import {
   ClientsPage,
   SchedulePage,
   RotaPage,
+  RotaBuilderPage,
   PayrollPage,
   BankAccountsPage,
   HRManagementPage,
@@ -359,7 +360,7 @@ export function AppRouter() {
             path="/rota"
             element={
               <ProtectedRoute>
-                <RotaPage />
+                <RotaBuilderPage />
               </ProtectedRoute>
             }
           />

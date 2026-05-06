@@ -13,6 +13,7 @@ export { WorkersPage } from './workers';
 export { ClientsPage } from './clients';
 export { SchedulePage } from './schedule';
 export { RotaPage } from './rota';
+export { default as RotaBuilderPage } from './rota/RotaBuilderPage';
 export { PayrollPage } from './payroll';
 export { BankAccountsPage } from './bank-accounts';
 export { HRManagementPage } from './hr-management';

@@ -24,6 +24,8 @@ import {
   CheckCircle,
   Warning,
   Error as ErrorIcon,
+  Add,
+  Person,
 } from '@mui/icons-material';
 import {
   Box,
@@ -46,7 +48,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
-import { useClientDetails, clientKeys } from '../../hooks/api/useClientsApi';
+import { useClientDetails, clientKeys, useClientWorkers, useAvailableWorkers, useBulkAssignWorkers, useRemoveWorkerAssignment } from '../../hooks/api/useClientsApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardContainer } from '../../components/layout';
 import { colors } from '../../utilities/colors';
@@ -572,7 +574,7 @@ const formatCurrency = (amount: number | null) => {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(amount));
 };
 
-type TabKey = 'overview' | 'department' | 'shifts' | 'payslips' | 'timesheet';
+type TabKey = 'overview' | 'department' | 'shifts' | 'payslips' | 'timesheet' | 'workers';
 
 // Timesheet types
 interface WeekData {
@@ -602,9 +604,17 @@ export function ClientDetails() {
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<WeekData | null>(null);
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
+  const [assignWorkersOpen, setAssignWorkersOpen] = useState(false);
+  const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // API hooks
   const { data: clientData, isLoading } = useClientDetails(id || '');
+  const { data: clientWorkers, isLoading: workersLoading, refetch: refetchWorkers } = useClientWorkers(id || '');
+  const { data: availableWorkers } = useAvailableWorkers(id || '');
+  const bulkAssignWorkers = useBulkAssignWorkers();
+  const removeWorkerAssignment = useRemoveWorkerAssignment();
 
   const client = clientData || null;
   const recentShifts = clientData?.recentShifts || [];
@@ -646,6 +656,34 @@ export function ClientDetails() {
     if (selectedWeek) {
       generateInvoiceMutation.mutate(selectedWeek);
     }
+  };
+
+  const handleAssignWorkers = () => {
+    if (selectedWorkers.length > 0) {
+      bulkAssignWorkers.mutate(
+        { workerIds: selectedWorkers, clientCompanyId: id || '' },
+        {
+          onSuccess: () => {
+            setAssignWorkersOpen(false);
+            setSelectedWorkers([]);
+            setSnackbarMessage('Workers assigned successfully');
+            setSnackbarOpen(true);
+          },
+        }
+      );
+    }
+  };
+
+  const handleRemoveWorker = (workerId: string) => {
+    removeWorkerAssignment.mutate(
+      { workerId, clientCompanyId: id || '' },
+      {
+        onSuccess: () => {
+          setSnackbarMessage('Worker removed successfully');
+          setSnackbarOpen(true);
+        },
+      }
+    );
   };
 
   const weeklyData: WeekData[] = timesheetData?.weeks || [];
@@ -998,6 +1036,83 @@ export function ClientDetails() {
     </>
   );
 
+  const renderWorkers = () => (
+    <>
+      <FilterRow>
+        <FilterLeft>
+          <SearchInput
+            placeholder="Search workers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: '#9CA3AF', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </FilterLeft>
+        <FilterRight>
+          <ExportButton onClick={() => setAssignWorkersOpen(true)}>
+            <Add sx={{ fontSize: 18 }} /> Assign Workers
+          </ExportButton>
+        </FilterRight>
+      </FilterRow>
+      <Box sx={{ overflowX: 'auto' }}>
+        <Table>
+          <thead>
+            <tr>
+              <Th style={{ width: '40px' }}><Checkbox size="small" /></Th>
+              <th>Worker Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {workersLoading ? (
+              <tr>
+                <Td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>
+                  <CircularProgress size={24} />
+                </Td>
+              </tr>
+            ) : !clientWorkers || clientWorkers.length === 0 ? (
+              <tr>
+                <Td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: colors.text.secondary }}>
+                  No workers assigned to this client. Click "Assign Workers" to add workers.
+                </Td>
+              </tr>
+            ) : (
+              clientWorkers
+                .filter((w: any) => w.fullName?.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((worker: any) => (
+                  <tr key={worker.id}>
+                    <Td><Checkbox size="small" /></Td>
+                    <Td>
+                      <WorkerCell>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: colors.primary.blue, fontSize: 12, fontWeight: 600 }}>
+                          {getInitials(worker.fullName)}
+                        </Avatar>
+                        <span style={{ fontWeight: 500 }}>{worker.fullName}</span>
+                      </WorkerCell>
+                    </Td>
+                    <Td>{worker.email || '-'}</Td>
+                    <Td>{worker.phone || '-'}</Td>
+                    <Td><StatusBadge status={worker.status}>{worker.status}</StatusBadge></Td>
+                    <Td>
+                      <ActionLink onClick={() => handleRemoveWorker(worker.id)}>Remove</ActionLink>
+                    </Td>
+                  </tr>
+                ))
+            )}
+          </tbody>
+        </Table>
+      </Box>
+    </>
+  );
+
   const getTabContent = () => {
     switch (activeTab) {
       case 'overview': return renderOverview();
@@ -1005,6 +1120,7 @@ export function ClientDetails() {
       case 'shifts': return renderShiftHistory();
       case 'payslips': return renderPayslips();
       case 'timesheet': return renderTimesheet();
+      case 'workers': return renderWorkers();
     }
   };
 
@@ -1084,6 +1200,7 @@ export function ClientDetails() {
       <TableCard>
         <TabsRow>
           <Tab active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}>Overview</Tab>
+          <Tab active={activeTab === 'workers'} onClick={() => setActiveTab('workers')}>Workers</Tab>
           <Tab active={activeTab === 'department'} onClick={() => setActiveTab('department')}>Department</Tab>
           <Tab active={activeTab === 'shifts'} onClick={() => setActiveTab('shifts')}>Shift History</Tab>
           <Tab active={activeTab === 'payslips'} onClick={() => setActiveTab('payslips')}>Invoices</Tab>
@@ -1225,6 +1342,105 @@ export function ClientDetails() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Assign Workers Dialog */}
+      <Dialog open={assignWorkersOpen} onClose={() => setAssignWorkersOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
+          Assign Workers to {client.name}
+        </DialogTitle>
+        <DialogContent sx={{ maxHeight: 500, overflowY: 'auto' }}>
+          {availableWorkers && availableWorkers.length > 0 ? (
+            <Box>
+              <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', color: colors.text.secondary, marginBottom: 16 }}>
+                Select workers to assign to this client:
+              </p>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {availableWorkers
+                  .filter(w => w.role === 'WORKER' && w.status === 'ACTIVE')
+                  .filter(w => !clientWorkers?.some((cw: any) => cw.id === w.id))
+                  .map((worker: any) => (
+                    <Box
+                      key={worker.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 2,
+                        border: '1px solid #E5E7EB',
+                        borderRadius: 1,
+                        bgcolor: selectedWorkers.includes(worker.id) ? '#E0F2FE' : 'white',
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedWorkers.includes(worker.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedWorkers([...selectedWorkers, worker.id]);
+                          } else {
+                            setSelectedWorkers(selectedWorkers.filter(id => id !== worker.id));
+                          }
+                        }}
+                      />
+                      <Avatar sx={{ width: 40, height: 40, bgcolor: colors.primary.blue, fontSize: 14, fontWeight: 600, ml: 1, mr: 2 }}>
+                        {getInitials(worker.fullName)}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '14px', fontWeight: 600 }}>
+                          {worker.fullName}
+                        </Box>
+                        <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '12px', color: colors.text.secondary }}>
+                          {worker.email || 'No email'}
+                        </Box>
+                      </Box>
+                      <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', color: colors.text.secondary }}>
+                        {worker.workerProfile?.hourlyRate ? `£${worker.workerProfile.hourlyRate}/h` : 'Rate not set'}
+                      </Box>
+                    </Box>
+                  ))}
+              </Box>
+            </Box>
+          ) : (
+            <Box textAlign="center" py={4} color={colors.text.secondary}>
+              No available workers to assign
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => {
+              setAssignWorkersOpen(false);
+              setSelectedWorkers([]);
+            }}
+            sx={{ fontFamily: "'Outfit', sans-serif", textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAssignWorkers}
+            disabled={selectedWorkers.length === 0 || bulkAssignWorkers.isPending}
+            sx={{
+              bgcolor: colors.primary.navy,
+              fontFamily: "'Outfit', sans-serif",
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#1a365d' },
+            }}
+          >
+            {bulkAssignWorkers.isPending ? 'Assigning...' : `Assign ${selectedWorkers.length} Worker${selectedWorkers.length !== 1 ? 's' : ''}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       {/* View Invoice Modal */}
       <ViewInvoiceModal
