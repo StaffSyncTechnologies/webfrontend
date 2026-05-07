@@ -19,11 +19,10 @@ export default function RotaBuilderPage() {
     location: client.contactEmail ? client.contactEmail.split('@')[1] : undefined, // Use email domain as location fallback
   }));
 
-  const [activeClientId, setActiveClientId] = useState<string>(
-    clientCompanies.length > 0 ? clientCompanies[0].id : ''
-  );
+  const [activeClientId, setActiveClientId] = useState<string>('');
+  const effectiveClientId = activeClientId || clientCompanies[0]?.id || '';
   const [showAddClient, setShowAddClient] = useState(false);
-  const activeClient = clientCompanies.find((c) => c.id === activeClientId);
+  const activeClient = clientCompanies.find((c) => c.id === effectiveClientId);
 
   if (clientsLoading) {
     return (
@@ -56,7 +55,7 @@ export default function RotaBuilderPage() {
             <button
               key={c.id}
               onClick={() => setActiveClientId(c.id)}
-              style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '0.5px solid', borderColor: activeClientId === c.id ? '#333' : '#ddd', background: activeClientId === c.id ? '#333' : 'transparent', color: activeClientId === c.id ? '#fff' : '#555', transition: 'all .15s' }}
+              style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '0.5px solid', borderColor: effectiveClientId === c.id ? '#333' : '#ddd', background: effectiveClientId === c.id ? '#333' : 'transparent', color: effectiveClientId === c.id ? '#fff' : '#555', transition: 'all .15s' }}
             >
               {c.name}
             </button>
@@ -71,7 +70,7 @@ export default function RotaBuilderPage() {
           </span>
         )}
       </div>
-      <RotaPage key={activeClientId} clientCompanyId={activeClientId} clientName={activeClient?.name} />
+      <RotaPage key={effectiveClientId} clientCompanyId={effectiveClientId} clientName={activeClient?.name} />
       {showAddClient && (
         <div onClick={() => setShowAddClient(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 10, padding: 20, width: 280, border: '0.5px solid #ddd' }}>

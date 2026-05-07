@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Box, Typography, styled, Button, Chip, CircularProgress,
   Tooltip, Dialog, DialogTitle, DialogContent, IconButton,
@@ -45,7 +45,9 @@ interface ShiftForm {
   startTime: string;
   endTime: string;
   role: string;
-  cap: number;
+  breakMinutes: number;
+  payRate: string;
+  notes: string;
 }
 
 const SHIFT_CFG: Record<ShiftSlot, { bg: string; text: string; border: string; label: string; time: string; emoji: string }> = {
@@ -67,7 +69,14 @@ function getMondayOfWeek(ref: Date): Date {
   return d;
 }
 
-function isoDate(d: Date): string { return d.toISOString().split('T')[0]; }
+function isoDate(d: Date): string {
+  // Use LOCAL date components — toISOString() returns UTC which is the previous
+  // calendar day for any UTC+ timezone, shifting the entire week grid.
+  const yyyy = d.getFullYear();
+  const mm   = String(d.getMonth() + 1).padStart(2, '0');
+  const dd   = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 function formatWeekLabel(monday: Date): string {
   const sunday = addDays(monday, 6);
@@ -149,8 +158,11 @@ const DataCell = styled(Box)({
 
 // ─── Shift Pill ──────────────────────────────────────────────────────────────
 
-function ShiftPill({ type, onRemove, published }: { type: ShiftSlot; onRemove: () => void; published: boolean }) {
-  const c = SHIFT_CFG[type];
+function ShiftPill({ type, onRemove, published, timeRange }: { type: ShiftSlot | string; onRemove: () => void; published: boolean; timeRange?: string }) {
+  const isCustom = type === 'CUSTOM' || !SHIFT_CFG[type as ShiftSlot];
+  const c = isCustom
+    ? { bg: '#F5F3FF', text: '#5B21B6', border: '#8B5CF6', label: 'Custom', time: timeRange || 'Custom', emoji: '⏰' }
+    : SHIFT_CFG[type as ShiftSlot] || { bg: '#F3F4F6', text: '#6B7280', border: '#9CA3AF', label: 'Unknown', time: 'Unknown', emoji: '❓' };
   return (
     <Tooltip title={`${c.label} (${c.time})`} placement="top">
       <Box sx={{
@@ -173,6 +185,98 @@ function ShiftPill({ type, onRemove, published }: { type: ShiftSlot; onRemove: (
         )}
       </Box>
     </Tooltip>
+  );
+}
+
+// ─── Cell Component ─────────────────────────────────────────────────────────────
+//
+// FIX: onAssign receives (worker, dayDate, dayIdx) — all three params.
+// Matches the mobile implementation to ensure correct assignment key calculation.
+
+interface CellProps {
+  worker: RotaWorker;
+  dayIdx: number;
+  dayDate: string; // yyyy-MM-dd
+  published: boolean;
+  isPast: boolean;
+  onAssign: (worker: RotaWorker, dayDate: string, dayIdx: number) => void;
+  onRemove: (worker: RotaWorker, rotaShiftId: string) => void;
+}
+
+function Cell({ worker, dayIdx, dayDate, published, isPast, onAssign, onRemove }: CellProps) {
+  const isHoliday = worker.holidayDates.includes(dayDate);
+  const isUnavailable = worker.unavailableDays.includes(dayIdx);
+
+  // KEY FORMAT: "{dayIndex}-{startTime}-{endTime}" e.g. "0-06:00-14:00"
+  // Must match exactly what getWeekRota builds in the assignmentMap.
+  const assignmentKeys = Object.keys(worker.assignments).filter(key => key.startsWith(`${dayIdx}-`));
+  const assignments = assignmentKeys.map(key => worker.assignments[key]);
+
+  if (isHoliday) {
+    return (
+      <DataCell sx={{ backgroundColor: '#FFFBEB', flexDirection: 'column', gap: 0.5 }}>
+        <BeachAccess sx={{ fontSize: 18, color: '#F59E0B' }} />
+        <Typography sx={{ fontFamily: 'Outfit', fontSize: 9, color: '#92400E', fontWeight: 600 }}>Leave</Typography>
+      </DataCell>
+    );
+  }
+
+  if (isUnavailable) {
+    return (
+      <DataCell sx={{ backgroundColor: '#F9FAFB' }}>
+        <Tooltip title="Not available">
+          <Typography sx={{ fontFamily: 'Outfit', fontSize: 10, color: '#D1D5DB', fontWeight: 600, userSelect: 'none' }}>N/A</Typography>
+        </Tooltip>
+      </DataCell>
+    );
+  }
+
+  if (assignments.length > 0) {
+    return (
+      <DataCell sx={{ flexDirection: 'column', gap: 0.5 }}>
+        {assignments.map((assignment, idx) => {
+          const timeSlot = `${assignment.startTime}-${assignment.endTime}`;
+          const shiftSlot = (Object.keys(SHIFT_SLOTS) as ShiftSlot[]).find(key => SHIFT_SLOTS[key] === timeSlot) as ShiftSlot;
+          const isCustom = assignment.role === 'CUSTOM' || !shiftSlot;
+          return (
+            <ShiftPill
+              key={`${dayDate}-${idx}`}
+              type={isCustom ? 'CUSTOM' : shiftSlot}
+              timeRange={isCustom ? timeSlot : undefined}
+              onRemove={() => onRemove(worker, assignment.rotaShiftId)}
+              published={published}
+            />
+          );
+        })}
+        {/* Only allow adding a second shift on future/today dates */}
+        {!published && !isPast && (
+          <Box
+            onClick={(e) => { e.stopPropagation(); onAssign(worker, dayDate, dayIdx); }}
+            sx={{ fontSize: 10, color: '#aaa', cursor: 'pointer', pl: 0.5 }}
+          >
+            + add
+          </Box>
+        )}
+      </DataCell>
+    );
+  }
+
+  if (published || isPast) {
+    return (
+      <DataCell sx={isPast && !published ? { backgroundColor: '#F9FAFB' } : undefined}>
+        {isPast && !published && (
+          <Tooltip title="Past date">
+            <Typography sx={{ fontFamily: 'Outfit', fontSize: 10, color: '#E5E7EB', fontWeight: 600, userSelect: 'none' }}>—</Typography>
+          </Tooltip>
+        )}
+      </DataCell>
+    );
+  }
+
+  return (
+    <DataCell>
+      <EmptyCell onClick={() => onAssign(worker, dayDate, dayIdx)} published={published} />
+    </DataCell>
   );
 }
 
@@ -208,7 +312,7 @@ function ShiftPickerDialog({
   onPick: () => void; onApplyPreset: (start: string, end: string, role: string) => void; onClose: () => void;
   shiftForm: ShiftForm; onShiftFormChange: (form: ShiftForm) => void;
 }) {
-  const dateLabel = date ? new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+  const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px', fontFamily: 'Outfit, system-ui, sans-serif' } }}>
       <DialogTitle sx={{ fontFamily: 'Outfit, system-ui, sans-serif', fontWeight: 700, pb: 0 }}>
@@ -273,26 +377,42 @@ function ShiftPickerDialog({
             placeholder="e.g. Warehouse Operative"
             value={shiftForm.role}
             onChange={(e) => onShiftFormChange({ ...shiftForm, role: e.target.value })}
-            fullWidth
-            size="small"
-            sx={{ fontFamily: 'Outfit' }}
+            fullWidth size="small" sx={{ fontFamily: 'Outfit' }}
           />
         </Box>
 
-        {/* Cap */}
-        <Box sx={{ mb: 2 }}>
-          <Typography sx={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: '.04em', mb: 1, fontFamily: 'Outfit' }}>Worker cap</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Pay rate + Break on one row */}
+        <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: '.04em', mb: 1, fontFamily: 'Outfit' }}>Pay rate (£/h)</Typography>
             <TextField
               type="number"
-              value={shiftForm.cap}
-              onChange={(e) => onShiftFormChange({ ...shiftForm, cap: parseInt(e.target.value) || 15 })}
-              size="small"
-              sx={{ width: 80 }}
-              inputProps={{ min: 1, max: 50 }}
+              placeholder="0.00"
+              value={shiftForm.payRate}
+              onChange={(e) => onShiftFormChange({ ...shiftForm, payRate: e.target.value })}
+              size="small" fullWidth inputProps={{ min: 0, step: 0.5 }}
             />
-            <Typography sx={{ fontSize: 11, color: '#888' }}>max workers</Typography>
           </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: '.04em', mb: 1, fontFamily: 'Outfit' }}>Break (mins)</Typography>
+            <TextField
+              type="number"
+              value={shiftForm.breakMinutes}
+              onChange={(e) => onShiftFormChange({ ...shiftForm, breakMinutes: parseInt(e.target.value) || 0 })}
+              size="small" fullWidth inputProps={{ min: 0, step: 5 }}
+            />
+          </Box>
+        </Box>
+
+        {/* Notes */}
+        <Box sx={{ mb: 2 }}>
+          <Typography sx={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: '.04em', mb: 1, fontFamily: 'Outfit' }}>Notes</Typography>
+          <TextField
+            placeholder="Any instructions for workers..."
+            value={shiftForm.notes}
+            onChange={(e) => onShiftFormChange({ ...shiftForm, notes: e.target.value })}
+            fullWidth size="small" multiline rows={2} sx={{ fontFamily: 'Outfit' }}
+          />
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
@@ -355,11 +475,18 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
     startTime: '09:00',
     endTime: '17:00',
     role: '',
-    cap: 15,
+    breakMinutes: 0,
+    payRate: '',
+    notes: '',
   });
+  const [workersNeeded, setWorkersNeeded] = useState<number>(1);
 
   const weekStart = isoDate(currentMonday);
   const { data, isLoading, isFetching } = useGetWeekRotaQuery({ weekStart, clientCompanyId });
+
+  console.log('[RotaPage] API Response:', { weekStart, clientCompanyId, data, isLoading, isFetching });
+  console.log('[RotaPage] Workers count:', data?.workers?.length);
+  console.log('[RotaPage] Workers:', data?.workers);
 
   const [assignWorker, { isLoading: assigning }] = useAssignWorkerMutation();
   const [unassignWorker] = useUnassignWorkerMutation();
@@ -371,6 +498,10 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
   const stats = data?.stats;
   const published = rota?.status === 'PUBLISHED';
 
+  useEffect(() => {
+    if (rota?.defaultWorkersNeeded) setWorkersNeeded(rota.defaultWorkersNeeded);
+  }, [rota?.defaultWorkersNeeded]);
+
   // Filter workers by search query
   const filteredWorkers = workers.filter(w =>
     w.fullName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -381,13 +512,16 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
   const navigateWeek = (dir: -1 | 1) => setCurrentMonday(prev => addDays(prev, dir * 7));
 
   const handleOpenPicker = useCallback((worker: RotaWorker, date: string, dayIndex: number) => {
+    if (date < isoDate(new Date())) {
+      setToast({ msg: 'Cannot assign shifts to past dates', severity: 'error' });
+      return;
+    }
     if (published) {
       setToast({ msg: 'Unpublish the rota first', severity: 'error' });
       return;
     }
     setPicker({ worker, date, dayIndex });
-    // Reset shift form to default
-    setShiftForm({ startTime: '09:00', endTime: '17:00', role: '', cap: 15 });
+    setShiftForm({ startTime: '09:00', endTime: '17:00', role: '', breakMinutes: 0, payRate: '', notes: '' });
   }, [published]);
 
   const applyPreset = useCallback((start: string, end: string, role: string) => {
@@ -396,7 +530,7 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
 
   const handlePickShift = useCallback(async () => {
     if (!rota || !picker) return;
-    const { startTime, endTime, role, cap } = shiftForm;
+    const { startTime, endTime, role } = shiftForm;
 
     // Count existing assignments for this time slot on this day
     const timeSlot = `${startTime}-${endTime}`;
@@ -405,27 +539,31 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
       return w.assignments[key];
     }).length;
 
-    if (existingCount >= cap) {
-      setToast({ msg: `Shift cap (${cap}) reached for this time slot`, severity: 'error' });
+    if (existingCount >= workersNeeded) {
+      setToast({ msg: `Shift cap (${workersNeeded}) reached for this time slot`, severity: 'error' });
       setPicker(null);
       return;
     }
 
     setPicker(null);
     try {
-      await assignWorker({ 
-        rotaId: rota.id, 
-        workerId: picker.worker.id, 
-        date: picker.date, 
-        startTime, 
-        endTime, 
-        role: role || timeSlot 
+      await assignWorker({
+        rotaId: rota.id,
+        workerId: picker.worker.id,
+        date: picker.date,
+        startTime,
+        endTime,
+        role: role || timeSlot,
+        breakMinutes: shiftForm.breakMinutes || undefined,
+        payRate: shiftForm.payRate ? parseFloat(shiftForm.payRate) : undefined,
+        notes: shiftForm.notes || undefined,
+        workersNeeded,
       }).unwrap();
       setToast({ msg: 'Shift assigned successfully', severity: 'success' });
     } catch (err: any) {
       setToast({ msg: err?.data?.error || 'Failed to assign shift', severity: 'error' });
     }
-  }, [rota, picker, shiftForm, assignWorker, workers]);
+  }, [rota, picker, shiftForm, workersNeeded, assignWorker, workers]);
 
   const handleRemove = useCallback(async (worker: RotaWorker, rotaShiftId: string) => {
     if (!rota) return;
@@ -565,6 +703,43 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
           </Box>
         </Box>
 
+        {/* ── Rota Settings Bar ────────────────────────────────────── */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3, p: '12px 20px', backgroundColor: '#fff', borderRadius: '12px', border: `1px solid ${colors.border.light}`, flexWrap: 'wrap' }}>
+          {/* Company location (read-only) */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 200 }}>
+            <Typography sx={{ fontSize: 10, fontFamily: 'Outfit', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.04em', whiteSpace: 'nowrap' }}>
+              📍 Site
+            </Typography>
+            <Typography sx={{ fontSize: 13, fontFamily: 'Outfit', fontWeight: 600, color: colors.primary.navy }}>
+              {data?.companyLocation
+                ? [data.companyLocation.address, data.companyLocation.city, data.companyLocation.postcode].filter(Boolean).join(', ') || 'Location not set'
+                : clientName ?? 'No site info'}
+            </Typography>
+          </Box>
+          {/* Workers needed (global editable) */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography sx={{ fontSize: 10, fontFamily: 'Outfit', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.04em', whiteSpace: 'nowrap' }}>
+              👥 Workers needed per shift
+            </Typography>
+            <TextField
+              type="number"
+              value={workersNeeded}
+              onChange={e => setWorkersNeeded(Math.max(1, parseInt(e.target.value) || 1))}
+              size="small"
+              inputProps={{ min: 1, max: 200 }}
+              sx={{
+                width: 72,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px', fontFamily: 'Outfit', fontWeight: 700,
+                  '& fieldset': { borderColor: '#E5E7EB' },
+                  '&:hover fieldset': { borderColor: colors.primary.blue },
+                  '&.Mui-focused fieldset': { borderColor: colors.primary.blue },
+                },
+              }}
+            />
+          </Box>
+        </Box>
+
         {/* ── Stats Cards ──────────────────────────────────────────── */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 3 }}>
           {[
@@ -652,14 +827,22 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
                   <Typography sx={{ fontFamily: 'Outfit', fontWeight: isToday ? 800 : 600, fontSize: 18, color: isToday ? colors.primary.blue : colors.primary.navy, lineHeight: 1.3 }}>
                     {num}
                   </Typography>
-                  {/* Shift count dots */}
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: '3px', mt: 0.5, minHeight: 8 }}>
+                  {/* Worker count per shift type */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: '3px', mt: 0.5, minHeight: 16, flexWrap: 'wrap' }}>
                     {(Object.keys(SHIFT_CFG) as ShiftSlot[]).map(t => {
-                      const timeSlot = SHIFT_SLOTS[t];
-                      const count = data?.shiftCounts?.[timeSlot]?.[i] ?? 0;
+                      const count = data?.shiftCounts?.[SHIFT_SLOTS[t]]?.[i] ?? 0;
                       return count > 0 ? (
-                        <Tooltip key={t} title={`${count} ${t} shift${count !== 1 ? 's' : ''}`}>
-                          <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: SHIFT_CFG[t].border }} />
+                        <Tooltip key={t} title={`${count} ${SHIFT_CFG[t].label} worker${count !== 1 ? 's' : ''}`}>
+                          <Box sx={{
+                            display: 'inline-flex', alignItems: 'center', gap: '2px',
+                            backgroundColor: SHIFT_CFG[t].bg,
+                            border: `1px solid ${SHIFT_CFG[t].border}`,
+                            borderRadius: '4px', px: '4px', py: '1px',
+                          }}>
+                            <Typography sx={{ fontFamily: 'Outfit', fontSize: 9, color: SHIFT_CFG[t].text, fontWeight: 800, lineHeight: 1 }}>
+                              {SHIFT_CFG[t].emoji} {count}
+                            </Typography>
+                          </Box>
                         </Tooltip>
                       ) : null;
                     })}
@@ -720,67 +903,18 @@ export function RotaPage({ clientCompanyId, clientName }: RotaPageProps) {
                 </RowNameCell>
 
                 {/* Day cells */}
-                {weekDates.map((date, di) => {
-                  const isHoliday = worker.holidayDates.includes(date);
-                  const isUnavailable = worker.unavailableDays.includes(di);
-                  
-                  // Find assignment for this day (assignments are keyed by "dayIndex-timeSlot")
-                  const assignmentKeys = Object.keys(worker.assignments).filter(key => key.startsWith(`${di}-`));
-                  const assignments = assignmentKeys.map(key => worker.assignments[key]);
-
-                  if (isHoliday) {
-                    return (
-                      <DataCell key={date} sx={{ backgroundColor: '#FFFBEB', flexDirection: 'column', gap: 0.5 }}>
-                        <BeachAccess sx={{ fontSize: 18, color: '#F59E0B' }} />
-                        <Typography sx={{ fontFamily: 'Outfit', fontSize: 9, color: '#92400E', fontWeight: 600 }}>Leave</Typography>
-                      </DataCell>
-                    );
-                  }
-
-                  if (isUnavailable) {
-                    return (
-                      <DataCell key={date} sx={{ backgroundColor: '#F9FAFB' }}>
-                        <Tooltip title="Not available">
-                          <Typography sx={{ fontFamily: 'Outfit', fontSize: 10, color: '#D1D5DB', fontWeight: 600, userSelect: 'none' }}>N/A</Typography>
-                        </Tooltip>
-                      </DataCell>
-                    );
-                  }
-
-                  if (assignments.length > 0) {
-                    return (
-                      <DataCell key={date} sx={{ flexDirection: 'column', gap: 0.5 }}>
-                        {assignments.map((assignment, idx) => {
-                          const timeSlot = assignment.startTime + '-' + assignment.endTime;
-                          const shiftSlot = Object.keys(SHIFT_SLOTS).find(key => SHIFT_SLOTS[key as ShiftSlot] === timeSlot) as ShiftSlot;
-                          return (
-                            <ShiftPill
-                              key={`${date}-${idx}`}
-                              type={shiftSlot}
-                              onRemove={() => handleRemove(worker, assignment.rotaShiftId)}
-                              published={published}
-                            />
-                          );
-                        })}
-                        {/* Add another shift to same day */}
-                        {!published && (
-                          <Box
-                            onClick={(e) => { e.stopPropagation(); handleOpenPicker(worker, date, di); }}
-                            sx={{ fontSize: 10, color: '#aaa', cursor: 'pointer', pl: 0.5 }}
-                          >
-                            + add
-                          </Box>
-                        )}
-                      </DataCell>
-                    );
-                  }
-
-                  return (
-                    <DataCell key={date}>
-                      <EmptyCell onClick={() => !published && handleOpenPicker(worker, date, di)} published={published} />
-                    </DataCell>
-                  );
-                })}
+                {weekDates.map((date, di) => (
+                  <Cell
+                    key={date}
+                    worker={worker}
+                    dayIdx={di}
+                    dayDate={date}
+                    published={published}
+                    isPast={date < isoDate(new Date())}
+                    onAssign={handleOpenPicker}
+                    onRemove={handleRemove}
+                  />
+                ))}
               </Box>
             ))
           )}
