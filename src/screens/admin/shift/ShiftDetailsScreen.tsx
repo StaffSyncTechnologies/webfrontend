@@ -12,7 +12,7 @@ import {
   useBroadcastShiftMutation,
   useCancelShiftMutation,
   useAssignWorkersMutation,
-} from '../../../store/slices/adminSlices/shiftSlice';
+} from '../../../store/api/shiftsApi';
 
 
 // ─── Types ─────────────────────────────────────────────────────────────────

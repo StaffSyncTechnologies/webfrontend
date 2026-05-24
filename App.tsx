@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme, NavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, NavigationContainerRef, LinkingOptions } from '@react-navigation/native';
 import * as SplashScreenLib from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
@@ -23,11 +23,26 @@ import { SplashScreen } from './src/components';
 import { NetworkStatusBanner } from './src/components/NetworkStatusBanner';
 import { useNotifications } from './src/hooks/useNotifications';
 import { useAppBadge } from './src/hooks/useAppBadge';
+import { useOfflineClockSync } from './src/hooks/useOfflineClockSync';
 import './global.css';
 import './src/i18n';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreenLib.preventAutoHideAsync();
+
+// ── NFC deep link config ──────────────────────────────────────────────────────
+// When a worker taps an NFC sticker, Android opens the app with:
+//   staffsync-worker://nfc-clock/{tagCode}
+// React Navigation picks it up here and routes straight to NfcTapScreen.
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['staffsync-worker://'],
+  config: {
+    screens: {
+      NfcTap: 'nfc-clock/:tagCode',
+      QRClockIn: 'qr-clock',
+    },
+  },
+};
 
 // Custom navigation themes
 const LightNavigationTheme = {
@@ -63,9 +78,12 @@ function AppContent() {
 
   // Register push notifications when authenticated
   const { lastNotificationResponse } = useNotifications();
-  
+
   // Manage app icon badge count
   const { clearBadgeOnLogout } = useAppBadge();
+
+  // Replay queued offline clock events when network returns
+  useOfflineClockSync();
 
   // Navigate to Auth screen when logged out
   useEffect(() => {
@@ -142,7 +160,7 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={isDark ? DarkNavigationTheme : LightNavigationTheme}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={isDark ? DarkNavigationTheme : LightNavigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={{ flex: 1 }}>
         <RootNavigator isAuthenticated={isAuthenticated} userRole={userType || 'worker'} />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from '../shims/imagePicker.shim';
 import { RootStackScreenProps } from '../types/navigation';
 import { useOrgTheme, useToast, useTheme } from '../contexts';
 import { H2, Body, Caption, Button, Input, DatePickerModal } from '../components/ui';

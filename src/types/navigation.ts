@@ -108,6 +108,16 @@ export type RootStackParamList = {
   Reports: undefined;
   RTW: undefined;
   ComplianceDashboard: undefined;
+  ClientList: undefined;
+  ClientDetails: { clientId: string };
+  Help: undefined;
+  NfcTap: { tagCode: string };
+  NfcClockIn: { shiftId: string; isRecurring?: boolean; rotaShiftId?: string; clockedIn?: boolean };
+  NfcManagement: undefined;
+  CreateNfcPoint: undefined;
+  WriteNfcTag: { point: import('../store/api/nfcApi').NfcClockPoint };
+  QRClockIn: undefined;
+  QRCodeDisplay: { point: import('../store/api/nfcApi').NfcClockPoint };
 };
 
 // Screen Props Types

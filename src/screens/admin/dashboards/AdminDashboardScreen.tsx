@@ -7,7 +7,7 @@ import { useOrgTheme, useTheme, useToast } from '../../../contexts';
 import { H2, H3, Body, Caption, Card, Badge } from '../../../components/ui';
 import { useGetPendingApprovalsQuery, useGetAdminStatsQuery, useGetRecentActivityQuery } from '../../../store/slices/adminSlices/dashboardSlice';
 import { useInviteWorkerMutation } from '../../../store/slices/adminSlices/workerSlice';
-import { useGetUnreadCountQuery } from '../../../store/slices/adminSlices/notificationSlice';
+import { useGetUnreadCountQuery } from '../../../store/api/notificationsApi';
 import { useGetSubscriptionSummaryQuery } from '../../../store/api/subscriptionApi';
 import { useAppSelector } from '../../../store/hooks';
 import InviteWorkerModal  from '../worker/InviteWorkerModal';

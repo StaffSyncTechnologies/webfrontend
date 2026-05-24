@@ -182,8 +182,11 @@ export function CreateShiftModal({
       setStartTime(shiftData.time?.split(' - ')[0] || '');
       setEndTime(shiftData.time?.split(' - ')[1] || '');
     } else if (shiftData.startAt && shiftData.endAt) {
-      setStartTime(shiftData.startAt?.split('T')[1]?.substring(0, 5) || '');
-      setEndTime(shiftData.endAt?.split('T')[1]?.substring(0, 5) || '');
+      // Use local-time hours so the picker shows the correct wall-clock time
+      const s = new Date(shiftData.startAt);
+      const e = new Date(shiftData.endAt);
+      setStartTime(`${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`);
+      setEndTime(`${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`);
       if (mode === 'edit') setDate(shiftData.startAt?.split('T')[0] || '');
     }
   }, [shiftData, mode]);
@@ -199,9 +202,9 @@ export function CreateShiftModal({
 
   const handleSave = () => {
     if (startTime && endTime && endTime <= startTime) return; // guard
-    const startAt = date && startTime ? `${date}T${startTime}:00.000Z` : shiftData?.startAt;
-    const endAt = date && endTime ? `${date}T${endTime}:00.000Z` : shiftData?.endAt;
-    console.log('CreateShiftModal - handleSave:', { startAt, endAt, startTime, endTime, date });
+    // Build as local time (no Z) then convert to proper UTC — matches web CreateShift.tsx
+    const startAt = date && startTime ? new Date(`${date}T${startTime}:00`).toISOString() : shiftData?.startAt;
+    const endAt   = date && endTime   ? new Date(`${date}T${endTime}:00`).toISOString()   : shiftData?.endAt;
     onSave({
       ...(mode === 'edit' ? shiftData : {}),
       title,

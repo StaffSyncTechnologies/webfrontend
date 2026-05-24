@@ -3,7 +3,7 @@ import { View, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useOrgTheme, useToast } from '../../../../contexts';
 import { H3, Body, Caption, Input } from '../../../../components/ui';
-import { useChangePasswordMutation } from '../../../../store/slices/adminSlices/settingsSlice';
+import { useChangePasswordMutation } from '../../../../store/api/authApi';
 
 interface ChangePasswordModalProps {
   open: boolean;

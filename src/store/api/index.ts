@@ -7,3 +7,5 @@ export * from './notificationsApi';
 export * from './chatApi';
 export * from './scheduleApi';
 export * from './rotaApi';
+export * from './contactApi';
+export * from './nfcApi';

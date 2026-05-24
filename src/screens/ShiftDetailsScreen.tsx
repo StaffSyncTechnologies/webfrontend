@@ -56,8 +56,10 @@ export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'
   const acceptedCount = shift?.assignments?.filter(a => a.status === 'ACCEPTED').length || 0;
   const isFilled = acceptedCount >= (shift?.workersNeeded || 1);
   
-  // Can act if: assigned with ASSIGNED status OR broadcasted to worker (but no assignment yet) AND shift is not filled
-  const canAct = (assignmentStatus === 'ASSIGNED' || (isBroadcastToMe && !myAssignment)) && !actionDone && !isFilled;
+  // Rota shifts are auto-accepted on publish — no manual accept needed.
+  const isRotaShift = !!shift?.rotaId;
+  // Can act if: assigned with ASSIGNED status OR broadcasted to worker (but no assignment yet) AND shift is not filled AND not from rota
+  const canAct = !isRotaShift && (assignmentStatus === 'ASSIGNED' || (isBroadcastToMe && !myAssignment)) && !actionDone && !isFilled;
 
   const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
     OPEN: { label: 'OPEN', bg: '#DCFCE7', text: '#16A34A' },
@@ -192,10 +194,11 @@ export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'
                     : isBroadcastToMe && !myAssignment ? '#2563EB'
                     : '#D97706',
                 }}>
-                  {actionDone === 'accepted' ? 'ACCEPTED' : 
-                   actionDone === 'declined' ? 'DECLINED' : 
+                  {actionDone === 'accepted' ? 'ACCEPTED' :
+                   actionDone === 'declined' ? 'DECLINED' :
                    isBroadcastToMe && !myAssignment && isFilled ? 'FILLED' :
-                   isBroadcastToMe && !myAssignment ? 'BROADCASTED' : 
+                   isBroadcastToMe && !myAssignment ? 'BROADCASTED' :
+                   isRotaShift && assignmentStatus === 'ACCEPTED' ? 'SCHEDULED' :
                    assignmentStatus}
                 </Caption>
               </View>
@@ -309,12 +312,14 @@ export function ShiftDetailsScreen({ route, navigation }: RootStackScreenProps<'
         </View>
       )}
 
-      {/* Already accepted — show Shift Accepted + Request Swap (for future shifts) */}
+      {/* Already accepted / rota-scheduled — show status + Request Swap (for future shifts) */}
       {(assignmentStatus === 'ACCEPTED' || actionDone === 'accepted') && !canAct && (
         <View className="absolute bottom-0 left-0 right-0 px-5 pb-8 pt-3 bg-light-background-primary dark:bg-dark-background-primary border-t border-light-border-light dark:border-dark-border-light">
           <View className="flex-row items-center justify-center py-2">
             <Ionicons name="checkmark-circle" size={22} color="#16A34A" />
-            <Body className="ml-2 font-outfit-semibold" style={{ color: '#16A34A' }}>Shift Accepted</Body>
+            <Body className="ml-2 font-outfit-semibold" style={{ color: '#16A34A' }}>
+              {isRotaShift ? 'Scheduled by Rota' : 'Shift Accepted'}
+            </Body>
           </View>
           {shift && new Date(shift.startAt) > new Date() && (
             <TouchableOpacity

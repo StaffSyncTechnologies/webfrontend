@@ -7,7 +7,7 @@ import {
   Modal,
   Share,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { WebView } from '../shims/webview.shim';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackScreenProps } from '../types/navigation';

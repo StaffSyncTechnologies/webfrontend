@@ -1,38 +1,18 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
+/**
+ * notificationSlice — admin notification preferences & device registration.
+ *
+ * The core notification endpoints (getNotifications, markAsRead, markAllAsRead,
+ * getUnreadCount) live in store/api/notificationsApi.ts.
+ * This file only adds the admin-specific preference/device endpoints that don't
+ * exist there, avoiding duplicate injectEndpoints registrations on baseApi.
+ */
+
 import { NOTIFICATIONS } from '../../../services/endpoints';
 import { baseApi } from '../../api/baseApi';
 
-export interface Notification {
-  id: string;
-  title: string;
-  body: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-  data?: any;
-}
-
-export const notificationApi = baseApi.injectEndpoints({
+export const notificationAdminApi = baseApi.injectEndpoints({
+  overrideExisting: false,
   endpoints: (builder) => ({
-    getNotifications: builder.query<{ data: Notification[] }, { page?: number; limit?: number }>({
-      query: ({ page = 1, limit = 20 }) => ({
-        url: NOTIFICATIONS.LIST,
-        params: { page, limit },
-      }),
-    }),
-
-    markAsRead: builder.mutation<void, string>({
-      query: (id) => ({ url: NOTIFICATIONS.MARK_READ(id), method: 'POST' }),
-    }),
-
-    markAllAsRead: builder.mutation<void, void>({
-      query: () => ({ url: NOTIFICATIONS.MARK_ALL_READ, method: 'POST' }),
-    }),
-
-    getUnreadCount: builder.query<{ count: number }, void>({
-      query: () => ({ url: NOTIFICATIONS.UNREAD_COUNT }),
-    }),
-
     getPreferences: builder.query<any, void>({
       query: () => ({ url: NOTIFICATIONS.PREFERENCES }),
     }),
@@ -56,13 +36,17 @@ export const notificationApi = baseApi.injectEndpoints({
 });
 
 export const {
-  useGetNotificationsQuery,
-  useMarkAsReadMutation,
-  useMarkAllAsReadMutation,
-  useGetUnreadCountQuery,
   useGetPreferencesQuery,
   useUpdatePreferenceMutation,
   useUpdatePreferencesBulkMutation,
   useRegisterDeviceMutation,
   useDeactivateDeviceMutation,
-} = notificationApi;
+} = notificationAdminApi;
+
+// Re-export the core hooks so old imports still resolve
+export {
+  useGetNotificationsQuery,
+  useMarkAsReadMutation,
+  useMarkAllAsReadMutation,
+  useGetUnreadCountQuery,
+} from '../../api/notificationsApi';

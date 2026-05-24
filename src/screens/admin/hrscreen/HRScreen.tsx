@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOrgTheme, useTheme } from '../../../contexts';
+import { useNavigation } from '@react-navigation/native';
 import { H2, H3, Body, Caption, Card, Badge,PaginatedCardList,FilterOption,PaginatedCardListProps } from '../../../components/ui';
 interface Manager {
   id: string;
@@ -98,6 +99,7 @@ export function HRScreen() {
   const insets = useSafeAreaInsets();
   const { primaryColor } = useOrgTheme();
   const { isDark } = useTheme();
+  const navigation = useNavigation();
 
   const stats = {
     totalManagers:     { count: 12, change: 8 },
@@ -212,9 +214,14 @@ export function HRScreen() {
     >
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-2 pb-4">
-        <View>
-          <H2>HR Management</H2>
-          <Caption color="secondary">Monitor manager performance & workload</Caption>
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="chevron-back" size={24} color={isDark ? '#fff' : '#111827'} />
+          </TouchableOpacity>
+          <View>
+            <H2>HR Management</H2>
+            <Caption color="secondary">Monitor manager performance & workload</Caption>
+          </View>
         </View>
         <TouchableOpacity
           className="flex-row items-center gap-2 px-4 py-3 rounded-xl"

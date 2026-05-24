@@ -180,6 +180,51 @@ export const shiftsApi = baseApi.injectEndpoints({
       }),
       providesTags: ['Attendance'],
     }),
+
+    // ── Admin: create shift ────────────────────────────────────────────────
+    createShift: builder.mutation<{ success: boolean; data: Shift }, Partial<Shift> & { title: string; startAt: string; endAt: string }>({
+      query: (body) => ({ url: SHIFTS.CREATE, method: 'POST', body }),
+      invalidatesTags: ['Shifts'],
+    }),
+
+    // ── Admin: update shift ────────────────────────────────────────────────
+    updateShift: builder.mutation<{ success: boolean; data: Shift }, { shiftId: string; updates: Partial<Shift> }>({
+      query: ({ shiftId, updates }) => ({ url: SHIFTS.UPDATE(shiftId), method: 'PATCH', body: updates }),
+      invalidatesTags: ['Shifts'],
+    }),
+
+    // ── Admin: broadcast shift ─────────────────────────────────────────────
+    broadcastShift: builder.mutation<{ success: boolean }, string>({
+      query: (shiftId) => ({ url: SHIFTS.BROADCAST(shiftId), method: 'POST' }),
+      invalidatesTags: ['Shifts'],
+    }),
+
+    // ── Admin: get shift assignments ───────────────────────────────────────
+    getShiftAssignments: builder.query<{ success: boolean; data: Array<{
+      id: string;
+      workerId: string;
+      status: string;
+      worker: { id: string; fullName: string; email: string };
+    }> }, string>({
+      query: (shiftId) => SHIFTS.ASSIGNMENTS(shiftId),
+      providesTags: (r, e, shiftId) => [{ type: 'Shifts', id: shiftId }],
+    }),
+
+    // ── Admin: cancel shift ────────────────────────────────────────────────
+    cancelShift: builder.mutation<{ success: boolean }, string>({
+      query: (shiftId) => ({ url: SHIFTS.CANCEL(shiftId), method: 'POST' }),
+      invalidatesTags: ['Shifts'],
+    }),
+
+    // ── Admin: assign workers to shift ─────────────────────────────────────
+    assignWorkers: builder.mutation<{ success: boolean }, { shiftId: string; workerIds: string[] }>({
+      query: ({ shiftId, workerIds }) => ({
+        url: SHIFTS.ASSIGNMENTS(shiftId),
+        method: 'POST',
+        body: { workerIds },
+      }),
+      invalidatesTags: ['Shifts'],
+    }),
   }),
 });
 
@@ -196,4 +241,13 @@ export const {
   useGetMyAttendanceStatusQuery,
   useGetMyAttendanceHistoryQuery,
   useGetMyTimesheetQuery,
+  useCreateShiftMutation,
+  useUpdateShiftMutation,
+  useBroadcastShiftMutation,
+  useGetShiftAssignmentsQuery,
+  useCancelShiftMutation,
+  useAssignWorkersMutation,
 } = shiftsApi;
+
+// Alias for screens that import it under the longer name
+export const useGetShiftByIdQuery = shiftsApi.endpoints.getById.useQuery;

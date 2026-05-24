@@ -40,6 +40,7 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
   const [secondsToEnd, setSecondsToEnd] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isRestored, setIsRestored] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
   const [geofenceStatus, setGeofenceStatus] = useState<{ within: boolean; distance?: number } | null>(null);
   const [isAutoClockingOut, setIsAutoClockingOut] = useState(false);
@@ -302,43 +303,39 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
   };
 
   const handleConfirm = async () => {
-    setShowConfirm(false);
-    
+    // Keep the modal open and show a loading state while we fetch location + call API
+    setIsConfirming(true);
+
     if (clockState === 'idle') {
-      // Clock in - get fresh location first
       try {
-        console.log('🔍 CLOCK-IN: Getting current location...');
         const location = await getCurrentLocation();
-        console.log('🔍 CLOCK-IN: Got location:', location);
-        
-        if (!location || !location.latitude || !location.longitude) {
+
+        if (!location || location.latitude == null || location.longitude == null) {
+          setIsConfirming(false);
+          setShowConfirm(false);
           Alert.alert('Location Error', 'Unable to get your location. Please ensure location services are enabled.');
           return;
         }
-        
-        await clockInMutation({ 
-          shiftId, 
-          lat: location.latitude, 
-          lng: location.longitude 
+
+        console.log('🔍 CLOCK-IN: Sending location:', { shiftId, lat: location.latitude, lng: location.longitude });
+        await clockInMutation({
+          shiftId,
+          lat: Number(location.latitude),
+          lng: Number(location.longitude),
         }).unwrap();
-        
+
         const now = Date.now();
         startTimestampRef.current = now;
         setSeconds(0);
         setClockState('clocked_in');
-        
+
         // Persist clock-in start time
         const data: PersistedClockData = { shiftId, startTimestamp: now, state: 'clocked_in' };
         await AsyncStorage.setItem(CLOCK_STORAGE_KEY, JSON.stringify(data));
+
+        setIsConfirming(false);
+        setShowConfirm(false);
       } catch (error: any) {
-        console.log('ClockInScreen - Clock in error:', error);
-        console.log('ClockInScreen - Error details:', {
-          message: error?.message,
-          data: error?.data,
-          status: error?.status,
-          code: error?.code,
-        });
-        // Show specific error message based on error code
         const errorCode = error?.data?.code || error?.code;
         let errorMessage = 'Failed to clock in. Please try again.';
         let errorTitle = 'Clock In Failed';
@@ -348,10 +345,10 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
           errorMessage = 'You have already clocked in for this shift.';
         } else if (errorCode === 'TOO_EARLY') {
           errorTitle = 'Too Early to Clock In';
-          errorMessage = error?.data?.message || 'You can clock in closer to the shift start time.';
+          errorMessage = error?.data?.error || error?.data?.message || 'You can clock in closer to the shift start time.';
         } else if (errorCode === 'CLOCK_IN_WINDOW_CLOSED') {
           errorTitle = 'Clock-In Window Closed';
-          errorMessage = error?.data?.message || 'The 15-minute clock-in window has passed. Please contact your manager.';
+          errorMessage = error?.data?.error || error?.data?.message || 'The 15-minute clock-in window has passed. Please contact your manager.';
         } else if (errorCode === 'SHIFT_ENDED') {
           errorTitle = 'Shift Ended';
           errorMessage = 'This shift has already ended and cannot be started.';
@@ -360,46 +357,51 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
           errorMessage = 'You are not assigned to this shift.';
         } else if (errorCode === 'OUTSIDE_GEOFENCE') {
           errorTitle = 'Too Far From Work Site';
-          errorMessage = error?.data?.message || 'You are too far from the work site to clock in.';
+          errorMessage = error?.data?.error || error?.data?.message || 'You are too far from the work site to clock in.';
+        } else if (errorCode === 'VALIDATION_ERROR') {
+          errorTitle = 'Invalid Request';
+          const details = error?.data?.details?.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+          errorMessage = details || error?.data?.error || 'Validation failed. Please try again.';
+        } else if (error?.data?.error) {
+          errorMessage = error.data.error;
         } else if (error?.data?.message) {
           errorMessage = error.data.message;
+        } else if (typeof error?.data === 'string' && error.data) {
+          errorMessage = error.data;
         } else if (error?.message) {
           errorMessage = error.message;
+        } else if (error?.status) {
+          errorMessage = `Server error (${error.status}). Please try again.`;
         }
+        console.error('Clock-in error:', JSON.stringify(error, null, 2));
 
+        setIsConfirming(false);
+        setShowConfirm(false);
         Alert.alert(errorTitle, errorMessage);
-        return;
       }
     } else if (clockState === 'clocked_in') {
-      // Clock out - get fresh location first
       try {
-        console.log('🔍 CLOCK-OUT: Getting current location...');
         const location = await getCurrentLocation();
-        console.log('🔍 CLOCK-OUT: Got location:', location);
-        
-        if (!location || !location.latitude || !location.longitude) {
+
+        if (!location || location.latitude == null || location.longitude == null) {
+          setIsConfirming(false);
+          setShowConfirm(false);
           Alert.alert('Location Error', 'Unable to get your location. Please ensure location services are enabled.');
           return;
         }
-        
-        await clockOutMutation({ 
-          shiftId, 
-          lat: location.latitude, 
-          lng: location.longitude 
+
+        await clockOutMutation({
+          shiftId,
+          lat: Number(location.latitude),
+          lng: Number(location.longitude),
         }).unwrap();
-        
+
         setClockState('clocked_out');
-        // Clear persisted state on clock-out
         await AsyncStorage.removeItem(CLOCK_STORAGE_KEY);
+
+        setIsConfirming(false);
+        setShowConfirm(false);
       } catch (error: any) {
-        console.log('ClockInScreen - Clock out error:', error);
-        console.log('ClockInScreen - Error details:', {
-          message: error?.message,
-          data: error?.data,
-          status: error?.status,
-          code: error?.code,
-        });
-        // Show specific error message based on error code
         const errorCode = error?.data?.code || error?.code;
         let errorMessage = 'Failed to clock out. Please try again.';
         let errorTitle = 'Clock Out Failed';
@@ -413,14 +415,22 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
         } else if (errorCode === 'ALREADY_CLOCKED_OUT') {
           errorTitle = 'Already Clocked Out';
           errorMessage = 'You have already clocked out from this shift.';
+        } else if (error?.data?.error) {
+          errorMessage = error.data.error;
         } else if (error?.data?.message) {
           errorMessage = error.data.message;
+        } else if (typeof error?.data === 'string' && error.data) {
+          errorMessage = error.data;
         } else if (error?.message) {
           errorMessage = error.message;
+        } else if (error?.status) {
+          errorMessage = `Server error (${error.status}). Please try again.`;
         }
+        console.error('Clock-out error:', JSON.stringify(error, null, 2));
 
+        setIsConfirming(false);
+        setShowConfirm(false);
         Alert.alert(errorTitle, errorMessage);
-        return;
       }
     }
   };
@@ -714,6 +724,37 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
           )}
         </View>
 
+        {/* Alternative clock-in / clock-out methods */}
+        <View className="mx-5 mb-2">
+          <Caption color="secondary" className="text-center mb-3">Or use an alternative method</Caption>
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl border"
+              style={{ borderColor: primaryColor, backgroundColor: `${primaryColor}10` }}
+              onPress={() =>
+                navigation.navigate('NfcClockIn', {
+                  shiftId: actualShiftId,
+                  isRecurring: isRecurring || false,
+                  rotaShiftId: rotaShiftId || undefined,
+                  clockedIn: clockState === 'clocked_in',
+                })
+              }
+            >
+              <Ionicons name="radio-outline" size={18} color={primaryColor} />
+              <Body style={{ color: primaryColor, fontWeight: '600', fontSize: 14 }}>NFC</Body>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl border"
+              style={{ borderColor: primaryColor, backgroundColor: `${primaryColor}10` }}
+              onPress={() => navigation.navigate('QRClockIn')}
+            >
+              <Ionicons name="qr-code-outline" size={18} color={primaryColor} />
+              <Body style={{ color: primaryColor, fontWeight: '600', fontSize: 14 }}>QR Code</Body>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Earnings */}
         <View className="px-5 py-5">
           <H3 className="mb-3">Earnings</H3>
@@ -762,10 +803,17 @@ export function ClockInScreen({ route, navigation }: RootStackScreenProps<'Clock
               </Body>
             </View>
 
-            <Button onPress={handleConfirm} className="mb-2.5">
-              {clockState === 'idle' ? 'Yes, Clock In' : 'Yes, Clock Out'}
+            <Button
+              onPress={handleConfirm}
+              loading={isConfirming}
+              disabled={isConfirming}
+              className="mb-2.5"
+            >
+              {isConfirming
+                ? clockState === 'idle' ? 'Clocking In…' : 'Clocking Out…'
+                : clockState === 'idle' ? 'Yes, Clock In' : 'Yes, Clock Out'}
             </Button>
-            <Button variant="outline" onPress={() => setShowConfirm(false)}>
+            <Button variant="outline" onPress={() => setShowConfirm(false)} disabled={isConfirming}>
               Cancel
             </Button>
           </View>

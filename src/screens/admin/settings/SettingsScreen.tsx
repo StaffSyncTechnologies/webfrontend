@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from '../../../shims/imagePicker.shim';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +14,7 @@ import { useGetCurrentQuery, useUpdateCurrentOrgMutation, useGetSettingsQuery, u
 import { API_BASE_URL, API_BASE_ROOT } from '../../../services/endpoints';
 import { useAppSelector } from '../../../store/hooks';
 import { useListManagersQuery, useUpdateManagerStatusMutation } from '../../../store/slices/adminSlices/hrSlice';
-import { useGetNotificationsQuery, useMarkAsReadMutation, useMarkAllAsReadMutation } from '../../../store/slices/adminSlices/notificationSlice';
+import { useGetNotificationsQuery, useMarkAsReadMutation, useMarkAllAsReadMutation } from '../../../store/api/notificationsApi';
 
 type TabKey = 'agency' | 'users' | 'notification';
 

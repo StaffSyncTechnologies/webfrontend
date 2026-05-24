@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useOrgTheme, useTheme, useToast } from '../../../contexts';
 import { H2, H3, Body, Caption, Card, Badge, PaginatedCardList, FilterOption } from '../../../components/ui';
 import { CreateShiftModal } from './CreateShiftModal';
-import { useGetShiftsQuery, useCreateShiftMutation, useUpdateShiftMutation, useBroadcastShiftMutation } from '../../../store/slices/adminSlices/shiftSlice';
+import { useGetShiftsQuery, useCreateShiftMutation, useUpdateShiftMutation, useBroadcastShiftMutation } from '../../../store/api/shiftsApi';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 

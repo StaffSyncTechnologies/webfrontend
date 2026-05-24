@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from '../../../shims/imagePicker.shim';
 import * as DocumentPicker from 'expo-document-picker';
 import {
   useAudioRecorder,

@@ -1,16 +1,24 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { AuthNavigator } from './AuthNavigator';
 import { WorkerTabNavigator } from './MainTabNavigator';
 import { AdminTabNavigator } from './AdminTabNavigation';
 import { ShiftDetailsScreen, ShiftConfirmedScreen, ClockInScreen, PayslipDetailScreen, HolidaysScreen, RequestHolidayScreen, HolidayRequestSubmittedScreen, HolidayDetailScreen, PrivacyPolicyScreen, ChatListScreen, ChatScreen, AppearanceScreen, NotificationSettingsScreen, SkillsCertificateScreen, ProfileDetailsScreen, RightToWorkScreen, LanguageScreen, NotificationsScreen, TimesheetScreen, ScheduleChangeRequestScreen, ShiftSwapScreen, WorkerDetailsScreen } from '../screens';
+import { NfcTapScreen } from '../screens/NfcTapScreen';
+import { NfcClockInScreen } from '../screens/NfcClockInScreen';
+import { QRClockInScreen } from '../screens/QRClockInScreen';
+import { NfcManagementScreen } from '../screens/admin/nfc/NfcManagementScreen';
+import { CreateNfcPointScreen } from '../screens/admin/nfc/CreateNfcPointScreen';
+import { WriteNfcTagScreen } from '../screens/admin/nfc/WriteNfcTagScreen';
+import { QRCodeDisplayScreen } from '../screens/admin/nfc/QRCodeDisplayScreen';
 import AdminChatListScreen from '../screens/admin/chat/AdminChatListScreen';
 import AdminChatScreen from '../screens/admin/chat/AdminChatScreen';
 import { ShiftsScreen } from '../screens/admin/shift/ShiftsScreen';
 import { ShiftDetailsScreen as AdminShiftDetailsScreen } from '../screens/admin/shift/ShiftDetailsScreen';
 import { AssignScheduleScreen } from '../screens/admin/schedule/AssignScheduleScreen';
-import { RotaBuilderScreen } from '../screens/admin/rota/RotaBuilderScreen';
+import RotaBuilderPage from '../screens/admin/rota/RotaBuilderPage';
 import { ChangePasswordScreen } from '../screens/ChangePasswordScreen';
 import { SubscriptionExpiredScreen } from '../screens/SubscriptionExpiredScreen';
 import { RTWBlockerModal } from '../components/RTWBlockerModal';
@@ -23,6 +31,9 @@ import { ReportsScreen } from '../screens/admin/reports/ReportsScreen';
 import { RTWScreen } from '../screens/admin/RTW/RTWScreen';
 import { ComplianceDashboardScreen } from '../screens/admin/dashboards/ComplianceDashboardScreen';
 import { SettingsScreen } from '../screens/admin/settings/SettingsScreen';
+import { ClientListScreen } from '../screens/admin/clients/ClientListScreen';
+import { ClientDetailsScreen } from '../screens/admin/clients/ClientDetailsScreen';
+import { HelpScreen } from '../screens/HelpScreen';
 import { useGetSubscriptionSummaryQuery } from '../store/api/subscriptionApi';
 import { useAppSelector } from '../store/hooks';
 
@@ -36,16 +47,45 @@ interface RootNavigatorProps {
 
 function SubscriptionGatedMain({ role, userRole }: { role?: 'worker' | 'admin'; userRole?: string }) {
   const token = useAppSelector((state) => state.auth.token);
-  const { data: summary, isLoading } = useGetSubscriptionSummaryQuery(undefined, { skip: !token });
 
-  // Don't block while loading — show normal app
-  if (isLoading || !summary) {
-    return role === 'admin' ? <AdminTabNavigator userRole={userRole || 'ADMIN'} /> : <WorkerTabNavigator />;
-  }
+  // Poll every 5 minutes + refetch on foreground
+  const { data: summary, isLoading, refetch } = useGetSubscriptionSummaryQuery(undefined, {
+    skip: !token,
+    pollingInterval: 5 * 60 * 1000, // 5 minutes
+  });
 
-  // Block if subscription/trial expired
-  if (summary.isExpired && !summary.canAccessDashboard) {
-    return <SubscriptionExpiredScreen />;
+  // Re-check subscription whenever the app comes back to the foreground
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (appState.current.match(/inactive|background/) && nextState === 'active') {
+        refetch();
+      }
+      appState.current = nextState;
+    });
+    return () => sub.remove();
+  }, [refetch]);
+
+  // Admin only: block immediately — do NOT silently show the app while loading
+  if (role === 'admin') {
+    if (isLoading) {
+      // Show a brief loading state rather than granting access
+      return <SubscriptionExpiredScreen loading />;
+    }
+    if (!summary || summary.isExpired || !summary.canAccessDashboard) {
+      // No data or expired — block access
+      if (summary?.isExpired || (summary && !summary.canAccessDashboard)) {
+        return <SubscriptionExpiredScreen />;
+      }
+    }
+  } else {
+    // Workers: don't block while loading (less critical)
+    if (isLoading || !summary) {
+      return <WorkerTabNavigator />;
+    }
+    if (summary.isExpired && !summary.canAccessDashboard) {
+      return <SubscriptionExpiredScreen />;
+    }
   }
 
   return (
@@ -258,7 +298,7 @@ export function RootNavigator({ isAuthenticated = false, userRole = 'worker', ad
       />
       <Stack.Screen
         name="RotaBuilder"
-        component={RotaBuilderScreen}
+        component={RotaBuilderPage}
         options={{ animation: 'slide_from_right', presentation: 'card' }}
       />
       <Stack.Screen
@@ -284,6 +324,57 @@ export function RootNavigator({ isAuthenticated = false, userRole = 'worker', ad
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="ClientList"
+        component={ClientListScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="ClientDetails"
+        component={ClientDetailsScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="Help"
+        component={HelpScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      {/* ── NFC screens ───────────────────────────────────────────────────── */}
+      <Stack.Screen
+        name="NfcTap"
+        component={NfcTapScreen}
+        options={{ animation: 'fade', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="NfcClockIn"
+        component={NfcClockInScreen}
+        options={{ animation: 'slide_from_bottom', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="NfcManagement"
+        component={NfcManagementScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="CreateNfcPoint"
+        component={CreateNfcPointScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="WriteNfcTag"
+        component={WriteNfcTagScreen}
+        options={{ animation: 'slide_from_right', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="QRClockIn"
+        component={QRClockInScreen}
+        options={{ animation: 'slide_from_bottom', presentation: 'card' }}
+      />
+      <Stack.Screen
+        name="QRCodeDisplay"
+        component={QRCodeDisplayScreen}
         options={{ animation: 'slide_from_right', presentation: 'card' }}
       />
     </Stack.Navigator>

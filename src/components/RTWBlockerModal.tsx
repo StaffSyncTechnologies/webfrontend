@@ -7,7 +7,8 @@ import { useTheme } from '../contexts';
 import { Button, Input, H1, Body, DatePickerModal } from './ui';
 import { useGetMyRTWQuery, useSubmitMyRTWMutation, useWorkerGetOrCreateRoomMutation } from '../store';
 import { useSocket } from '../hooks/useSocket';
-import { useAppSelector } from '../store/hooks';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { logout } from '../store/slices/authSlice';
 import type { ChatMessage } from '../store/api/chatApi';
 
 export function RTWBlockerModal() {
@@ -25,6 +26,7 @@ export function RTWBlockerModal() {
   const [chatRoomId, setChatRoomId] = useState<string | undefined>();
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
 
+  const dispatch = useAppDispatch();
   const { data: rtwData, isLoading: rtwLoading, refetch } = useGetMyRTWQuery();
   const [submitRTW, { isLoading: isSubmitting }] = useSubmitMyRTWMutation();
   const [getOrCreateRoom, { isLoading: isCreatingChatRoom }] = useWorkerGetOrCreateRoomMutation();
@@ -239,6 +241,16 @@ export function RTWBlockerModal() {
                 <Body color="muted" style={{ fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
                   This verification is required by your employer to comply with UK employment law.
                 </Body>
+              </View>
+
+              <View style={{ alignItems: 'center', marginTop: 20 }}>
+                <TouchableOpacity
+                  onPress={() => dispatch(logout())}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 16 }}
+                >
+                  <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+                  <Body style={{ color: '#EF4444', fontSize: 13, fontWeight: '600' }}>Log Out</Body>
+                </TouchableOpacity>
               </View>
 
             {/* Error Message */}

@@ -76,7 +76,7 @@ export function HolidayScreen() {
   const { primaryColor } = useOrgTheme();
   const { isDark } = useTheme();
   const navigation = useNavigation();
-  const adminRole = useAppSelector((state) => state.auth.admin?.role);
+  const adminRole = useAppSelector((state) => state?.auth.admin?.role);
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<TabKey>('history');

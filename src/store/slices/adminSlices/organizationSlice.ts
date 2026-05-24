@@ -1,4 +1,3 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
 import { ORGANIZATION } from '../../../services/endpoints';
 import { baseApi } from '../../api/baseApi';
 
@@ -11,6 +10,12 @@ export interface Organization {
   logo: string | null;
   settings: any;
   branding: any;
+}
+
+export interface ClientCompany {
+  id: string;
+  name: string;
+  location?: string;
 }
 
 export const organizationApi = baseApi.injectEndpoints({
@@ -43,10 +48,6 @@ export const organizationApi = baseApi.injectEndpoints({
 
     getClients: builder.query<{ data: any[] }, void>({
       query: () => ({ url: ORGANIZATION.CLIENTS }),
-    }),
-
-    createClient: builder.mutation<any, Partial<any>>({
-      query: (body) => ({ url: ORGANIZATION.CREATE_CLIENT, method: 'POST', body }),
     }),
 
     getClientDetail: builder.query<any, string>({
@@ -119,6 +120,18 @@ export const organizationApi = baseApi.injectEndpoints({
       query: ({ locationId, ...body }) => ({ url: `/locations/${locationId}`, method: 'PUT', body }),
       invalidatesTags: ['Locations'] as any,
     }),
+
+    getActiveClientCompanies: builder.query<ClientCompany[], void>({
+      query: () => ({ url: '/clients/list?status=ACTIVE' }),
+      transformResponse: (response: any) => {
+        const clients = response?.data?.clients ?? [];
+        return clients.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          location: c.contactEmail ? c.contactEmail.split('@')[1] : undefined,
+        }));
+      },
+    }),
   }),
 });
 
@@ -130,7 +143,6 @@ export const {
   useGetBrandingQuery,
   useUpdateBrandingMutation,
   useGetClientsQuery,
-  useCreateClientMutation,
   useGetClientDetailQuery,
   useGetClientUsersQuery,
   useResendClientUserInviteMutation,
@@ -145,4 +157,5 @@ export const {
   useGetLocationsQuery,
   useAddLocationMutation,
   useUpdateLocationMutation,
+  useGetActiveClientCompaniesQuery,
 } = organizationApi;

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, useOrgTheme } from '../../contexts';
 import { Container, H1, H2, Body, Caption, Button } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +12,8 @@ type Props = AuthStackScreenProps<'ChooseAccountType'>;
 
 type AccountType = 'worker' | 'agency';
 
+const ACCOUNT_TYPE_KEY = '@staffsync_account_type';
+
 export function ChooseAccountTypeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -18,10 +21,21 @@ export function ChooseAccountTypeScreen({ navigation }: Props) {
   const { primaryColor } = useOrgTheme();
   const [selectedType, setSelectedType] = useState<AccountType | null>(null);
 
+  // Restore last chosen account type so the user doesn't have to re-pick every launch
+  useEffect(() => {
+    AsyncStorage.getItem(ACCOUNT_TYPE_KEY).then((saved) => {
+      if (saved === 'worker' || saved === 'agency') {
+        setSelectedType(saved);
+      }
+    });
+  }, []);
+
   const handleContinue = () => {
     if (selectedType === 'worker') {
+      AsyncStorage.setItem(ACCOUNT_TYPE_KEY, 'worker');
       navigation.navigate('Login', { role: 'worker' });
     } else if (selectedType === 'agency') {
+      AsyncStorage.setItem(ACCOUNT_TYPE_KEY, 'agency');
       navigation.navigate('AgencyLogin');
     }
   };

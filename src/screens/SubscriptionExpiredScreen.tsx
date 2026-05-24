@@ -1,13 +1,26 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { H2, Body, Caption } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 
-export function SubscriptionExpiredScreen() {
+export function SubscriptionExpiredScreen({ loading = false }: { loading?: boolean }) {
   const insets = useSafeAreaInsets();
   const { logout } = useAuth();
+
+  // Show a neutral loading screen while we verify subscription status
+  if (loading) {
+    return (
+      <View
+        className="flex-1 bg-light-background-primary dark:bg-dark-background-primary items-center justify-center"
+        style={{ paddingTop: insets.top }}
+      >
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Caption color="secondary" className="mt-4">Verifying subscription…</Caption>
+      </View>
+    );
+  }
 
   const handleLogout = async () => {
     try {

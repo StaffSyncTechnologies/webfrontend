@@ -43,9 +43,24 @@ export function useLocation() {
         }
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+        new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Location timeout')), ms);
+          promise.then((v) => { clearTimeout(timer); resolve(v); }).catch((e) => { clearTimeout(timer); reject(e); });
+        });
+
+      let location: Location.LocationObject;
+      try {
+        location = await withTimeout(
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          10000
+        );
+      } catch {
+        location = await withTimeout(
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
+          8000
+        );
+      }
 
       const { latitude, longitude, accuracy } = location.coords;
       setState({ latitude, longitude, accuracy, error: null, isLoading: false });

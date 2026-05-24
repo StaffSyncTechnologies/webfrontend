@@ -23,7 +23,7 @@ export function AuthNavigator() {
 
   return (
     <Stack.Navigator
-      initialRouteName={isFirstLaunch ? 'LanguageSelect' : 'Login'}
+      initialRouteName={isFirstLaunch ? 'LanguageSelect' : 'ChooseAccountType'}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',

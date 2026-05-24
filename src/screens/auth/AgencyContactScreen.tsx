@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, Image, Linking, ScrollView, Platform, Modal, Alert, ActivityIndicator, KeyboardAvoidingView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { WebView } from 'react-native-webview';
+import { WebView } from '../../shims/webview.shim';
 import { H1, H2, Body, Caption, Card, Divider, Input } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts';

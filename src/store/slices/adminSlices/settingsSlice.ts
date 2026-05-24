@@ -1,4 +1,3 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
 import { AUTH } from '../../../services/endpoints';
 import { baseApi } from '../../api/baseApi';
 
@@ -24,14 +23,6 @@ export const settingsApi = baseApi.injectEndpoints({
       query: (body) => ({ url: AUTH.UPDATE_ME, method: 'PUT', body }),
     }),
 
-    changePassword: builder.mutation<void, { currentPassword: string; newPassword: string }>({
-      query: (body) => ({ url: AUTH.CHANGE_PASSWORD, method: 'POST', body }),
-    }),
-
-    forgotPassword: builder.mutation<void, { email: string }>({
-      query: (body) => ({ url: AUTH.FORGOT_PASSWORD, method: 'POST', body }),
-    }),
-
     resetPassword: builder.mutation<void, { token: string; newPassword: string }>({
       query: (body) => ({ url: AUTH.RESET_PASSWORD, method: 'POST', body }),
     }),
@@ -41,7 +32,9 @@ export const settingsApi = baseApi.injectEndpoints({
 export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
-  useChangePasswordMutation,
-  useForgotPasswordMutation,
   useResetPasswordMutation,
 } = settingsApi;
+
+// Re-exported from authApi — these used to be duplicated here, causing
+// "overrideExisting" errors. Import from the canonical source instead.
+export { useChangePasswordMutation, useForgotPasswordMutation } from '../../api/authApi';

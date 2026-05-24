@@ -19,14 +19,16 @@ export function MoreScreen() {
 
   const menuItems = [
     { id: '1', title: 'Settings', icon: 'settings-outline', description: 'App settings and preferences', screen: 'Settings' as const, action: null },
-    { id: '2', title: 'Reports', icon: 'document-text-outline', description: 'View and generate reports', screen: 'Reports' as const, action: null },
-    { id: '3', title: 'Compliance', icon: 'shield-checkmark-outline', description: 'Right to Work and compliance checks', screen: 'RTW' as const, action: null },
-    { id: '4', title: 'Chat', icon: 'chatbubbles-outline', description: 'Messages and conversations', screen: 'AdminChatList' as const, action: null },
-    { id: '5', title: 'Timesheets', icon: 'time-outline', description: 'View timesheet records', screen: 'AdminTimesheet' as const, action: null },
-    { id: '6', title: 'Holiday', icon: 'calendar-outline', description: 'Holiday management', screen: 'AdminHoliday' as const, action: null },
-    { id: '7', title: 'Invite Requests', icon: 'person-add-outline', description: 'Manage invite requests', screen: 'InviteRequests' as const, action: null },
-    { id: '8', title: 'Help', icon: 'help-circle-outline', description: 'Get help and support', screen: null as any, action: null },
-    { id: '9', title: 'Logout', icon: 'log-out-outline', description: 'Sign out of your account', screen: null as any, action: 'logout' },
+    { id: '2', title: 'NFC & QR Clock-in', icon: 'radio-outline', description: 'Manage NFC tags and QR codes for site clock-in', screen: 'NfcManagement' as const, action: null },
+    { id: '3', title: 'Reports', icon: 'document-text-outline', description: 'View and generate reports', screen: 'Reports' as const, action: null },
+    { id: '4', title: 'Compliance', icon: 'shield-checkmark-outline', description: 'Right to Work and compliance checks', screen: 'RTW' as const, action: null },
+    { id: '5', title: 'Chat', icon: 'chatbubbles-outline', description: 'Messages and conversations', screen: 'AdminChatList' as const, action: null },
+    { id: '6', title: 'Timesheets', icon: 'time-outline', description: 'View timesheet records', screen: 'AdminTimesheet' as const, action: null },
+    { id: '7', title: 'Holiday', icon: 'calendar-outline', description: 'Holiday management', screen: 'AdminHoliday' as const, action: null },
+    { id: '8', title: 'Invite Requests', icon: 'person-add-outline', description: 'Manage invite requests', screen: 'InviteRequests' as const, action: null },
+    { id: '9', title: 'Clients', icon: 'business-outline', description: 'Manage clients and assignments', screen: 'ClientList' as const, action: null },
+    { id: '10', title: 'Help', icon: 'help-circle-outline', description: 'Get help and support', screen: 'Help' as const, action: null },
+    { id: '11', title: 'Logout', icon: 'log-out-outline', description: 'Sign out of your account', screen: null as any, action: 'logout' },
   ];
 
   const handleMenuPress = (screen: string | null, action: string | null) => {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, Image, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from '../../shims/imagePicker.shim';
 import { useOrgTheme, useToast } from '../../contexts';
 import { Button, H1, Body, Caption, StepHeader } from '../../components/ui';
 import { useTranslation } from 'react-i18next';
