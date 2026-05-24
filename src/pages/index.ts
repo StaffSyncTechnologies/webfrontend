@@ -26,6 +26,7 @@ export { CompliancePage } from './compliance';
 export { SettingsPage } from './settings';
 export { HelpPage } from './help';
 export { InviteRequestsPage } from './invite-requests';
+export { NfcPage } from './nfc';
 export { default as ContactUsPage } from './contactUs';
 export { default as DeleteAccountPage } from './legal/DeleteAccount';
 export { default as DeleteDataPage } from './legal/DeleteData';

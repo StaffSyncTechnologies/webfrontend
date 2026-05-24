@@ -18,6 +18,7 @@ import {
   VerifiedUser,
   Chat,
   PersonAdd,
+  Wifi,
 } from '@mui/icons-material';
 import type { ComponentType } from 'react';
 import type { UserRole } from '../utilities/roles';
@@ -168,6 +169,15 @@ export const routes: RouteConfig[] = [
     showInSidebar: true,
     section: 'main',
     allowedRoles: ['ADMIN', 'OPS_MANAGER'],
+  },
+  {
+    path: '/nfc',
+    label: 'NFC & QR Clock-in',
+    icon: Wifi,
+    requiresAuth: true,
+    showInSidebar: true,
+    section: 'main',
+    allowedRoles: ['ADMIN'],
   },
   {
     path: '/settings',

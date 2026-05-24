@@ -1,0 +1,1 @@
+export { NfcPage } from './NfcPage';

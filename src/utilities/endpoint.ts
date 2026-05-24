@@ -397,6 +397,26 @@ export const INVITE_REQUESTS = {
   REVIEW: (id: string) => `${API_BASE}/agencies/invite-requests/${id}`,
 } as const;
 
+// AI endpoints
+export const AI = {
+  SUGGEST_WORKERS:       `${API_BASE}/ai/suggest-workers`,
+  ABSENCE_PREDICTIONS:   `${API_BASE}/ai/absence-predictions`,
+} as const;
+
+// NFC Clock Point endpoints
+export const NFC = {
+  LIST: `${API_BASE}/nfc`,
+  CREATE: `${API_BASE}/nfc`,
+  ACTIVATE: (id: string) => `${API_BASE}/nfc/${id}/activate`,
+  DEACTIVATE: (id: string) => `${API_BASE}/nfc/${id}/deactivate`,
+  DELETE: (id: string) => `${API_BASE}/nfc/${id}`,
+} as const;
+
+// Location endpoints
+export const LOCATIONS = {
+  LIST: `${API_BASE}/locations`,
+} as const;
+
 // Chat endpoints
 export const CHAT = {
   ROOMS: `${API_BASE}/chat/rooms`,

@@ -212,7 +212,8 @@ function Cell({ worker, dayIdx, dayDate, published, isPast, onAssign, onRemove }
   const assignmentKeys = Object.keys(worker.assignments).filter(key => key.startsWith(`${dayIdx}-`));
   const assignments = assignmentKeys.map(key => worker.assignments[key]);
 
-  if (isHoliday) {
+  // Holiday with NO assignment → plain Leave cell
+  if (isHoliday && assignments.length === 0) {
     return (
       <DataCell sx={{ backgroundColor: '#FFFBEB', flexDirection: 'column', gap: 0.5 }}>
         <BeachAccess sx={{ fontSize: 18, color: '#F59E0B' }} />
@@ -233,7 +234,16 @@ function Cell({ worker, dayIdx, dayDate, published, isPast, onAssign, onRemove }
 
   if (assignments.length > 0) {
     return (
-      <DataCell sx={{ flexDirection: 'column', gap: 0.5 }}>
+      <DataCell sx={{ flexDirection: 'column', gap: 0.5, backgroundColor: isHoliday ? '#FFFBEB' : undefined }}>
+        {/* Holiday warning badge when worker is scheduled on a leave day */}
+        {isHoliday && (
+          <Tooltip title="On leave — consider reassigning">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <BeachAccess sx={{ fontSize: 11, color: '#F59E0B' }} />
+              <Typography sx={{ fontFamily: 'Outfit', fontSize: 8, color: '#92400E', fontWeight: 700 }}>LEAVE</Typography>
+            </Box>
+          </Tooltip>
+        )}
         {assignments.map((assignment, idx) => {
           const timeSlot = `${assignment.startTime}-${assignment.endTime}`;
           const shiftSlot = (Object.keys(SHIFT_SLOTS) as ShiftSlot[]).find(key => SHIFT_SLOTS[key] === timeSlot) as ShiftSlot;
@@ -249,7 +259,7 @@ function Cell({ worker, dayIdx, dayDate, published, isPast, onAssign, onRemove }
           );
         })}
         {/* Only allow adding a second shift on future/today dates */}
-        {!published && !isPast && (
+        {!published && !isPast && !isHoliday && (
           <Box
             onClick={(e) => { e.stopPropagation(); onAssign(worker, dayDate, dayIdx); }}
             sx={{ fontSize: 10, color: '#aaa', cursor: 'pointer', pl: 0.5 }}

@@ -29,6 +29,8 @@ import { inviteRequestApi } from './slices/inviteRequestSlice';
 import { matchingApi } from './api/matchingApi';
 import { recurringScheduleApi } from './slices/recurringScheduleSlice';
 import { rotaApi } from './api/rotaApi';
+import { nfcApi } from './slices/nfcSlice';
+import { aiApi } from './slices/aiSlice';
 
 // Redux persist configuration for auth
 const persistConfig = {
@@ -95,6 +97,8 @@ const rootReducer = combineReducers({
   [matchingApi.reducerPath]: matchingApi.reducer,
   [recurringScheduleApi.reducerPath]: recurringScheduleApi.reducer,
   [rotaApi.reducerPath]: rotaApi.reducer,
+  [nfcApi.reducerPath]: nfcApi.reducer,
+  [aiApi.reducerPath]: aiApi.reducer,
 });
 
 export const store = configureStore({
@@ -131,7 +135,9 @@ export const store = configureStore({
       inviteRequestApi.middleware,
       matchingApi.middleware,
       recurringScheduleApi.middleware,
-      rotaApi.middleware
+      rotaApi.middleware,
+      nfcApi.middleware,
+      aiApi.middleware
     ),
 });
 

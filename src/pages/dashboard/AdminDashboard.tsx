@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AbsenceRiskWidget } from './AbsenceRiskWidget';
 import {
   useGetAdminStatsQuery,
   useGetShiftsByDayQuery,
@@ -877,6 +878,11 @@ export function AdminDashboard() {
           </PaginationControls>
         </Pagination>
       </ActivitySection>
+
+      {/* Absence Risk Widget */}
+      <Box sx={{ mt: 3 }}>
+        <AbsenceRiskWidget />
+      </Box>
     </DashboardContainer>
   );
 }

@@ -18,19 +18,21 @@ import {
   MoreVert,
   Campaign,
   Cancel,
+  AutoAwesome,
 } from '@mui/icons-material';
 import { Box, styled, TextField, InputAdornment, Select, MenuItem, Checkbox, IconButton, Menu as MuiMenu, CircularProgress } from '@mui/material';
 import { useDocumentTitle } from '../../hooks';
 import { DashboardContainer, GridCols4 } from '../../components/layout';
 import { StatsCard } from '../../components/controls';
 import { colors } from '../../utilities/colors';
-import { 
-  useGetShiftsQuery, 
+import {
+  useGetShiftsQuery,
   useDeleteShiftMutation,
   useBroadcastShiftMutation,
   useCancelShiftMutation,
 } from '../../store/slices/shiftSlice';
 import type { Shift } from '../../types/api';
+import { AISuggestPanel } from './AISuggestPanel';
 
 // ============ STYLED COMPONENTS ============
 const HeaderRow = styled(Box)({
@@ -73,6 +75,23 @@ const CreateButton = styled('button')({
   '&:hover': {
     backgroundColor: '#1a2d4a',
   },
+});
+
+const AIButton = styled('button')({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  padding: '10px 18px',
+  borderRadius: '8px',
+  border: `2px solid ${colors.primary.blue}`,
+  backgroundColor: 'transparent',
+  fontFamily: "'Outfit', sans-serif",
+  fontSize: '14px',
+  fontWeight: 600,
+  color: colors.primary.blue,
+  cursor: 'pointer',
+  transition: 'background-color 0.15s',
+  '&:hover': { backgroundColor: '#EFF6FF' },
 });
 
 const TableCard = styled(Box)({
@@ -358,6 +377,7 @@ export function ShiftsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuShiftId, setMenuShiftId] = useState<string | null>(null);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   // API calls
   const statusFilter = activeTab === 'all' ? undefined : activeTab === 'open' ? 'OPEN' : 'COMPLETED';
@@ -460,11 +480,23 @@ export function ShiftsPage() {
           <PageTitle>Shifts</PageTitle>
           <PageSubtitle>Manage and monitor agency workers shifts</PageSubtitle>
         </TitleSection>
-        <CreateButton onClick={() => navigate('/shifts/create')}>
-          <Add sx={{ fontSize: 18 }} />
-          Create new shift
-        </CreateButton>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <AIButton onClick={() => setAiPanelOpen(true)}>
+            <AutoAwesome sx={{ fontSize: 17 }} />
+            AI Suggest Workers
+          </AIButton>
+          <CreateButton onClick={() => navigate('/shifts/create')}>
+            <Add sx={{ fontSize: 18 }} />
+            Create new shift
+          </CreateButton>
+        </Box>
       </HeaderRow>
+
+      {/* AI Suggest Panel */}
+      <AISuggestPanel
+        open={aiPanelOpen}
+        onClose={() => setAiPanelOpen(false)}
+      />
 
       {/* Stats Cards */}
       <GridCols4>

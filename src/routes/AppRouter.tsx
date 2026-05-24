@@ -2,11 +2,11 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../components/auth';
 import { AuthGuard } from '../components/auth/AuthGuard';
 import { RoleBasedRoute } from '../components/auth/RoleBasedRoute';
-import { 
-  Login, 
+import {
+  Login,
   ClientLogin,
-  Register, 
-  NotFound, 
+  Register,
+  NotFound,
   RoleDashboard,
   ShiftsPage,
   WorkersPage,
@@ -26,6 +26,7 @@ import {
   SettingsPage,
   HelpPage,
   InviteRequestsPage,
+  NfcPage,
   ContactUsPage,
   DeleteAccountPage,
   DeleteDataPage,
@@ -449,6 +450,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <InviteRequestsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nfc"
+            element={
+              <ProtectedRoute>
+                <NfcPage />
               </ProtectedRoute>
             }
           />
