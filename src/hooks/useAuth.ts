@@ -1,87 +1,55 @@
-import { useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import {
-  useWorkerLoginMutation,
-  useWorkerVerifyOtpMutation,
-  useWorkerRegisterMutation,
-  useLogoutMutation,
-  useGetMeQuery,
-  logout as logoutAction,
-} from '../store';
+import { useAppSelector, useAppDispatch } from '../store';
+import { setAuth, clearAuth, updateUser, checkTokenExpiration, restoreAuth } from '../store/slices/authPersistSlice';
+import { useEffect } from 'react';
 
-export function useAuth() {
+export const useAuth = () => {
   const dispatch = useAppDispatch();
-  const { token, worker, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const auth = useAppSelector((state) => state.auth);
 
-  const [loginMutation, { isLoading: isLoggingIn }] = useWorkerLoginMutation();
-  const [verifyOtpMutation, { isLoading: isVerifying }] = useWorkerVerifyOtpMutation();
-  const [registerMutation, { isLoading: isRegistering }] = useWorkerRegisterMutation();
-  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
+  // Restore auth state from localStorage on mount
+  useEffect(() => {
+    dispatch(restoreAuth());
+  }, [dispatch]);
 
-  // Skip if not authenticated
-  const { refetch: refetchMe } = useGetMeQuery(undefined, { skip: !isAuthenticated });
+  // Check token expiration periodically
+  useEffect(() => {
+    if (auth.isAuthenticated && auth.tokenExpiration) {
+      const checkExpiration = () => {
+        dispatch(checkTokenExpiration());
+      };
 
-  const sendOtp = useCallback(async (phone: string) => {
-    try {
-      const result = await loginMutation({ phone }).unwrap();
-      return { success: true, data: result };
-    } catch (error: any) {
-      console.error('sendOtp error:', JSON.stringify(error, null, 2));
-      return { success: false, error: error?.data?.error || error?.data?.message || error?.error || error?.message || 'Failed to send OTP' };
+      // Check immediately
+      checkExpiration();
+
+      // Set up interval to check every minute
+      const interval = setInterval(checkExpiration, 60000);
+
+      return () => clearInterval(interval);
     }
-  }, [loginMutation]);
+  }, [auth.isAuthenticated, auth.tokenExpiration, dispatch]);
 
-  const verifyOtp = useCallback(async (phone: string, otp: string) => {
-    try {
-      const result = await verifyOtpMutation({ phone, otp }).unwrap();
-      return { success: true, data: result };
-    } catch (error: any) {
-      console.error('verifyOtp error:', JSON.stringify(error, null, 2));
-      return { success: false, error: error?.data?.error || error?.data?.message || error?.error || error?.message || 'Invalid OTP' };
-    }
-  }, [verifyOtpMutation]);
+  const login = (user: any, token: string, refreshToken?: string, expiresIn?: number) => {
+    dispatch(setAuth({ user, token, refreshToken, expiresIn }));
+  };
 
-  const register = useCallback(async (inviteCode: string, email: string) => {
-    try {
-      const result = await registerMutation({ inviteCode, email }).unwrap();
-      return { success: true, data: result };
-    } catch (error: any) {
-      console.error('register error:', JSON.stringify(error, null, 2));
-      return { success: false, error: error?.data?.error || error?.data?.message || error?.error || error?.message || 'Registration failed' };
-    }
-  }, [registerMutation]);
+  const logout = () => {
+    dispatch(clearAuth());
+  };
 
-  const logout = useCallback(async () => {
-    try {
-      await logoutMutation().unwrap();
-    } catch (error) {
-      // Logout locally even if API fails
-    } finally {
-      dispatch(logoutAction());
-    }
-  }, [logoutMutation, dispatch]);
-
-  const refreshProfile = useCallback(async () => {
-    if (isAuthenticated) {
-      await refetchMe();
-    }
-  }, [isAuthenticated, refetchMe]);
+  const updateUserProfile = (updates: any) => {
+    dispatch(updateUser(updates));
+  };
 
   return {
-    // State
-    token,
-    worker,
-    isAuthenticated,
-    isLoading: isLoading || isLoggingIn || isVerifying || isRegistering,
-    isLoggingOut,
-
-    // Actions
-    sendOtp,
-    verifyOtp,
-    register,
+    user: auth.user,
+    token: auth.token,
+    refreshToken: auth.refreshToken,
+    isAuthenticated: auth.isAuthenticated,
+    isLoading: auth.isLoading,
+    error: auth.error,
+    tokenExpiration: auth.tokenExpiration,
+    login,
     logout,
-    refreshProfile,
+    updateUserProfile,
   };
-}
-
-export default useAuth;
+};

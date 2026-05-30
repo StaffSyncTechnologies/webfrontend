@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Debug</title>
+    <script>
+        // Check if we have a token
+        const token = localStorage.getItem('authToken');
+        console.log('Token exists:', !!token);
+        console.log('Token value:', token?.substring(0, 20) + '...');
+        
+        // Check API endpoints
+        const API_BASE = 'https://app.staffsynctech.co.uk';
+        
+        // Test rooms endpoint
+        fetch(`${API_BASE}/api/v1/chat/rooms`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Rooms response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Rooms data:', data);
+        })
+        .catch(error => {
+            console.error('Rooms error:', error);
+        });
+        
+        // Test me endpoint
+        fetch(`${API_BASE}/api/v1/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Me response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Me data:', data);
+        })
+        .catch(error => {
+            console.error('Me error:', error);
+        });
+    </script>
+</head>
+<body>
+    <h1>Chat Debug</h1>
+    <p>Check the console for debug information</p>
+</body>
+</html>

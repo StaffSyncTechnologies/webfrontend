@@ -31,11 +31,11 @@ export interface Shift {
     longitude: number;
     geofenceRadius: number;
   };
+  requiredSkills?: Array<{
+    skillId: string;
+  }>;
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   createdAt: string;
-  isGiveAway?: boolean;
-  swapRequestId?: string | null;
-  originalOwner?: { id: string; fullName: string } | null;
   assignments?: Array<{
     id: string;
     workerId: string;
@@ -56,6 +56,10 @@ export interface Shift {
       [key: string]: any;
     };
   }>;
+  _count?: {
+    assignments: number;
+    attendances: number;
+  };
 }
 
 export interface AttendanceRecord {
@@ -64,55 +68,7 @@ export interface AttendanceRecord {
   clockInAt?: string;
   clockOutAt?: string;
   status: 'PENDING' | 'APPROVED' | 'FLAGGED';
-  totalHours?: number;
-  totalPay?: number;
-}
-
-export interface TimesheetEntry {
-  shiftId: string;
-  shiftTitle: string;
-  location: string | null;
-  client: string | null;
-  scheduledStart: string;
-  scheduledEnd: string;
-  hourlyRate: number | null;
-  breakMinutes: number;
-  clockInAt: string | null;
-  clockOutAt: string | null;
-  hoursWorked: number | null;
-  status: 'PENDING' | 'APPROVED' | 'FLAGGED' | 'UPCOMING' | 'MISSED';
-  flagReason: string | null;
-  geofenceValid: boolean | null;
-}
-
-export interface TimesheetDay {
-  dayName: string;
-  date: string;
-  isToday: boolean;
-  entries: TimesheetEntry[];
-  totalHours: number;
-  totalEarnings: number;
-}
-
-export interface TimesheetData {
-  weekStart: string;
-  weekEnd: string;
-  summary: {
-    totalHours: number;
-    totalEarnings: number;
-    shiftsWorked: number;
-    shiftsScheduled: number;
-    approved: number;
-    pending: number;
-    flagged: number;
-  };
-  monthly: {
-    monthName: string;
-    totalHours: number;
-    totalEarnings: number;
-    shiftsWorked: number;
-  };
-  days: TimesheetDay[];
+  hoursWorked?: number;
 }
 
 export const shiftsApi = baseApi.injectEndpoints({
@@ -120,14 +76,6 @@ export const shiftsApi = baseApi.injectEndpoints({
     getShifts: builder.query<{ success: boolean; data: Shift[] }, { status?: string }>({
       query: (params) => ({ url: SHIFTS.LIST, params }),
       providesTags: ['Shifts'],
-    }),
-    getOpenShifts: builder.query<{ success: boolean; data: Shift[] }, void>({
-      query: () => SHIFTS.OPEN,
-      providesTags: ['Shifts'],
-    }),
-    claimShift: builder.mutation<{ success: boolean; message: string }, string>({
-      query: (shiftId) => ({ url: SHIFTS.CLAIM(shiftId), method: 'POST' }),
-      invalidatesTags: ['Shifts'],
     }),
     getMyShiftHistory: builder.query<{ success: boolean; data: Shift[] }, void>({
       query: () => SHIFTS.MY_HISTORY,
@@ -146,23 +94,11 @@ export const shiftsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Shifts'],
     }),
     clockIn: builder.mutation<{ success: boolean; data: AttendanceRecord }, { shiftId: string; lat?: number; lng?: number }>({
-      query: ({ shiftId, lat, lng }) => {
-        console.log('🔍 CLOCK-IN MUTATION: Sending request:', { shiftId, lat, lng });
-        console.log('🔍 CLOCK-IN MUTATION: Body:', { latitude: lat, longitude: lng });
-        return {
-          url: SHIFTS.CLOCK_IN(shiftId), 
-          method: 'POST', 
-          body: { latitude: lat, longitude: lng } 
-        };
-      },
+      query: ({ shiftId, lat, lng }) => ({ url: SHIFTS.CLOCK_IN(shiftId), method: 'POST', body: { lat, lng } }),
       invalidatesTags: ['Shifts', 'Attendance'],
     }),
     clockOut: builder.mutation<{ success: boolean; data: AttendanceRecord }, { shiftId: string; lat?: number; lng?: number }>({
-      query: ({ shiftId, lat, lng }) => ({ 
-        url: SHIFTS.CLOCK_OUT(shiftId), 
-        method: 'POST', 
-        body: { latitude: lat, longitude: lng } 
-      }),
+      query: ({ shiftId, lat, lng }) => ({ url: SHIFTS.CLOCK_OUT(shiftId), method: 'POST', body: { lat, lng } }),
       invalidatesTags: ['Shifts', 'Attendance'],
     }),
     getMyAttendanceStatus: builder.query<{ success: boolean; data: AttendanceRecord | null }, void>({
@@ -173,65 +109,11 @@ export const shiftsApi = baseApi.injectEndpoints({
       query: () => ATTENDANCE.MY_HISTORY,
       providesTags: ['Attendance'],
     }),
-    getMyTimesheet: builder.query<{ success: boolean; data: TimesheetData }, { weekStart?: string } | void>({
-      query: (params) => ({
-        url: ATTENDANCE.MY_TIMESHEET,
-        params: params ? { weekStart: params.weekStart } : undefined,
-      }),
-      providesTags: ['Attendance'],
-    }),
-
-    // ── Admin: create shift ────────────────────────────────────────────────
-    createShift: builder.mutation<{ success: boolean; data: Shift }, Partial<Shift> & { title: string; startAt: string; endAt: string }>({
-      query: (body) => ({ url: SHIFTS.CREATE, method: 'POST', body }),
-      invalidatesTags: ['Shifts'],
-    }),
-
-    // ── Admin: update shift ────────────────────────────────────────────────
-    updateShift: builder.mutation<{ success: boolean; data: Shift }, { shiftId: string; updates: Partial<Shift> }>({
-      query: ({ shiftId, updates }) => ({ url: SHIFTS.UPDATE(shiftId), method: 'PATCH', body: updates }),
-      invalidatesTags: ['Shifts'],
-    }),
-
-    // ── Admin: broadcast shift ─────────────────────────────────────────────
-    broadcastShift: builder.mutation<{ success: boolean }, string>({
-      query: (shiftId) => ({ url: SHIFTS.BROADCAST(shiftId), method: 'POST' }),
-      invalidatesTags: ['Shifts'],
-    }),
-
-    // ── Admin: get shift assignments ───────────────────────────────────────
-    getShiftAssignments: builder.query<{ success: boolean; data: Array<{
-      id: string;
-      workerId: string;
-      status: string;
-      worker: { id: string; fullName: string; email: string };
-    }> }, string>({
-      query: (shiftId) => SHIFTS.ASSIGNMENTS(shiftId),
-      providesTags: (r, e, shiftId) => [{ type: 'Shifts', id: shiftId }],
-    }),
-
-    // ── Admin: cancel shift ────────────────────────────────────────────────
-    cancelShift: builder.mutation<{ success: boolean }, string>({
-      query: (shiftId) => ({ url: SHIFTS.CANCEL(shiftId), method: 'POST' }),
-      invalidatesTags: ['Shifts'],
-    }),
-
-    // ── Admin: assign workers to shift ─────────────────────────────────────
-    assignWorkers: builder.mutation<{ success: boolean }, { shiftId: string; workerIds: string[] }>({
-      query: ({ shiftId, workerIds }) => ({
-        url: SHIFTS.ASSIGNMENTS(shiftId),
-        method: 'POST',
-        body: { workerIds },
-      }),
-      invalidatesTags: ['Shifts'],
-    }),
   }),
 });
 
 export const {
   useGetShiftsQuery,
-  useGetOpenShiftsQuery,
-  useClaimShiftMutation,
   useGetMyShiftHistoryQuery,
   useGetByIdQuery,
   useAcceptShiftMutation,
@@ -240,14 +122,4 @@ export const {
   useClockOutMutation,
   useGetMyAttendanceStatusQuery,
   useGetMyAttendanceHistoryQuery,
-  useGetMyTimesheetQuery,
-  useCreateShiftMutation,
-  useUpdateShiftMutation,
-  useBroadcastShiftMutation,
-  useGetShiftAssignmentsQuery,
-  useCancelShiftMutation,
-  useAssignWorkersMutation,
 } = shiftsApi;
-
-// Alias for screens that import it under the longer name
-export const useGetShiftByIdQuery = shiftsApi.endpoints.getById.useQuery;

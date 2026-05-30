@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Test</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .login { margin-bottom: 20px; }
+        .chat { border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
+        .message { margin-bottom: 10px; padding: 5px; border-radius: 5px; }
+        .mine { background: #007bff; color: white; text-align: right; }
+        .theirs { background: #f1f1f1; }
+        .input { display: flex; gap: 10px; }
+        .input input { flex: 1; padding: 5px; }
+        .input button { padding: 5px 10px; }
+        .rooms { margin-bottom: 20px; }
+        .room { padding: 10px; border: 1px solid #ccc; margin-bottom: 5px; cursor: pointer; }
+        .room.active { background: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chat Test</h1>
+        
+        <div class="login">
+            <h3>Login</h3>
+            <input type="email" id="email" placeholder="Email" value="admin@staffsync-demo.com">
+            <input type="password" id="password" placeholder="Password" value="Admin123!">
+            <button onclick="login()">Login</button>
+            <div id="loginStatus"></div>
+        </div>
+
+        <div class="rooms" id="rooms" style="display: none;">
+            <h3>Chat Rooms</h3>
+            <div id="roomsList"></div>
+        </div>
+
+        <div class="chat-section" id="chatSection" style="display: none;">
+            <h3 id="chatTitle">Chat</h3>
+            <div class="chat" id="chatMessages"></div>
+            <div class="input">
+                <input type="text" id="messageInput" placeholder="Type a message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let token = null;
+        let socket = null;
+        let currentRoomId = null;
+        let currentUserId = null;
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/v1/auth/staff/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    token = data.data.token;
+                    currentUserId = data.data.user.id;
+                    document.getElementById('loginStatus').innerHTML = '<span style="color: green;">Logged in!</span>';
+                    document.getElementById('rooms').style.display = 'block';
+                    loadRooms();
+                    connectSocket();
+                } else {
+                    document.getElementById('loginStatus').innerHTML = '<span style="color: red;">Login failed</span>';
+                }
+            } catch (error) {
+                document.getElementById('loginStatus').innerHTML = '<span style="color: red;">Error: ' + error.message + '</span>';
+            }
+        }
+
+        async function loadRooms() {
+            try {
+                const response = await fetch('http://localhost:3001/api/v1/chat/rooms', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const roomsList = document.getElementById('roomsList');
+                    roomsList.innerHTML = '';
+                    
+                    data.data.forEach(room => {
+                        const roomDiv = document.createElement('div');
+                        roomDiv.className = 'room';
+                        roomDiv.innerHTML = `
+                            ${room.hrUser?.fullName || 'Unknown'} - ${room.worker?.fullName || 'Unknown'}
+                            ${room.unreadCount > 0 ? `(${room.unreadCount})` : ''}
+                        `;
+                        roomDiv.onclick = () => selectRoom(room);
+                        roomsList.appendChild(roomDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+            }
+        }
+
+        function selectRoom(room) {
+            currentRoomId = room.id;
+            document.querySelectorAll('.room').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('chatSection').style.display = 'block';
+            document.getElementById('chatTitle').textContent = `Chat with ${room.worker?.fullName || room.hrUser?.fullName || 'Unknown'}`;
+            
+            loadMessages();
+            joinRoom();
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(`http://localhost:3001/api/v1/chat/rooms/${currentRoomId}/messages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const messagesDiv = document.getElementById('chatMessages');
+                    messagesDiv.innerHTML = '';
+                    
+                    data.data.forEach(message => {
+                        addMessage(message);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        function addMessage(message) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.senderId === currentUserId ? 'mine' : 'theirs'}`;
+            messageDiv.innerHTML = `
+                <div>${message.content}</div>
+                <small>${new Date(message.createdAt).toLocaleTimeString()}</small>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function connectSocket() {
+            socket = io('http://localhost:3001', {
+                auth: { token }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('status').innerHTML = '<span style="color: green;">Connected</span>';
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('status').innerHTML = '<span style="color: red;">Disconnected</span>';
+            });
+
+            socket.on('receive_message', (message) => {
+                addMessage(message);
+            });
+
+            socket.on('chat:new_message', (data) => {
+                if (data.roomId === currentRoomId) {
+                    addMessage(data.message);
+                }
+                loadRooms(); // Refresh room list
+            });
+        }
+
+        function joinRoom() {
+            if (socket && currentRoomId) {
+                socket.emit('chat:join', { roomId: currentRoomId });
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (content && socket && currentRoomId) {
+                socket.emit('send_message', {
+                    room: currentRoomId,
+                    text: content
+                });
+                input.value = '';
+            }
+        }
+
+        // Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

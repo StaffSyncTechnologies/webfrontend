@@ -1,89 +1,78 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    "./App.{js,jsx,ts,tsx}",
-    "./src/**/*.{js,jsx,ts,tsx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
-  presets: [require("nativewind/preset")],
   theme: {
     extend: {
-      fontFamily: {
-        outfit: ['Outfit_400Regular'],
-        'outfit-light': ['Outfit_300Light'],
-        'outfit-medium': ['Outfit_500Medium'],
-        'outfit-semibold': ['Outfit_600SemiBold'],
-        'outfit-bold': ['Outfit_700Bold'],
-      },
       colors: {
-        // Brand Colors
         primary: {
-          navy: '#000035',
-          blue: '#00AFEF',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
         },
-        // Status Colors
-        status: {
-          success: '#34A853',
-          warning: '#FBBC04',
-          error: '#EA4335',
+        success: {
+          50: '#f0fdf4',
+          500: '#22c55e',
+          700: '#15803d',
         },
-        // Light Theme Colors
-        light: {
-          background: {
-            primary: '#FFFFFF',
-            secondary: '#F5F7FA',
-            tertiary: '#E5E7EB',
-          },
-          text: {
-            primary: '#000035',
-            secondary: '#6B7280',
-            muted: '#9CA3AF',
-          },
-          border: {
-            light: '#E5E7EB',
-            default: '#D1D5DB',
-          },
-          card: '#FFFFFF',
+        warning: {
+          50: '#fffbeb',
+          500: '#f59e0b',
+          700: '#b45309',
         },
-        // Dark Theme Colors
-        dark: {
-          background: {
-            primary: '#0D0D1A',
-            secondary: '#1A1A2E',
-            tertiary: '#2D2D44',
-          },
-          text: {
-            primary: '#FFFFFF',
-            secondary: '#A0A0B2',
-            muted: '#6B6B80',
-          },
-          border: {
-            light: '#2D2D44',
-            default: '#3D3D55',
-          },
-          card: '#1A1A2E',
+        error: {
+          50: '#fef2f2',
+          500: '#ef4444',
+          700: '#b91c1c',
         },
-        // Semantic Theme Colors (use CSS variables)
-        background: {
-          DEFAULT: 'var(--color-background)',
-          secondary: 'var(--color-background-secondary)',
-          tertiary: 'var(--color-background-tertiary)',
+        gray: {
+          50: '#f9fafb',
+          100: '#f3f4f6',
+          200: '#e5e7eb',
+          300: '#d1d5db',
+          400: '#9ca3af',
+          500: '#6b7280',
+          600: '#4b5563',
+          700: '#374151',
+          800: '#1f2937',
+          900: '#111827',
         },
-        foreground: {
-          DEFAULT: 'var(--color-text-primary)',
-          secondary: 'var(--color-text-secondary)',
-          muted: 'var(--color-text-muted)',
-        },
-        card: {
-          DEFAULT: 'var(--color-card)',
-        },
-        border: {
-          DEFAULT: 'var(--color-border)',
-          light: 'var(--color-border-light)',
-        },
+      },
+      spacing: {
+        '1': '4px',
+        '2': '8px',
+        '3': '12px',
+        '4': '16px',
+        '5': '20px',
+        '6': '24px',
+        '8': '32px',
+        '10': '40px',
+        '12': '48px',
+        '16': '64px',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'md': '8px',
+        'lg': '12px',
+        'xl': '16px',
+        'full': '9999px',
+      },
+      boxShadow: {
+        'sm': '0 1px 2px rgba(0, 0, 0, 0.05)',
+        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
       },
     },
   },
   plugins: [],
 }
-

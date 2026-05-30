@@ -1,19 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../../services/endpoints';
-
-// Local shape — avoids a circular import with store/index.ts
-// (store/index imports baseApi; importing RootState from there creates a cycle)
-interface _AuthState {
-  auth: { token: string | null };
-}
-
-// Action type string for auth/logout.
-// We dispatch the plain object instead of importing the action creator from
-// authSlice, which would create a cycle:
-//   baseApi → authSlice → authApi → baseApi
-const LOGOUT_ACTION = { type: 'auth/logout' } as const;
+import type { RootState } from '../index';
 
 const AUTH_TOKEN_KEY = '@staffsync_auth_token';
 
@@ -21,81 +8,47 @@ const AUTH_TOKEN_KEY = '@staffsync_auth_token';
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: async (headers, { getState }) => {
-    // Add API key for all requests
-    const apiKey = process.env.EXPO_PUBLIC_API_KEY || '990ef49add9082155b6faf7facc842484286d9a2d3017588cdf372eb1049fc46';
-    if (apiKey) {
-      headers.set('X-API-Key', apiKey);
-    }
-
     // Try to get token from Redux state first
-    const state = getState() as _AuthState;
+    const state = getState() as RootState;
     let token = state.auth.token;
-
-    // If not in state, try AsyncStorage
+    
+    // If not in state, try localStorage
     if (!token) {
-      token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      token = localStorage.getItem(AUTH_TOKEN_KEY);
     }
-
+    
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
-
+    
+    // Add API key
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (apiKey) {
+      headers.set('X-API-Key', apiKey);
+    }
+    
     // Don't set Content-Type for FormData (file uploads) - let the browser set it with boundary
     if (!headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
-
     return headers;
   },
 });
 
-// Wrapper that auto-logs out on 401 (expired / invalid token)
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
-  args,
-  api,
-  extraOptions,
-) => {
-  const result = await baseQuery(args, api, extraOptions);
-
-  if (result.error && result.error.status === 401) {
-    // Token expired or invalid — clear session and force re-login
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-    api.dispatch(LOGOUT_ACTION);
-  }
-
-  return result;
-};
-
 // Base API with tag types for cache invalidation
 export const baseApi = createApi({
   reducerPath: 'api',
-  baseQuery: baseQueryWithReauth,
+  baseQuery,
   tagTypes: [
-    'Client',
-    'ClientWorkers',
     'Worker',
     'Shifts',
-    'Invoices',
-    'Timesheet',
     'Attendance',
     'Payslips',
     'Documents',
     'Skills',
     'Notifications',
     'Holidays',
-    'RecurringSchedules',
-    'ScheduleChangeRequests',
-    'InviteRequests',
-    'Locations',
-    'ComplianceStats',
-    'ComplianceWorkers',
-    'ComplianceWorker',
-    'HolidayRequests',
-    'HolidayBalances',
-    'TimesheetStats',
-    'TimesheetList',
     'Rota',
-    'NfcPoints',
   ],
   endpoints: () => ({}),
 });

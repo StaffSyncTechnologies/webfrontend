@@ -1,16 +1,6 @@
 import { baseApi } from './baseApi';
 
-// ─── Shift type helpers ───────────────────────────────────────────────────────
-
-export type ShiftType = 'morning' | 'afternoon' | 'night';
-
-export const SHIFT_SLOTS: Record<ShiftType, string> = {
-  morning:   '06:00-14:00',
-  afternoon: '14:00-22:00',
-  night:     '22:00-06:00',
-};
-
-// ─── Response types ───────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface RotaAssignment {
   rotaShiftId: string;
@@ -27,11 +17,12 @@ export interface RotaWorker {
   unavailableDates: string[]; // "yyyy-MM-dd"
   holidayDates: string[];     // "yyyy-MM-dd"
   /**
-   * Key: "{dayIndex}-{startTime}-{endTime}"
-   * e.g. "0-06:00-14:00" | "3-14:00-22:00" | "6-22:00-06:00"
+   * Key format: "{dayIndex}-{startTime}-{endTime}"
+   * Examples:   "0-06:00-14:00"   (Mon morning)
+   *             "2-14:00-22:00"   (Wed afternoon)
+   *             "4-22:00-06:00"   (Fri night)
    *
-   * dayIndex: 0=Mon … 6=Sun, matching the rota's monday.
-   * Cell.tsx looks up keys with: key.startsWith(`${dayIdx}-`)
+   * Built by fmtTime() in rota.controller.ts — Cell.tsx must use the same format.
    */
   assignments: Record<string, RotaAssignment>;
 }
@@ -66,15 +57,15 @@ export interface WeekRotaResponse {
   rota: RotaInfo;
   companyLocation: CompanyLocation | null;
   workers: RotaWorker[];
-  /** Key: "HH:mm-HH:mm" → number[7], one count per day */
+  /** Key: "HH:mm-HH:mm" → array of 7 counts (one per day) */
   shiftCounts: Record<string, number[]>;
   stats: RotaStats;
 }
 
-// ─── Mutation arg types (import these in RotaBuilderScreen) ───────────────────
+// ─── Mutation arg types ───────────────────────────────────────────────────────
 
 export interface AssignWorkerArg {
-  rotaId: string;       // from rota.id returned by getWeekRota — never derive from date
+  rotaId: string;
   workerId: string;
   date: string;         // "yyyy-MM-dd"
   startTime: string;    // "HH:mm"
@@ -90,45 +81,46 @@ export interface AssignWorkerArg {
 
 export interface UnassignWorkerArg {
   rotaId: string;
-  rotaShiftId: string; // from assignment.rotaShiftId
+  rotaShiftId: string;
   workerId: string;
 }
 
-// ─── API ──────────────────────────────────────────────────────────────────────
+// ─── Injected endpoints ───────────────────────────────────────────────────────
 
 export const rotaApi = baseApi.injectEndpoints({
   endpoints: builder => ({
 
-    // GET /rota/week
+    // ── GET /rota/week ────────────────────────────────────────────────────────
+    // weekStart: Monday of the week as "yyyy-MM-dd"
+    // clientCompanyId: optional — omit for DIRECT_COMPANY mode
     getWeekRota: builder.query<
       WeekRotaResponse,
       { weekStart?: string; clientCompanyId?: string }
     >({
-      query: ({ weekStart, clientCompanyId } = {}) => {
-        console.log('[getWeekRota] Request params:', { weekStart, clientCompanyId });
-        const queryParams = new URLSearchParams();
-        if (weekStart) queryParams.append('weekStart', weekStart);
-        if (clientCompanyId) queryParams.append('clientCompanyId', clientCompanyId);
-        const url = `/rota/week?${queryParams.toString()}`;
-        console.log('[getWeekRota] Full URL:', url);
-        return {
-          url,
-        };
-      },
+      query: ({ weekStart, clientCompanyId } = {}) => ({
+        url: '/rota/week',
+        params: {
+          ...(weekStart       ? { weekStart }       : {}),
+          ...(clientCompanyId ? { clientCompanyId } : {}),
+        },
+      }),
       providesTags: ['Rota'],
-      transformResponse: (response: WeekRotaResponse) => {
-        console.log('[getWeekRota] Raw response:', response);
-        return response;
-      },
       transformErrorResponse: (response) => {
         console.error('[getWeekRota] API Error:', response);
         return response;
       },
     }),
 
-    // POST /rota/:rotaId/assign
+    // ── POST /rota/:rotaId/assign ─────────────────────────────────────────────
+    // rotaId MUST be the id from getWeekRota response — never derive it from date
     assignWorker: builder.mutation<
-      { success: boolean; assignment: any; rotaShiftId: string },
+      {
+        success: boolean;
+        assignment: any;
+        rotaShiftId: string;
+        /** "{dayIndex}-{startTime}-{endTime}" — same key used in worker.assignments */
+        assignmentKey: string;
+      },
       AssignWorkerArg
     >({
       query: ({ rotaId, ...body }) => ({
@@ -136,10 +128,11 @@ export const rotaApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
+      // invalidatesTags triggers a getWeekRota refetch → Cell re-renders with real data
       invalidatesTags: ['Rota'],
     }),
 
-    // DELETE /rota/:rotaId/assign
+    // ── DELETE /rota/:rotaId/assign ───────────────────────────────────────────
     unassignWorker: builder.mutation<{ success: boolean }, UnassignWorkerArg>({
       query: ({ rotaId, ...body }) => ({
         url: `/rota/${rotaId}/assign`,
@@ -149,13 +142,13 @@ export const rotaApi = baseApi.injectEndpoints({
       invalidatesTags: ['Rota'],
     }),
 
-    // POST /rota/:rotaId/publish
+    // ── POST /rota/:rotaId/publish ────────────────────────────────────────────
     publishRota: builder.mutation<{ success: boolean; rota: RotaInfo }, string>({
       query: rotaId => ({ url: `/rota/${rotaId}/publish`, method: 'POST' }),
       invalidatesTags: ['Rota'],
     }),
 
-    // POST /rota/:rotaId/unpublish
+    // ── POST /rota/:rotaId/unpublish ──────────────────────────────────────────
     unpublishRota: builder.mutation<{ success: boolean; rota: RotaInfo }, string>({
       query: rotaId => ({ url: `/rota/${rotaId}/unpublish`, method: 'POST' }),
       invalidatesTags: ['Rota'],
