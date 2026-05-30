@@ -20,6 +20,13 @@ export interface NfcClockPoint {
   status: NfcPointStatus;
   locationId?: string | null;
   location?: NfcLocation | null;
+  clientId?: string | null;
+  client?: { id: string; name: string } | null;
+  description?: string | null;
+  address?: string | null;
+  postcode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   writtenAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -28,6 +35,12 @@ export interface NfcClockPoint {
 export interface CreateNfcPointPayload {
   name: string;
   locationId?: string;
+  clientId?: string;
+  description?: string;
+  address?: string;
+  postcode?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 // ─── API Slice ────────────────────────────────────────────────────────────────

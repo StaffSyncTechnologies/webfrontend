@@ -14,9 +14,9 @@ import {
   Tooltip,
   Alert,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
+  Autocomplete,
 } from '@mui/material';
 import {
   Add,
@@ -29,6 +29,7 @@ import {
   Close,
   ToggleOff,
   Download,
+  MyLocation,
 } from '@mui/icons-material';
 import { QRCodeSVG } from 'qrcode.react';
 import { DashboardContainer } from '../../components/layout/DashboardContainer';
@@ -45,6 +46,8 @@ import {
   type NfcClockPoint,
   type NfcPointStatus,
 } from '../../store/slices/nfcSlice';
+import { useGetClientsQuery } from '../../store/slices/organizationSlice';
+import type { Client } from '../../types/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -394,20 +397,74 @@ interface CreateDialogProps {
   onClose: () => void;
 }
 
+// ─── Geocoding helper ─────────────────────────────────────────────────────────
+
+async function geocodeAddress(address: string, postcode: string): Promise<{ lat: number; lng: number } | null> {
+  const q = [address, postcode, 'UK'].filter(Boolean).join(', ');
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=gb`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'StaffSync/1.0' } });
+  const json = await res.json();
+  if (json.length > 0) {
+    return { lat: parseFloat(json[0].lat), lng: parseFloat(json[0].lon) };
+  }
+  return null;
+}
+
+// ─── Client initials helper ───────────────────────────────────────────────────
+
+function getInitials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+// ─── Create NFC Point Dialog ──────────────────────────────────────────────────
+
 function CreateNfcPointDialog({ open, onClose }: CreateDialogProps) {
   const toast = useToast();
-  const [name, setName] = useState('');
+
+  // Form state
+  const [name, setName]           = useState('');
   const [nameError, setNameError] = useState('');
   const [locationId, setLocationId] = useState<string>('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [address, setAddress]     = useState('');
+  const [postcode, setPostcode]   = useState('');
+  const [latitude, setLatitude]   = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeMsg, setGeocodeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: locations = [], isLoading: locationsLoading } = useGetLocationsQuery();
+  const { data: clients = [], isLoading: clientsLoading }     = useGetClientsQuery();
   const [createPoint, { isLoading }] = useCreateNfcClockPointMutation();
 
   const handleClose = () => {
-    setName('');
-    setNameError('');
-    setLocationId('');
+    setName(''); setNameError(''); setLocationId(''); setSelectedClient(null);
+    setAddress(''); setPostcode(''); setLatitude(null); setLongitude(null);
+    setGeocoding(false); setGeocodeMsg(null);
     onClose();
+  };
+
+  const handleGeocode = async () => {
+    if (!address.trim() && !postcode.trim()) {
+      setGeocodeMsg({ type: 'error', text: 'Enter an address or postcode first.' });
+      return;
+    }
+    setGeocoding(true);
+    setGeocodeMsg(null);
+    try {
+      const result = await geocodeAddress(address, postcode);
+      if (result) {
+        setLatitude(result.lat);
+        setLongitude(result.lng);
+        setGeocodeMsg({ type: 'success', text: `Found: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}` });
+      } else {
+        setGeocodeMsg({ type: 'error', text: 'Address not found. Try a more specific address.' });
+      }
+    } catch {
+      setGeocodeMsg({ type: 'error', text: 'Geocoding failed. Check your connection.' });
+    } finally {
+      setGeocoding(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -420,6 +477,11 @@ function CreateNfcPointDialog({ open, onClose }: CreateDialogProps) {
       await createPoint({
         name: name.trim(),
         locationId: locationId || undefined,
+        clientId: selectedClient?.id || undefined,
+        address: address.trim() || undefined,
+        postcode: postcode.trim() || undefined,
+        latitude: latitude ?? undefined,
+        longitude: longitude ?? undefined,
       }).unwrap();
       toast.success('NFC clock point created! Workers can now use it to clock in via QR code.');
       handleClose();
@@ -471,17 +533,134 @@ function CreateNfcPointDialog({ open, onClose }: CreateDialogProps) {
             error={!!nameError}
             helperText={nameError}
             sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '10px',
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: '14px',
-              },
+              '& .MuiOutlinedInput-root': { borderRadius: '10px', fontFamily: "'Outfit', sans-serif", fontSize: '14px' },
               '& .MuiFormHelperText-root': { fontFamily: "'Outfit', sans-serif" },
             }}
           />
         </Box>
 
-        {/* Location picker */}
+        {/* Client picker */}
+        <Box>
+          <DialogLabel>Client Company (Optional)</DialogLabel>
+          <Autocomplete
+            options={clients}
+            getOptionLabel={(c) => c.name}
+            value={selectedClient}
+            onChange={(_, val) => setSelectedClient(val)}
+            loading={clientsLoading}
+            renderOption={(props, option) => (
+              <Box
+                component="li"
+                {...props}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, fontFamily: "'Outfit', sans-serif" }}
+              >
+                <Box
+                  sx={{
+                    width: 36, height: 36, borderRadius: '8px',
+                    backgroundColor: `${colors.primary.blue}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '13px',
+                    color: colors.primary.blue, flexShrink: 0,
+                  }}
+                >
+                  {getInitials(option.name)}
+                </Box>
+                <Box>
+                  <Box sx={{ fontWeight: 600, fontSize: '14px', color: colors.primary.navy }}>{option.name}</Box>
+                  {option.email && (
+                    <Box sx={{ fontSize: '12px', color: colors.text.secondary }}>{option.email}</Box>
+                  )}
+                </Box>
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search clients…"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', fontFamily: "'Outfit', sans-serif", fontSize: '14px' } }}
+              />
+            )}
+          />
+          <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '12px', color: colors.text.secondary, mt: 0.75 }}>
+            Link this NFC point to a client company for reporting.
+          </Box>
+        </Box>
+
+        {/* Address & Postcode + Geocoding */}
+        <Box>
+          <DialogLabel>Address &amp; Location</DialogLabel>
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
+            <TextField
+              fullWidth
+              label="Address"
+              value={address}
+              onChange={(e) => { setAddress(e.target.value); setLatitude(null); setLongitude(null); setGeocodeMsg(null); }}
+              placeholder="e.g. 123 High Street, London"
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', fontFamily: "'Outfit', sans-serif", fontSize: '14px' } }}
+            />
+            <TextField
+              label="Postcode"
+              value={postcode}
+              onChange={(e) => { setPostcode(e.target.value); setLatitude(null); setLongitude(null); setGeocodeMsg(null); }}
+              placeholder="SW1A 2AA"
+              sx={{
+                width: 150, flexShrink: 0,
+                '& .MuiOutlinedInput-root': { borderRadius: '10px', fontFamily: "'Outfit', sans-serif", fontSize: '14px' },
+              }}
+            />
+          </Box>
+
+          {/* Coordinates result or geocode button */}
+          {latitude !== null && longitude !== null ? (
+            <Box
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1.5,
+                backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0',
+                borderRadius: '10px', p: '10px 14px',
+              }}
+            >
+              <CheckCircle sx={{ color: '#059669', fontSize: 18, flexShrink: 0 }} />
+              <Box sx={{ fontFamily: "'Outfit', sans-serif", fontSize: '13px', color: '#065F46', flex: 1 }}>
+                {latitude.toFixed(5)}, {longitude.toFixed(5)}
+              </Box>
+              <Button
+                size="small"
+                onClick={() => { setLatitude(null); setLongitude(null); setGeocodeMsg(null); }}
+                sx={{ fontFamily: "'Outfit', sans-serif", textTransform: 'none', fontSize: '12px', color: colors.text.secondary, minWidth: 0, p: '2px 8px' }}
+              >
+                Clear
+              </Button>
+            </Box>
+          ) : (
+            <Box>
+              <Button
+                variant="outlined"
+                onClick={handleGeocode}
+                disabled={geocoding || (!address.trim() && !postcode.trim())}
+                startIcon={geocoding ? <CircularProgress size={14} color="inherit" /> : <MyLocation />}
+                sx={{
+                  fontFamily: "'Outfit', sans-serif", textTransform: 'none', borderRadius: '10px',
+                  borderColor: '#D1D5DB', color: colors.primary.navy, fontSize: '13px',
+                  '&:hover': { borderColor: colors.primary.blue, backgroundColor: '#EFF6FF' },
+                }}
+              >
+                {geocoding ? 'Finding coordinates…' : 'Get Coordinates'}
+              </Button>
+              {geocodeMsg && (
+                <Box
+                  sx={{
+                    fontFamily: "'Outfit', sans-serif", fontSize: '12px', mt: 0.75, pl: 0.5,
+                    color: geocodeMsg.type === 'error' ? '#DC2626' : '#059669',
+                  }}
+                >
+                  {geocodeMsg.text}
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Work site picker */}
         <Box>
           <DialogLabel>Work Site (Optional)</DialogLabel>
           <FormControl fullWidth>
@@ -490,11 +669,7 @@ function CreateNfcPointDialog({ open, onClose }: CreateDialogProps) {
               onChange={(e) => setLocationId(e.target.value)}
               displayEmpty
               disabled={locationsLoading}
-              sx={{
-                borderRadius: '10px',
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: '14px',
-              }}
+              sx={{ borderRadius: '10px', fontFamily: "'Outfit', sans-serif", fontSize: '14px' }}
             >
               <MenuItem value="">
                 <Box sx={{ fontFamily: "'Outfit', sans-serif", color: colors.text.secondary }}>
@@ -518,7 +693,7 @@ function CreateNfcPointDialog({ open, onClose }: CreateDialogProps) {
           </Box>
         </Box>
 
-        {/* What happens */}
+        {/* What happens next */}
         <Box
           sx={{
             backgroundColor: '#F9FAFB',

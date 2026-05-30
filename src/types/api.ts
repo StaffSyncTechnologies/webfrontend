@@ -254,6 +254,7 @@ export interface Shift {
   title: string;
   clientCompanyId: string;
   siteLocation: string;
+  postcode?: string;
   siteLat?: number;
   siteLng?: number;
   startAt: string;
